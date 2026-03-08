@@ -1,10 +1,14 @@
 import { Bot, ChevronDown, MessageCircle, PlayCircle, Star, User, Zap } from 'lucide-react';
 
-export default function Header() {
+type Props = {
+  title?: string;
+};
+
+export default function Header({ title = 'Start from scratch' }: Props) {
   return (
     <header className="flex justify-between items-center px-6 pt-5 pb-3 border-b border-gray-200">
       <div className="flex items-center gap-2">
-        <h1 className="text-[28px] font-medium tracking-tight text-[#323338]">Start from scratch</h1>
+        <h1 className="text-[28px] font-medium tracking-tight text-[#323338]">{title}</h1>
         <button className="text-gray-400 hover:text-gray-600 mt-1"><ChevronDown size={20} /></button>
         <button className="ml-2 text-gray-400 hover:text-yellow-500"><Star size={18} /></button>
       </div>

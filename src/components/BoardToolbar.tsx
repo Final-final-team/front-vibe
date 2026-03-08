@@ -2,9 +2,13 @@ import { ArrowUpDown, ChevronDown, EyeOff, Filter, LayoutTemplate, MoreHorizonta
 
 interface BoardToolbarProps {
   onOpenModal: () => void;
+  primaryLabel?: string;
 }
 
-export default function BoardToolbar({ onOpenModal }: BoardToolbarProps) {
+export default function BoardToolbar({
+  onOpenModal,
+  primaryLabel = '새로운 아이템 (5W1H 할당)',
+}: BoardToolbarProps) {
   return (
     <div className="px-6 py-4 flex items-center gap-4">
       <div className="flex rounded-md shadow-sm">
@@ -12,7 +16,7 @@ export default function BoardToolbar({ onOpenModal }: BoardToolbarProps) {
           onClick={onOpenModal}
           className="bg-blue-600 text-white px-4 py-1.5 text-sm font-medium rounded-l hover:bg-blue-700 flex items-center gap-1"
         >
-          새로운 아이템 (5W1H 할당)
+          {primaryLabel}
         </button>
         <button className="bg-blue-600 border-l border-blue-500 text-white px-2 py-1.5 rounded-r hover:bg-blue-700">
           <ChevronDown size={16} />
