@@ -36,6 +36,41 @@ const tasksCatalog: ReviewTask[] = [
     ownerId: 102,
     latestReviewStatus: 'COMPLETED',
   },
+  {
+    id: 13,
+    title: '초대 기반 멤버 온보딩 플로우 정리',
+    summary: '초대 발송, 수락, 만료, 거절 상태를 프로젝트 멤버십에 연결한다.',
+    ownerId: 202,
+    latestReviewStatus: 'IN_PROGRESS',
+  },
+  {
+    id: 14,
+    title: '프로젝트 RBAC 매트릭스 설계',
+    summary: '역할-권한 집합과 멤버 할당 흐름을 프론트 화면에 반영한다.',
+    ownerId: 101,
+    latestReviewStatus: 'IN_PROGRESS',
+  },
+  {
+    id: 20,
+    title: '운영 템플릿 표준화',
+    summary: '운영 프로젝트용 작업 템플릿과 상태 표현을 맞춘다.',
+    ownerId: 501,
+    latestReviewStatus: 'IN_PROGRESS',
+  },
+  {
+    id: 21,
+    title: '온콜 운영 보드 정비',
+    summary: '운영 이슈 triage와 역할 라우팅을 보드에 반영한다.',
+    ownerId: 502,
+    latestReviewStatus: 'IN_REVIEW',
+  },
+  {
+    id: 22,
+    title: '감사 로그 조회 구조화',
+    summary: '운영 로그 탐색 화면과 필터 패턴을 정리한다.',
+    ownerId: 501,
+    latestReviewStatus: 'COMPLETED',
+  },
 ];
 
 let reviewIdCounter = 3003;
