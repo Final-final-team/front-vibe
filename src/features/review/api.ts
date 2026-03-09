@@ -1,4 +1,5 @@
 import { getAccessToken, getCurrentActor } from '../../shared/lib/session';
+import { appConfig } from '../../shared/config/app-config';
 import type {
   ApiErrorShape,
   ReviewCancelInput,
@@ -45,8 +46,8 @@ type ErrorResponse = {
   path?: string;
 };
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? '';
-const USE_MOCK = !API_BASE_URL;
+const API_BASE_URL = appConfig.publicApiBaseUrl;
+const USE_MOCK = appConfig.useMock;
 
 export class ApiError extends Error implements ApiErrorShape {
   code: string;
