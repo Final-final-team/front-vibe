@@ -1,10 +1,13 @@
-# Vite + React 19 + TypeScript + Tailwind vs Next.js
+# ADR-0003: Vite React TypeScript Tailwind Over Next.js
 
-## 질문 배경
+- Status: accepted
+- Date: 2026-03-09
+
+## Context
 
 사용자가 현재 `Vite + React 19 + TypeScript + Tailwind` 조합이 괜찮은지, 그리고 `Next.js`가 더 나은지 질문했다.
 
-## 선택지
+## Options Considered
 
 ### 1. Vite + React 19 + TypeScript + Tailwind 유지
 
@@ -30,17 +33,17 @@
 - 내부 업무툴에서는 SSR 이득이 제한적일 수 있다.
 - 기존 디자인만 가져가고 구조를 갈아엎는 상황에서 프레임워크 전환까지 하면 복잡도가 커진다.
 
-## 이 프로젝트 기준 추천
+## Recommendation
 
 현재 repo와 제품 성격을 기준으로 `Vite + React 19 + TypeScript + Tailwind` 유지가 더 적합하다.
 
-## 최종 선택
+## Decision
 
 - 프레임워크: `Vite + React 19`
 - 언어: `TypeScript`
 - 스타일링: `Tailwind CSS`
 - `Next.js` 전환은 하지 않음
 
-## 선택 근거
+## Consequences
 
 이 프로젝트는 공개 랜딩 페이지보다 인증된 내부 업무관리툴에 가깝고, 핵심 복잡도는 review API 연동과 상태 전이 처리다. 이 경우 프레임워크를 옮기기보다 현재 Vite 기반을 유지하면서 라우터, Query, 도메인 구조를 정리하는 편이 비용 대비 효과가 가장 좋다.

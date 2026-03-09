@@ -1,12 +1,15 @@
-# WSL 런타임과 Vite Proxy를 로컬 실연동 기준으로 선택한 이유
+# ADR-0007: WSL Runtime And Vite Proxy For Local Integration
 
-## 질문 배경
+- Status: accepted
+- Date: 2026-03-09
+
+## Context
 
 - 실제 배포 환경이 Linux 계열이므로, 로컬도 가능한 한 같은 조건으로 맞춰 백엔드와 프론트를 실연동 테스트하고 싶었다.
 - 현재 백엔드는 기본 설정상 `localhost:5432` PostgreSQL과 `8080` HTTP 서버를 전제하고 있고, 프론트는 `Vite` 개발 서버에서 동작한다.
 - 브라우저에서 프론트와 백엔드를 직접 다른 origin으로 연결하면 CORS 설정이 추가로 필요하다.
 
-## 선택지
+## Options Considered
 
 ### 1. Windows에서 백엔드 실행 + 프론트는 기존 방식 유지
 
@@ -40,7 +43,7 @@
 - 초기 세팅 비용이 가장 크다.
 - WSL에 Java, PostgreSQL, Node 런타임과 프론트 의존성을 다시 맞춰야 한다.
 
-## 프론트-백엔드 연결 방식 선택지
+## Options Considered For Frontend-Backend Connectivity
 
 ### A. 프론트에서 `http://127.0.0.1:8080`으로 직접 호출
 
@@ -64,22 +67,21 @@
 - 개발 환경 전용 설정이 하나 더 생긴다.
 - 운영 배포 경로와는 별개의 프록시 레이어가 있다.
 
-## 이 프로젝트 기준 추천
+## Recommendation
 
 - 런타임은 `WSL에서 백엔드와 프론트를 모두 실행`하는 쪽이 맞다.
 - 연결 방식은 `Vite proxy`가 맞다.
 
-## 최종 선택
+## Decision
 
 - `WSL + Java 17 + PostgreSQL + Node` 기준으로 실행한다.
 - 프론트는 `127.0.0.1:5173`, 백엔드는 `127.0.0.1:8080`으로 띄운다.
 - 프론트에서 `/api` 요청은 `vite.config.ts`의 proxy를 통해 백엔드로 전달한다.
 - `VITE_API_BASE_URL`은 로컬 개발 기준 `http://127.0.0.1:5173`를 사용한다.
 
-## 선택 근거
+## Consequences
 
 - 사용자가 배포 환경과 맞춘 Linux 기준 개발을 원했다.
 - 실제로 WSL에서 Java/PostgreSQL/Node를 모두 맞춘 뒤 조회 API와 쓰기 API가 정상 응답하는 것을 확인했다.
 - 백엔드에 CORS 설정이 없으므로, 개발 중 브라우저 연결은 direct cross-origin보다 Vite proxy가 더 안전하고 단순하다.
 - 현재 repo가 `Vite` 기반이므로 `Next.js` 전환이나 별도 dev gateway 도입보다 비용이 낮다.
-

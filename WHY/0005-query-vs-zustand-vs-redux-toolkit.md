@@ -1,10 +1,13 @@
-# TanStack Query vs Zustand vs Redux Toolkit
+# ADR-0005: TanStack Query With Local UI State
 
-## 질문 배경
+- Status: accepted
+- Date: 2026-03-09
+
+## Context
 
 사용자가 `Zustand`와 `Redux Toolkit`이 무엇인지, 이 프로젝트에 무엇이 맞는지 질문했다.
 
-## 선택지
+## Options Considered
 
 ### 1. TanStack Query + 로컬 상태
 
@@ -36,16 +39,16 @@
 - 현재 규모와 요구에 비해 무거울 수 있다.
 - 보일러플레이트와 설계 비용이 증가한다.
 
-## 이 프로젝트 기준 추천
+## Recommendation
 
 `TanStack Query + feature 로컬 상태`를 기본값으로 둔다.
 
-## 최종 선택
+## Decision
 
 - 서버 상태: `TanStack Query`
 - 폼, 모달, 업로드, 드래프트: 로컬 상태
 - `Zustand`와 `Redux Toolkit`은 지금 단계에서 도입하지 않음
 
-## 선택 근거
+## Consequences
 
 현재 핵심 복잡도는 "review API 호출과 상태 동기화"이지 "거대한 전역 상태"가 아니다. 따라서 Query가 먼저 해결해야 할 문제에 가장 직접적이고, UI 상태는 로컬에서 관리하는 편이 유지보수가 쉽다.

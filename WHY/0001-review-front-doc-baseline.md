@@ -1,17 +1,20 @@
-# 왜 이 방식으로 시작하는가
+# ADR-0001: Review Frontend Documentation First
 
-## 결정
+- Status: accepted
+- Date: 2026-03-09
+
+## Decision
 
 리뷰 기능 프론트 구현은 먼저 문서화부터 진행하고, 실제 UI 구현은 기존 `front-vibe` 저장소를 확보한 뒤 진행한다.
 
-## 배경
+## Context
 
 - 현재 로컬 프론트 워크스페이스는 비어 있었다.
 - 사용자는 기존 프론트 디자인을 유지하길 원한다.
 - 백엔드 구현은 `/mnt/c/Users/alswl/Desktop/fianl`에 존재하며, `review` 도메인 API와 상태 전이가 이미 구체적으로 정의되어 있다.
 - 이 환경에서는 `https://github.com/Final-final-team/front-vibe.git` 접근에 GitHub 인증이 없어 원격 저장소를 바로 clone할 수 없었다.
 
-## 선택지
+## Options Considered
 
 ### 1. 디자인 원본 없이 바로 UI 구현
 
@@ -33,11 +36,11 @@
 단점:
 - 실제 화면 구현은 한 단계 뒤로 밀린다.
 
-## 추천 이유
+## Recommendation
 
 이 프로젝트의 핵심 제약은 "백엔드 기능 1:1 매핑"과 "기존 프론트 디자인 유지"를 동시에 만족해야 한다는 점이다. 디자인 원본이 없는 상태에서 바로 구현하면 기능은 맞출 수 있어도 디자인 보존은 거의 보장할 수 없다. 반대로 문서 설계를 먼저 해두면, 구현 단계에서 무엇을 어떤 상태 규칙으로 붙여야 하는지가 명확해진다.
 
-## 최종 판단
+## Consequences
 
 - 지금 단계에서는 `docs/`에 화면설계 페이지와 컴포넌트 설계 페이지를 먼저 만든다.
 - 실제 UI/라우트/상태 구현은 `front-vibe` 저장소를 clone하거나 로컬 원본을 확보한 즉시 이어간다.

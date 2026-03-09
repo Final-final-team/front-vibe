@@ -1,10 +1,13 @@
-# SSR vs CSR for Internal Review Tool
+# ADR-0004: CSR Over SSR For Internal Tool
 
-## 질문 배경
+- Status: accepted
+- Date: 2026-03-09
+
+## Context
 
 사용자가 `SSR`과 `CSR` 차이와, 어떤 방식이 더 나은지 질문했다.
 
-## 선택지
+## Options Considered
 
 ### 1. CSR
 
@@ -27,14 +30,14 @@
 - 서버와 클라이언트 경계가 늘어나 구현 복잡도가 커진다.
 - 내부 인증형 업무툴에서는 이득이 작을 수 있다.
 
-## 이 프로젝트 기준 추천
+## Recommendation
 
 `CSR`가 더 적합하다.
 
-## 최종 선택
+## Decision
 
 - 렌더링 모델: `CSR`
 
-## 선택 근거
+## Consequences
 
 이 제품은 검색 유입이 중요한 공개 웹서비스가 아니라, 로그인 후 사용하는 업무관리툴이다. 따라서 SEO 이점보다 review 상태 변경, 락 충돌, 다중 액션 UX를 단순하게 구현하는 것이 중요하다. 이 관점에서 CSR이 더 실용적이다.

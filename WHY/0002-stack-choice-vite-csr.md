@@ -1,6 +1,9 @@
-# 왜 현재 스택은 Vite CSR 기준으로 유지하는가
+# ADR-0002: Keep Vite CSR Stack
 
-## 결정
+- Status: accepted
+- Date: 2026-03-09
+
+## Decision
 
 `front-vibe`의 확인된 현재 스택을 유지한다.
 
@@ -10,13 +13,13 @@
 - `Tailwind CSS`
 - CSR 중심 SPA 구조
 
-## 확인 근거
+## Context
 
 - `package.json`에 `vite`, `react`, `react-dom`, `tailwindcss`가 설정되어 있다.
 - 엔트리 파일이 `src/main.tsx`와 `src/App.tsx` 구조다.
 - Next.js나 SSR 엔트리 파일은 존재하지 않았다.
 
-## 선택지
+## Options Considered
 
 ### 1. 기존 Vite CSR 유지
 
@@ -38,11 +41,11 @@
 - 내부 업무형 review 도메인에는 전환 비용 대비 이점이 작다.
 - 디자인 보존 요구와 충돌할 가능성이 높다.
 
-## 추천 이유
+## Recommendation
 
 이 프로젝트는 기존 프론트 디자인 유지가 중요하고, review 기능은 승인/반려/취소/첨부/코멘트처럼 클라이언트 상호작용이 중심이다. 따라서 현재 repo 구조를 유지하고, 필요한 서버 상태 관리만 추가하는 편이 구현 비용과 리스크 측면에서 가장 합리적이다.
 
-## 최종 판단
+## Consequences
 
 - 렌더링 모델은 현재 repo 기준 `CSR`
 - 데이터 패칭은 `TanStack Query` 추가를 전제로 설계
