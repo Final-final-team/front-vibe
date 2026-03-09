@@ -1,43 +1,43 @@
-# Frontend ADRs
+# 프론트엔드 ADR
 
-This folder is the frontend architecture decision record store for this workspace.
+이 폴더는 이 워크스페이스의 프론트엔드 아키텍처 결정 기록 저장소다.
 
-## Purpose
-- Capture meaningful frontend technical decisions in a durable format.
-- Preserve the context and tradeoffs behind each choice.
-- Make later refactors easier by showing what was chosen, why, and what assumptions were active at the time.
+## 목적
+- 의미 있는 프론트엔드 기술 결정을 지속 가능한 형식으로 남긴다.
+- 각 선택의 배경과 트레이드오프를 보존한다.
+- 이후 리팩터링 시 무엇을 왜 선택했는지, 당시 어떤 가정이 있었는지 추적할 수 있게 한다.
 
-## ADR Format
-Each ADR should use this structure when possible:
+## ADR 형식
+가능하면 각 ADR은 아래 구조를 따른다.
 
 ```md
-# ADR-XXXX: Short Title
+# ADR-XXXX: 짧은 제목
 
-- Status: accepted | superseded | deprecated | proposed
-- Date: YYYY-MM-DD
+- 상태: 채택 | 대체됨 | 폐기 | 제안
+- 날짜: YYYY-MM-DD
 
-## Context
+## 배경
 
-## Options Considered
+## 검토한 선택지
 
-## Decision
+## 결정
 
-## Consequences
+## 결과
 ```
 
-Optional sections are allowed when useful:
-- `Recommendation`
-- `Open Questions`
-- `References`
-- `Supersedes`
-- `Superseded by`
+필요하면 아래 섹션을 추가할 수 있다.
+- `권고안`
+- `열린 질문`
+- `참고 자료`
+- `대체한 결정`
+- `이 결정으로 대체됨`
 
-## Writing Rules
-- One ADR per meaningful decision.
-- Keep titles short and concrete.
-- Record the user-approved choice, not just the recommendation.
-- Prefer file and code references when the decision was grounded in the current repository state.
-- If a decision changes later, create a new ADR and link the old one instead of silently rewriting history.
+## 작성 규칙
+- 의미 있는 결정 하나당 ADR 하나를 만든다.
+- 제목은 짧고 구체적으로 쓴다.
+- 권고안만이 아니라 실제 사용자 승인 결과를 기록한다.
+- 현재 저장소 상태에 근거한 결정이라면 파일과 코드 참조를 우선한다.
+- 나중에 결정이 바뀌면 기존 문서를 조용히 덮어쓰지 말고 새 ADR을 만들고 연결한다.
 
-## Current Scope
-These ADRs cover frontend architecture, rendering model, routing, state/data strategy, environment/config strategy, and interaction patterns for `front-vibe`.
+## 현재 범위
+이 ADR들은 `front-vibe`의 프론트엔드 아키텍처, 렌더링 모델, 라우팅, 상태/데이터 전략, 환경설정 전략, 상호작용 패턴을 다룬다.

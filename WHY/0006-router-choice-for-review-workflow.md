@@ -1,13 +1,13 @@
-# ADR-0006: React Router For Review Workflow
+# ADR-0006: 리뷰 워크플로우용 React Router
 
-- Status: accepted
-- Date: 2026-03-09
+- 상태: 채택
+- 날짜: 2026-03-09
 
-## Context
+## 배경
 
 리팩터링 과정에서 review 기능을 단일 페이지 모달 구조로 유지할지, 라우터를 도입할지 결정해야 했다.
 
-## Options Considered
+## 검토한 선택지
 
 ### 1. React Router 도입
 
@@ -29,11 +29,11 @@
 - review 도메인처럼 상태와 화면이 많아지면 복잡도가 빠르게 증가한다.
 - URL로 상태를 표현하기 어렵다.
 
-## Recommendation
+## 권고안
 
 `React Router` 도입이 맞다.
 
-## Decision
+## 결정
 
 - 라우팅: `React Router`
 - 기본 경로:
@@ -43,6 +43,6 @@
   - `/tasks/:taskId/reviews/new`
   - `/reviews/:reviewId/edit`
 
-## Consequences
+## 결과
 
 review 기능은 목록, 상세, 편집, 상신이 모두 독립된 화면 책임을 가진다. 이를 단일 페이지 모달로 억지로 감싸기보다 URL 구조로 나누는 편이 구현과 유지보수 모두에서 유리하다.
