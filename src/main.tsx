@@ -5,13 +5,16 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { RouterProvider } from 'react-router-dom';
 import { queryClient } from './app/query-client';
 import { router } from './app/router';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import './index.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-      <ReactQueryDevtools initialIsOpen={false} />
+      <TooltipProvider>
+        <RouterProvider router={router} />
+        <ReactQueryDevtools initialIsOpen={false} />
+      </TooltipProvider>
     </QueryClientProvider>
   </StrictMode>,
 );

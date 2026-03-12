@@ -7,10 +7,12 @@ import ReviewDetailPage from '../pages/ReviewDetailPage';
 import ReviewEditorPage from '../pages/ReviewEditorPage';
 import ReviewInboxPage from '../pages/ReviewInboxPage';
 import RolesPermissionsPage from '../pages/RolesPermissionsPage';
+import ShadcnLabPage from '../pages/ShadcnLabPage';
 import TaskListPage from '../pages/TaskListPage';
 import TaskReviewsPage from '../pages/TaskReviewsPage';
 
 export const router = createBrowserRouter([
+  { path: '/design-lab', element: <ShadcnLabPage /> },
   {
     path: '/',
     element: <App />,

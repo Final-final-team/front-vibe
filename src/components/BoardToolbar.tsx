@@ -1,4 +1,8 @@
-import { ArrowUpDown, ChevronDown, Filter, Search } from 'lucide-react';
+import { ArrowUpDown, ChevronDown, Filter, Plus, Search, SlidersHorizontal } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Separator } from '../components/ui/separator';
+import { cn } from '../shared/lib/cn';
 
 interface BoardToolbarProps {
   onOpenModal: () => void;
@@ -14,49 +18,76 @@ export default function BoardToolbar({
   contextLabel,
 }: BoardToolbarProps) {
   return (
-    <div className="flex flex-col gap-3 border-b border-gray-200 bg-white px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
-      <div className="flex items-center gap-3">
-        <button
-          onClick={onOpenModal}
-          className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
-        >
-          {primaryLabel}
-        </button>
-        {contextLabel && (
-          <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
-            {contextLabel}
-          </span>
-        )}
-      </div>
-
-      <div className="flex flex-col gap-3 lg:min-w-[520px] lg:flex-row lg:items-center lg:justify-end">
-        <label className="flex min-w-[220px] items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500">
-          <Search size={16} />
-          <input
-            type="text"
-            placeholder="현재 뷰에서 검색"
-            className="w-full border-0 bg-transparent text-sm text-gray-700 outline-none placeholder:text-gray-400"
-          />
-        </label>
-        <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
-          {filterLabels.map((label) => (
+    <div className="border-x border-b border-border/70 bg-card px-5 py-3">
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Button onClick={onOpenModal} className="h-10 rounded-2xl px-4 shadow-[0_10px_30px_rgba(37,99,235,0.25)]">
+            <Plus size={16} />
+            {primaryLabel}
+          </Button>
+          <div className="inline-flex items-center rounded-2xl border border-border/70 bg-muted/40 p-1">
             <button
+              type="button"
+              className="rounded-xl bg-background px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm"
+            >
+              보드 보기
+            </button>
+            <button
+              type="button"
+              className="rounded-xl px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:text-foreground"
+            >
+              큐 보기
+            </button>
+          </div>
+        {contextLabel && (
+            <span className="rounded-full border border-border/70 bg-muted/40 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            {contextLabel}
+            </span>
+        )}
+        </div>
+
+        <div className="flex flex-col gap-3 xl:min-w-[640px] xl:flex-row xl:items-center xl:justify-end">
+          <div className="relative flex-1">
+            <Search
+              size={16}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              placeholder="현재 뷰에서 검색"
+              className="h-10 rounded-2xl border-border/70 bg-muted/35 pl-10 shadow-none"
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+          {filterLabels.map((label) => (
+              <button
               key={label}
               type="button"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 transition hover:border-gray-300 hover:bg-gray-50"
+                className={cn(
+                  'inline-flex h-10 items-center gap-2 rounded-2xl border border-border/70 bg-background px-3.5 text-sm font-medium text-foreground/85 shadow-sm transition',
+                  'hover:border-border hover:bg-muted/40',
+                )}
             >
-              <Filter size={14} />
+                <Filter size={14} className="text-muted-foreground" />
               {label}
-              <ChevronDown size={14} className="text-gray-400" />
-            </button>
+                <ChevronDown size={14} className="text-muted-foreground" />
+              </button>
           ))}
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 transition hover:border-gray-300 hover:bg-gray-50"
-          >
-            <ArrowUpDown size={14} />
-            정렬
-          </button>
+            <Separator orientation="vertical" className="hidden h-8 xl:block" />
+            <button
+              type="button"
+              className="inline-flex h-10 items-center gap-2 rounded-2xl border border-border/70 bg-background px-3.5 text-sm font-medium text-foreground/85 shadow-sm transition hover:border-border hover:bg-muted/40"
+            >
+              <ArrowUpDown size={14} className="text-muted-foreground" />
+              정렬
+            </button>
+            <button
+              type="button"
+              className="inline-flex h-10 items-center gap-2 rounded-2xl border border-dashed border-border/70 bg-muted/20 px-3.5 text-sm font-medium text-muted-foreground transition hover:bg-muted/40"
+            >
+              <SlidersHorizontal size={14} />
+              보기 설정
+            </button>
+          </div>
         </div>
       </div>
     </div>

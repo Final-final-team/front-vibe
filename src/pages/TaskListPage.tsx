@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
 import {
   closestCenter,
@@ -14,14 +15,25 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { ArrowRight, FolderKanban, GripVertical, Rows3, SendHorizontal } from 'lucide-react';
+import {
+  ArrowRight,
+  CircleGauge,
+  Clock3,
+  FolderKanban,
+  GripVertical,
+  Rows3,
+  SendHorizontal,
+  Sparkles,
+  Users2,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useTasks } from '../features/review/hooks';
 import { useProjectMilestones, useProjectTaskMeta } from '../features/workspace/hooks';
 import { useWorkspace } from '../features/workspace/use-workspace';
 import { formatDate } from '../shared/lib/format';
+import { Badge } from '../components/ui/badge';
+import { Button } from '../components/ui/button';
 import Card from '../shared/ui/Card';
-import MetricCard from '../shared/ui/MetricCard';
 import StatusPill from '../shared/ui/StatusPill';
 
 type BoardTask = {
@@ -89,6 +101,7 @@ export default function TaskListPage() {
   const selectedTask = boardTasks.find((task) => task.taskId === selectedTaskId) ?? boardTasks[0];
   const inReviewCount = boardTasks.filter((task) => task.latestReviewStatus === 'IN_REVIEW').length;
   const completedCount = boardTasks.filter((task) => task.latestReviewStatus === 'COMPLETED').length;
+  const activeAssignees = new Set(boardTasks.map((task) => task.assigneeName)).size;
 
   function getMilestoneTasks(milestoneId: string) {
     const fallbackOrder = sourceOrderByMilestone[milestoneId] ?? [];
@@ -135,24 +148,30 @@ export default function TaskListPage() {
 
   return (
     <div className="space-y-6">
-      <section className="grid gap-4 xl:grid-cols-3">
-        <MetricCard
+      <section className="grid gap-3 xl:grid-cols-4">
+        <MiniMetric
           label="Milestone Groups"
           value={`${milestones.length}개`}
-          hint="마일스톤 단위로 업무를 섹션화"
-          icon={<Rows3 size={18} />}
+          hint="섹션 단위 운영"
+          icon={<Rows3 size={16} />}
         />
-        <MetricCard
+        <MiniMetric
           label="In Review"
           value={`${inReviewCount}건`}
-          hint="현재 검토 큐에 올라간 업무"
-          icon={<SendHorizontal size={18} />}
+          hint="현재 검토 큐"
+          icon={<SendHorizontal size={16} />}
         />
-        <MetricCard
+        <MiniMetric
           label="Completed"
           value={`${completedCount}건`}
-          hint="승인까지 끝난 업무"
-          icon={<FolderKanban size={18} />}
+          hint="승인 완료"
+          icon={<FolderKanban size={16} />}
+        />
+        <MiniMetric
+          label="Active Assignees"
+          value={`${activeAssignees}명`}
+          hint="현재 담당자"
+          icon={<Users2 size={16} />}
         />
       </section>
 
@@ -170,14 +189,27 @@ export default function TaskListPage() {
                 key={milestone.id}
                 title={milestone.name}
                 description={milestone.summary}
-                action={<StatusPill tone="slate">{progress}% complete</StatusPill>}
+                action={
+                  <div className="flex items-center gap-2">
+                    <StatusPill tone="slate">{progress}% complete</StatusPill>
+                    <Badge variant="outline" className="rounded-full px-3 py-1">
+                      {milestoneTasks.length} tasks
+                    </Badge>
+                  </div>
+                }
+                className="bg-card/90"
               >
                 <div className="overflow-x-auto">
                   <div className="min-w-[900px]">
-                    <div className="mb-4 h-2 overflow-hidden rounded-full bg-gray-100">
-                      <div className="h-full rounded-full bg-blue-600" style={{ width: `${progress}%` }} />
+                    <div className="mb-5 flex items-center justify-between gap-3">
+                      <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+                        <div className="h-full rounded-full bg-primary" style={{ width: `${progress}%` }} />
+                      </div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        board slice
+                      </div>
                     </div>
-                    <div className="grid grid-cols-[2.2fr_1fr_0.8fr_1fr_1fr_1fr] border-b border-gray-200 pb-3 text-xs font-semibold uppercase tracking-[0.14em] text-gray-400">
+                    <div className="grid grid-cols-[2.2fr_1fr_0.8fr_1fr_1fr_1fr] border-b border-border/70 pb-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                       <div>업무</div>
                       <div>담당자</div>
                       <div>우선순위</div>
@@ -189,7 +221,7 @@ export default function TaskListPage() {
                       items={milestoneTasks.map((task) => task.taskId)}
                       strategy={verticalListSortingStrategy}
                     >
-                      <div className="divide-y divide-gray-100">
+                      <div className="divide-y divide-border/60">
                         {milestoneTasks.map((task) => (
                           <SortableTaskRow
                             key={task.taskId}
@@ -208,20 +240,24 @@ export default function TaskListPage() {
           </div>
         </DndContext>
 
-        <div className="space-y-6">
-          <Card title="선택된 업무" description="업무 상세와 검토 진입점을 함께 둡니다.">
+        <div className="space-y-6 xl:sticky xl:top-[272px] xl:self-start">
+          <Card
+            title="선택된 업무"
+            description="실행 중인 업무의 핵심 상태와 review 진입 액션"
+            action={<Badge className="rounded-full px-3 py-1">{selectedTask ? `taskId ${selectedTask.taskId}` : 'idle'}</Badge>}
+          >
             {selectedTask ? (
               <div className="space-y-5">
                 <div>
-                  <div className="text-lg font-semibold text-gray-900">{selectedTask.title}</div>
-                  <p className="mt-2 text-sm leading-6 text-gray-600">{selectedTask.summary}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <StatusPill tone="teal">{selectedTask.domain}</StatusPill>
+                    <StatusPill tone="purple">{selectedTask.assigneeName}</StatusPill>
+                    <StatusPill tone="slate">{selectedTask.milestoneName}</StatusPill>
+                  </div>
+                  <div className="mt-4 text-2xl font-semibold tracking-tight text-foreground">{selectedTask.title}</div>
+                  <p className="mt-2 text-sm leading-7 text-muted-foreground">{selectedTask.summary}</p>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <StatusPill tone="teal">{selectedTask.domain}</StatusPill>
-                  <StatusPill tone="purple">{selectedTask.assigneeName}</StatusPill>
-                  <StatusPill tone="slate">{selectedTask.milestoneName}</StatusPill>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <MetaItem label="기한" value={formatDate(selectedTask.dueDate)} />
                   <MetaItem label="우선순위" value={selectedTask.priority} />
                   <MetaItem
@@ -234,44 +270,54 @@ export default function TaskListPage() {
                           : '진행중'
                     }
                   />
-                  <MetaItem label="검토 진입" value="row / 전용 inbox 탭" />
+                  <MetaItem label="검토 진입" value="row / inbox / detail" />
+                </div>
+                <div className="rounded-[24px] border border-border/70 bg-muted/25 p-4">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <Sparkles size={16} className="text-primary" />
+                    오늘의 운영 포인트
+                  </div>
+                  <ul className="mt-3 space-y-2 text-sm leading-6 text-muted-foreground">
+                    <li>선택된 row 기준으로 검토 목록과 새 review 생성이 즉시 이어집니다.</li>
+                    <li>드래그 순서 변경은 같은 마일스톤 내부 우선순위 조정 시나리오를 가정합니다.</li>
+                    <li>상세 패널은 추후 sheet 또는 dialog로 전환 가능한 구조를 유지합니다.</li>
+                  </ul>
                 </div>
                 <div className="flex flex-wrap gap-3">
-                  <Link
-                    to={`/tasks/${selectedTask.taskId}/reviews`}
-                    className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
-                  >
+                  <Button asChild className="rounded-2xl">
+                    <Link to={`/tasks/${selectedTask.taskId}/reviews`}>
                     review 목록
                     <ArrowRight size={16} />
-                  </Link>
-                  <Link
-                    to={`/tasks/${selectedTask.taskId}/reviews/new`}
-                    className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-blue-200 hover:text-blue-700"
-                  >
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" className="rounded-2xl">
+                    <Link to={`/tasks/${selectedTask.taskId}/reviews/new`}>
                     새 review
-                  </Link>
+                    </Link>
+                  </Button>
                 </div>
               </div>
             ) : (
-              <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-8 text-sm text-gray-500">
+              <div className="rounded-[24px] border border-dashed border-border bg-muted/30 px-4 py-8 text-sm text-muted-foreground">
                 업무를 선택하면 상세 패널이 열립니다.
               </div>
             )}
           </Card>
 
-          <Card title="보드 원칙" description="이번 구현에서 고정한 업무 화면 패턴">
-            <ul className="space-y-3 text-sm leading-6 text-gray-600">
-              <li>마일스톤은 독립 플로우가 아니라 업무를 묶는 섹션으로만 사용합니다.</li>
-              <li>업무 row는 같은 마일스톤 안에서 드래그앤드롭으로 순서를 조정할 수 있습니다.</li>
-              <li>동일 데이터의 전용 검토 탭을 분리해 inbox 스타일 확인 흐름을 제공합니다.</li>
-            </ul>
-          </Card>
-
-          <Card title="추후 상호작용 준비" description="아직 확정 전이지만 구조상 고려한 요소들입니다.">
-            <ul className="space-y-3 text-sm leading-6 text-gray-600">
-              <li>멤버 초대, 검토 처리, 업무 상신은 추후 `Dialog` 기반 팝업으로 전환 가능합니다.</li>
-              <li>드래그 결과의 서버 저장 방식은 아직 미정이며, 낙관적 업데이트/충돌/롤백 정책을 별도 합의해야 합니다.</li>
-              <li>칸반/캘린더/차트/간트는 비활성 뷰 탭으로 남겨 두고 후속 구현을 전제로 디자인합니다.</li>
+          <Card title="운영 리듬" description="현재 보드가 의도하는 실제 사용 패턴">
+            <ul className="space-y-3 text-sm leading-7 text-muted-foreground">
+              <li className="flex items-start gap-3">
+                <span className="mt-1 text-primary"><CircleGauge size={16} /></span>
+                마일스톤은 독립 플로우가 아니라 업무를 묶는 실행 단위입니다.
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="mt-1 text-primary"><Clock3 size={16} /></span>
+                업무 row는 같은 마일스톤 안에서 즉시 순서를 바꾸며 일일 우선순위를 조정합니다.
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="mt-1 text-primary"><SendHorizontal size={16} /></span>
+                동일 데이터의 전용 검토 탭을 분리해 inbox 스타일 확인 흐름을 제공합니다.
+              </li>
             </ul>
           </Card>
         </div>
@@ -304,9 +350,9 @@ function SortableTaskRow({
         transition,
       }}
       className={[
-        'relative grid w-full grid-cols-[2.2fr_1fr_0.8fr_1fr_1fr_1fr] gap-4 py-4 text-left text-sm transition',
-        selected ? 'bg-blue-50/60' : 'hover:bg-gray-50',
-        isDragging ? 'z-10 rounded-2xl border border-blue-200 bg-white shadow-[0_16px_36px_rgba(37,99,235,0.18)]' : '',
+        'relative grid w-full grid-cols-[2.2fr_1fr_0.8fr_1fr_1fr_1fr] gap-4 rounded-[22px] px-3 py-4 text-left text-sm transition',
+        selected ? 'bg-primary/7 ring-1 ring-primary/15' : 'hover:bg-muted/40',
+        isDragging ? 'z-10 border border-primary/20 bg-card shadow-[0_16px_36px_rgba(37,99,235,0.18)]' : '',
       ].join(' ')}
     >
       <div
@@ -323,15 +369,15 @@ function SortableTaskRow({
         style={{ touchAction: 'none' }}
       />
       <div className="pointer-events-none relative z-10 flex items-start gap-3 pl-1">
-        <span className="mt-0.5 text-gray-300">
+        <span className="mt-0.5 text-muted-foreground/60">
           <GripVertical size={16} />
         </span>
         <div>
-          <div className="font-semibold text-gray-900">{task.title}</div>
-          <div className="mt-1 text-gray-500">{task.summary}</div>
+          <div className="font-semibold text-foreground">{task.title}</div>
+          <div className="mt-1 line-clamp-2 text-muted-foreground">{task.summary}</div>
         </div>
       </div>
-      <div className="pointer-events-none relative z-10 flex items-center text-gray-600">{task.assigneeName}</div>
+      <div className="pointer-events-none relative z-10 flex items-center text-foreground/80">{task.assigneeName}</div>
       <div className="pointer-events-none relative z-10 flex items-center">
         <StatusPill
           tone={
@@ -362,11 +408,11 @@ function SortableTaskRow({
               : '진행중'}
         </StatusPill>
       </div>
-      <div className="pointer-events-none relative z-10 flex items-center text-gray-500">{formatDate(task.dueDate)}</div>
+      <div className="pointer-events-none relative z-10 flex items-center text-muted-foreground">{formatDate(task.dueDate)}</div>
       <div className="relative z-20 flex items-center gap-3">
         <Link
           to={`/tasks/${task.taskId}/reviews`}
-          className="text-sm font-semibold text-blue-600 hover:text-blue-700"
+          className="text-sm font-semibold text-primary hover:text-primary/80"
           onPointerDown={(event) => event.stopPropagation()}
           onClick={(event) => event.stopPropagation()}
         >
@@ -374,7 +420,7 @@ function SortableTaskRow({
         </Link>
         <Link
           to={`/tasks/${task.taskId}/reviews/new`}
-          className="text-sm font-semibold text-gray-600 hover:text-gray-900"
+          className="text-sm font-semibold text-foreground/70 hover:text-foreground"
           onPointerDown={(event) => event.stopPropagation()}
           onClick={(event) => event.stopPropagation()}
         >
@@ -387,9 +433,34 @@ function SortableTaskRow({
 
 function MetaItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
-      <div className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-400">{label}</div>
-      <div className="mt-2 text-sm font-semibold text-gray-900">{value}</div>
+    <div className="rounded-[22px] border border-border/70 bg-muted/35 px-4 py-3">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
+      <div className="mt-2 text-sm font-semibold text-foreground">{value}</div>
     </div>
+  );
+}
+
+function MiniMetric({
+  label,
+  value,
+  hint,
+  icon,
+}: {
+  label: string;
+  value: string;
+  hint: string;
+  icon: ReactNode;
+}) {
+  return (
+    <section className="flex items-center justify-between rounded-[22px] border border-border/70 bg-card/95 px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+      <div>
+        <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
+        <div className="mt-1.5 text-[28px] font-semibold tracking-tight text-foreground">{value}</div>
+        <div className="mt-1 text-sm text-muted-foreground">{hint}</div>
+      </div>
+      <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-border/70 bg-muted/35 text-foreground/75">
+        {icon}
+      </div>
+    </section>
   );
 }
