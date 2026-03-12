@@ -1,0 +1,73 @@
+<div class="rich-frame review-inbox-fragment">
+  <div class="fragment-shell">
+    <div class="metric-row">
+      <div class="metric-card">
+        <div class="metric-label">Pending Review</div>
+        <div class="metric-value">2건</div>
+        <div class="metric-hint">현재 승인 또는 반려가 필요한 업무</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Approved Rounds</div>
+        <div class="metric-value">1건</div>
+        <div class="metric-hint">최근 승인된 검토 라운드</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">No Review Yet</div>
+        <div class="metric-value">3건</div>
+        <div class="metric-hint">아직 검토 라운드가 생성되지 않은 업무</div>
+      </div>
+    </div>
+
+    <div class="fragment-grid inbox-grid">
+      <div class="surface wide">
+        <div class="surface-title">Review Inbox</div>
+        <div class="table-head">
+          <span>업무</span>
+          <span>도메인</span>
+          <span>현재 상태</span>
+          <span>최신 라운드</span>
+        </div>
+        <div class="table-row">
+          <div>
+            <strong>QA 회귀 테스트 반영</strong>
+            <p>마감 전 수정사항과 재상신 체크 필요</p>
+          </div>
+          <div><span class="tag teal">업무</span></div>
+          <div><span class="tag amber">검토중</span></div>
+          <div><span class="tag slate">Round 3</span></div>
+        </div>
+        <div class="table-row">
+          <div>
+            <strong>정산 도메인 예외 처리</strong>
+            <p>반려 사유 반영 후 재상신 예정</p>
+          </div>
+          <div><span class="tag teal">정산</span></div>
+          <div><span class="tag slate">진행중</span></div>
+          <div><span class="tag rose">REJECTED</span></div>
+        </div>
+        <div class="table-row">
+          <div>
+            <strong>프로젝트 역할 정책 정리</strong>
+            <p>아직 review 라운드 없음</p>
+          </div>
+          <div><span class="tag teal">권한</span></div>
+          <div><span class="tag green">완료</span></div>
+          <div><span class="tag slate">미상신</span></div>
+        </div>
+      </div>
+
+      <div class="surface side">
+        <div class="surface-title">검토 진입 패턴</div>
+        <ul class="bullet-list">
+          <li>업무 탭 row / 상세 패널에서 검토로 진입</li>
+          <li>검토 탭은 큐 관점의 inbox 화면</li>
+          <li>상세/수정/상신은 review 라우트 재사용</li>
+        </ul>
+        <div class="note-box">
+          <div class="note-title">정책 미확정</div>
+          <p>프로젝트 종료/재개 규칙, 보고 승인 권한, 알림 정책은 이후 합의 필요</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

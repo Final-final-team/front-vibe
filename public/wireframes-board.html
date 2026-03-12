@@ -1,0 +1,1085 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>front-vibe board wireframes</title>
+    <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+    <style>
+      :root {
+        --bg: #ddd8d0;
+        --board: #f4efe7;
+        --grid: rgba(148, 163, 184, 0.2);
+        --ink: #172033;
+        --muted: #61708b;
+        --line: #d2cbc1;
+        --card: #ffffff;
+        --shell: #2f6df6;
+        --current: #0f9f6e;
+        --future: #dc8d12;
+        --candidate: #d6488d;
+        --flow: #7c3aed;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, "Pretendard", "Noto Sans KR", system-ui, sans-serif;
+        color: var(--ink);
+        background: var(--bg);
+      }
+
+      .stage {
+        padding: 40px;
+        min-height: 100vh;
+      }
+
+      .board {
+        position: relative;
+        width: 6600px;
+        height: 4500px;
+        margin: 0 auto;
+        border: 1px solid #c8c0b6;
+        border-radius: 40px;
+        background:
+          radial-gradient(circle at 1px 1px, var(--grid) 1px, transparent 0),
+          var(--board);
+        background-size: 28px 28px;
+        box-shadow: 0 30px 100px rgba(59, 45, 24, 0.16);
+        overflow: hidden;
+      }
+
+      .board-header {
+        position: absolute;
+        top: 42px;
+        left: 52px;
+        display: flex;
+        gap: 14px;
+        align-items: center;
+      }
+
+      .title-pill, .sub-pill, .legend-pill, .card-pill, .route-pill, .section-label {
+        border-radius: 999px;
+        padding: 10px 16px;
+        font-weight: 700;
+      }
+
+      .title-pill {
+        background: #111827;
+        color: white;
+        font-size: 14px;
+      }
+
+      .sub-pill {
+        background: white;
+        border: 1px solid #d5d8e1;
+        color: #4b5563;
+        font-size: 14px;
+      }
+
+      .legend {
+        position: absolute;
+        top: 56px;
+        right: 56px;
+        background: rgba(255,255,255,.92);
+        border: 1px solid #d7dbe5;
+        border-radius: 26px;
+        padding: 18px 20px;
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+      }
+
+      .legend h4 {
+        margin: 0 0 10px;
+        color: #98a3b5;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .18em;
+      }
+
+      .legend-row { display: flex; gap: 8px; }
+
+      .legend-pill.current, .card-pill.current { background: #d8f5ea; color: #137452; }
+      .legend-pill.future, .card-pill.future { background: #fff0cf; color: #a36100; }
+      .legend-pill.candidate, .card-pill.candidate { background: #ffe0ef; color: #b41f67; }
+      .legend-pill.shell, .card-pill.shell { background: #dfe8ff; color: #244ecb; }
+      .legend-pill.flow, .card-pill.flow { background: #ece1ff; color: #6c2bd9; }
+
+      .section {
+        position: absolute;
+        border: 2px dashed rgba(140, 153, 173, 0.6);
+        border-radius: 34px;
+        background: rgba(255,255,255,.45);
+      }
+
+      .section-label {
+        position: absolute;
+        top: -18px;
+        left: 24px;
+        background: white;
+        border: 1px solid #e5e7eb;
+        font-size: 15px;
+        box-shadow: 0 3px 10px rgba(0,0,0,.04);
+      }
+
+      .screen {
+        position: absolute;
+        background: var(--card);
+        border: 1px solid #dde3ec;
+        border-radius: 28px;
+        padding: 18px;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.1);
+      }
+
+      .screen.shell-card { border-color: #c7d8ff; }
+      .screen.current-card { border-color: #c8eadf; }
+      .screen.future-card { border-color: #f3dcac; }
+      .screen.candidate-card { border-color: #f3bfd7; }
+
+      .screen .top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .screen .left-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .route-pill {
+        background: #f3f4f6;
+        color: #707b8e;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .14em;
+        padding: 8px 12px;
+      }
+
+      .screen h3 {
+        margin: 14px 0 0;
+        font-size: 33px;
+        line-height: 1.08;
+      }
+
+      .screen .subtitle {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .screen .mock {
+        margin-top: 16px;
+        border: 1px solid #e4e7ee;
+        border-radius: 24px;
+        background: #fcfcfd;
+        padding: 16px;
+      }
+
+      .screen.rich-review .mock,
+      .screen.rich-fragment .mock {
+        padding: 0;
+        overflow: hidden;
+        background: white;
+      }
+
+      .screen ul {
+        list-style: none;
+        margin: 14px 0 0;
+        padding: 0;
+        display: grid;
+        gap: 9px;
+      }
+
+      .screen li {
+        background: #f8fafc;
+        border-radius: 16px;
+        padding: 11px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #3b4a60;
+      }
+
+      .screen .footer {
+        margin-top: 14px;
+        font-size: 13px;
+        color: #7b879a;
+        font-weight: 700;
+      }
+
+      .mock-shell, .mock-list, .mock-board, .mock-detail, .mock-split, .mock-modal, .mock-kanban, .mock-calendar, .mock-chart, .mock-gantt {
+        min-height: 240px;
+      }
+
+      .bar, .pill, .cell, .block, .panel, .button {
+        background: #edf1f6;
+        border-radius: 12px;
+      }
+
+      .button { background: #dfe5ff; }
+      .soft { background: #f6f8fb; border: 1px solid #e4e7ee; }
+
+      .mock-shell .row, .mock-board .row, .mock-split .row { display: flex; gap: 10px; }
+      .mock-shell .row + .row, .mock-list .item + .item, .mock-board .group + .group { margin-top: 12px; }
+
+      .mock-shell .tabline, .mock-shell .toolbar { display: flex; gap: 8px; margin-top: 12px; }
+      .mock-shell .bar { height: 42px; }
+      .mock-shell .header-main { display: flex; justify-content: space-between; gap: 12px; }
+      .mock-shell .left { width: 42%; }
+      .mock-shell .right { width: 25%; }
+      .mock-shell .tab, .mock-shell .view { height: 32px; min-width: 80px; }
+      .mock-shell .view.active { background: #111827; }
+      .mock-shell .filter { height: 38px; flex: 1; }
+
+      .mock-board .group {
+        background: white;
+        border: 1px solid #e4e7ee;
+        border-radius: 18px;
+        padding: 12px;
+      }
+      .mock-board .group-title { width: 180px; height: 22px; }
+      .mock-board .header-row, .mock-board .task-row { display: grid; grid-template-columns: 1.6fr .8fr .8fr .8fr; gap: 8px; margin-top: 10px; }
+      .mock-board .task-row .cell:nth-child(2) { background: #ddf7ea; }
+      .mock-board .task-row .cell { height: 38px; }
+      .mock-board .header-row .cell { height: 28px; background: #f8fafc; }
+
+      .mock-list .item {
+        background: white;
+        border: 1px solid #e4e7ee;
+        border-radius: 18px;
+        padding: 12px;
+      }
+      .mock-list .title { width: 56%; height: 22px; }
+      .mock-list .status { width: 24%; height: 22px; float: right; }
+      .mock-list .meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+      .mock-list .meta .cell { height: 28px; }
+
+      .mock-detail .bar { height: 40px; }
+      .mock-detail .block.big { margin-top: 12px; height: 100px; }
+      .mock-detail .metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 12px; }
+      .mock-detail .metrics .block { height: 84px; }
+      .mock-detail .panel { margin-top: 12px; height: 150px; background: white; border: 1px solid #e4e7ee; }
+      .mock-detail .actions { margin-top: 12px; display: flex; gap: 8px; }
+      .mock-detail .actions .button { height: 40px; flex: 1; }
+
+      .mock-split { display: grid; grid-template-columns: 1.35fr .85fr; gap: 12px; }
+      .mock-split .main, .mock-split .side { background: white; border: 1px solid #e4e7ee; border-radius: 22px; padding: 14px; }
+      .mock-split .main .bar { height: 40px; }
+      .mock-split .main .block { margin-top: 10px; }
+      .mock-split .main .block.long { height: 56px; }
+      .mock-split .main .grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-top: 10px; }
+      .mock-split .main .grid .block { height: 84px; margin-top: 0; }
+      .mock-split .main .panel { margin-top: 10px; height: 120px; background: white; border: 1px solid #e4e7ee; }
+      .mock-split .side .block { height: 50px; margin-bottom: 10px; }
+
+      .mock-modal {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f7f6fb;
+      }
+      .modal-card {
+        width: 86%;
+        max-width: 290px;
+        background: white;
+        border: 1px solid #e6dbff;
+        box-shadow: 0 12px 24px rgba(109, 40, 217, 0.12);
+        border-radius: 22px;
+        padding: 14px;
+      }
+      .modal-card .bar, .modal-card .block { margin-top: 10px; height: 40px; }
+      .modal-card .block.big { height: 88px; }
+      .modal-card .actions { display: flex; gap: 8px; margin-top: 10px; }
+      .modal-card .actions .button { height: 40px; flex: 1; }
+
+      .mock-kanban { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+      .mock-kanban .column {
+        background: white;
+        border: 1px solid #e4e7ee;
+        border-radius: 20px;
+        padding: 12px;
+      }
+      .mock-kanban .column .bar { height: 24px; }
+      .mock-kanban .card { margin-top: 10px; border: 1px solid #e4e7ee; border-radius: 16px; background: #f8fafc; padding: 10px; }
+      .mock-kanban .card .cell { height: 18px; }
+      .mock-kanban .card .cell.small { width: 40%; margin-top: 8px; }
+
+      .mock-calendar .bar { height: 28px; }
+      .mock-calendar .grid { margin-top: 12px; display: grid; grid-template-columns: repeat(7,1fr); gap: 8px; }
+      .mock-calendar .date { height: 58px; border: 1px solid #e4e7ee; border-radius: 14px; background: #f8fafc; }
+
+      .mock-chart .summary { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; }
+      .mock-chart .summary .block { height: 88px; }
+      .mock-chart .graph { margin-top: 12px; background: white; border: 1px solid #e4e7ee; border-radius: 20px; padding: 14px; }
+      .mock-chart .bars { display: flex; gap: 12px; align-items: end; height: 120px; }
+      .mock-chart .bars span { width: 34px; border-radius: 14px 14px 0 0; background: linear-gradient(180deg,#99f6e4 0%, #10b981 100%); }
+
+      .mock-gantt .bar { height: 28px; }
+      .mock-gantt .panel { margin-top: 12px; background: white; border: 1px solid #e4e7ee; border-radius: 20px; padding: 14px; }
+      .mock-gantt .line { display: grid; grid-template-columns: 120px 1fr; gap: 12px; margin-top: 10px; }
+      .mock-gantt .line:first-child { margin-top: 0; }
+      .mock-gantt .line .cell { height: 20px; }
+
+      .rich-frame {
+        background: white;
+        min-height: 100%;
+      }
+
+      .fragment-shell, .review-detail-fragment, .review-editor-fragment {
+        padding: 16px;
+      }
+
+      .metric-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+      }
+
+      .metric-card, .surface {
+        border: 1px solid #e4e7ee;
+        border-radius: 20px;
+        background: white;
+      }
+
+      .metric-card {
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        padding: 14px;
+      }
+
+      .metric-label {
+        color: #718096;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .14em;
+        font-weight: 700;
+      }
+
+      .metric-value {
+        margin-top: 8px;
+        font-size: 24px;
+        font-weight: 800;
+      }
+
+      .metric-hint {
+        margin-top: 6px;
+        color: #7b8799;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .fragment-grid {
+        display: grid;
+        gap: 12px;
+        margin-top: 12px;
+      }
+
+      .inbox-grid { grid-template-columns: 1.4fr .9fr; }
+      .detail-grid { grid-template-columns: 1.38fr .82fr; }
+
+      .surface {
+        padding: 14px;
+      }
+
+      .surface-title {
+        font-size: 14px;
+        font-weight: 800;
+      }
+
+      .surface-subtitle {
+        margin-top: 14px;
+        color: #6b778c;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: .14em;
+        font-weight: 700;
+      }
+
+      .table-head {
+        margin-top: 10px;
+        display: grid;
+        grid-template-columns: 1.6fr .8fr .8fr .8fr;
+        gap: 8px;
+        color: #90a0b6;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .12em;
+        font-weight: 700;
+      }
+
+      .table-row {
+        display: grid;
+        grid-template-columns: 1.6fr .8fr .8fr .8fr;
+        gap: 8px;
+        align-items: start;
+        padding: 12px 0;
+        border-top: 1px solid #edf2f7;
+      }
+
+      .table-row strong {
+        display: block;
+        font-size: 13px;
+      }
+
+      .table-row p {
+        margin: 4px 0 0;
+        color: #738196;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .tag, .token {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .tag.teal { background: #ddf7ea; color: #137452; }
+      .tag.amber { background: #fff0cf; color: #a36100; }
+      .tag.green { background: #d8f5ea; color: #137452; }
+      .tag.rose { background: #ffe0ef; color: #b41f67; }
+      .tag.slate { background: #eef2f7; color: #516075; }
+
+      .bullet-list {
+        margin: 12px 0 0;
+        padding-left: 18px;
+        color: #5f6d82;
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .note-box {
+        margin-top: 14px;
+        border-radius: 18px;
+        background: #fff8df;
+        border: 1px solid #f1df9a;
+        padding: 14px;
+      }
+
+      .note-title {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: .12em;
+        font-weight: 800;
+        color: #8b5a00;
+      }
+
+      .note-box p {
+        margin: 8px 0 0;
+        color: #7a6318;
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      .detail-hero {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: start;
+      }
+
+      .detail-hero.compact h4 { font-size: 20px; }
+
+      .eyebrow {
+        color: #3b82f6;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .16em;
+        font-weight: 800;
+      }
+
+      .detail-hero h4 {
+        margin: 8px 0 0;
+        font-size: 22px;
+      }
+
+      .hero-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .hero-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .ghost-btn, .primary-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        padding: 10px 14px;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .ghost-btn {
+        background: white;
+        border: 1px solid #dbe2eb;
+        color: #556274;
+      }
+
+      .primary-btn {
+        background: #2f6df6;
+        color: white;
+      }
+
+      .primary-btn.wide, .ghost-btn.wide {
+        width: 100%;
+      }
+
+      .action-strip {
+        display: flex;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .paragraph-box {
+        margin-top: 10px;
+        border-radius: 18px;
+        background: #f8fafc;
+        padding: 14px;
+        color: #435268;
+        font-size: 13px;
+        line-height: 1.75;
+      }
+
+      .meta-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      .meta-item {
+        border-radius: 16px;
+        background: #f8fafc;
+        padding: 12px;
+      }
+
+      .meta-item span {
+        display: block;
+        color: #77859a;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .12em;
+        font-weight: 700;
+      }
+
+      .meta-item strong {
+        display: block;
+        margin-top: 8px;
+        font-size: 13px;
+      }
+
+      .attachment-list, .comment-thread, .timeline {
+        margin-top: 10px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .attachment-row, .comment-item, .timeline-item {
+        border-radius: 16px;
+        background: #f8fafc;
+        padding: 12px;
+      }
+
+      .attachment-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        font-size: 13px;
+      }
+
+      .comment-item strong {
+        font-size: 12px;
+      }
+
+      .comment-item p {
+        margin: 6px 0 0;
+        font-size: 12px;
+        color: #57667c;
+        line-height: 1.6;
+      }
+
+      .token-list, .token-input {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .token {
+        background: #eef2ff;
+        color: #4352be;
+      }
+
+      .timeline-item {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        font-size: 12px;
+        color: #5a687d;
+      }
+
+      .editor-form-shell {
+        display: grid;
+        grid-template-columns: 1.35fr .82fr;
+        gap: 12px;
+        margin-top: 14px;
+      }
+
+      .input-line {
+        margin-top: 10px;
+        height: 42px;
+        border-radius: 14px;
+        background: #f1f5f9;
+      }
+
+      .input-line.large { height: 56px; }
+
+      .textarea-box {
+        margin-top: 10px;
+        height: 140px;
+        border-radius: 18px;
+        background: #f8fafc;
+      }
+
+      .input-ghost {
+        border-radius: 999px;
+        padding: 6px 10px;
+        border: 1px dashed #cbd5e1;
+        color: #94a3b8;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .attachment-dropzone {
+        margin-top: 10px;
+        border-radius: 18px;
+        border: 1px dashed #cbd5e1;
+        background: #fbfcfd;
+        padding: 18px;
+      }
+
+      .dropzone-title {
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      .dropzone-hint {
+        margin-top: 6px;
+        color: #7c889b;
+        font-size: 12px;
+      }
+
+      .cta-stack {
+        display: grid;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .cta-stack.horizontal {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .sticky {
+        position: absolute;
+        border-radius: 10px;
+        padding: 14px 16px;
+        font-size: 13px;
+        line-height: 1.65;
+        font-weight: 700;
+        box-shadow: 0 10px 20px rgba(15, 23, 42, 0.1);
+      }
+      .sticky.yellow { background: #f4de93; color: #5b4310; }
+      .sticky.mint { background: #c9f0d9; color: #1f5e3c; }
+      .sticky.peach { background: #ffd2bf; color: #7a3d2a; }
+
+      .diamond {
+        position: absolute;
+        width: 110px;
+        height: 110px;
+        transform: rotate(45deg);
+        background: var(--flow);
+        border-radius: 20px;
+        box-shadow: 0 16px 24px rgba(109, 40, 217, 0.24);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .diamond span {
+        transform: rotate(-45deg);
+        color: white;
+        font-size: 12px;
+        line-height: 1.45;
+        text-align: center;
+        font-weight: 800;
+      }
+
+      svg.connectors {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+      .conn-label {
+        font-size: 15px;
+        font-weight: 800;
+        fill: #6d28d9;
+      }
+
+    </style>
+  </head>
+  <body>
+    <div class="stage">
+      <div class="board">
+        <div class="board-header">
+          <div class="title-pill">front-vibe 화면설계서 v1</div>
+          <div class="sub-pill">현재 프론트 구현 기준 / 업무-검토 중심 / 미래 뷰 확장 고려</div>
+        </div>
+
+        <div class="legend">
+          <h4>확정성 범례</h4>
+          <div class="legend-row">
+            <div class="legend-pill current">현재 확정</div>
+            <div class="legend-pill future">후속 확장</div>
+            <div class="legend-pill candidate">미확정 인터랙션</div>
+          </div>
+        </div>
+
+        <div class="section" style="left:210px; top:120px; width:1300px; height:1080px;">
+          <div class="section-label">공통 셸</div>
+        </div>
+        <div class="section" style="left:320px; top:1020px; width:2720px; height:1260px;">
+          <div class="section-label">핵심 운영</div>
+        </div>
+        <div class="section" style="left:3600px; top:150px; width:2740px; height:2140px;">
+          <div class="section-label">검토 흐름</div>
+        </div>
+        <div class="section" style="left:220px; top:2680px; width:2260px; height:980px;">
+          <div class="section-label">지원 도메인</div>
+        </div>
+        <div class="section" style="left:2620px; top:2680px; width:3080px; height:980px;">
+          <div class="section-label">미래 뷰 확장</div>
+        </div>
+        <div class="section" style="left:2860px; top:4000px; width:1640px; height:440px;">
+          <div class="section-label">오버레이 후보</div>
+        </div>
+
+        <svg class="connectors" viewBox="0 0 6600 4500" preserveAspectRatio="none">
+          <path d="M 1360 600 C 1440 600, 1440 1410, 1520 1410" fill="none" stroke="#8b5cf6" stroke-width="4" stroke-linecap="round"></path>
+          <circle cx="1360" cy="600" r="6" fill="#8b5cf6"></circle>
+          <circle cx="1520" cy="1410" r="6" fill="#8b5cf6"></circle>
+          <text class="conn-label" x="1510" y="980" text-anchor="middle">공통 탐색 구조</text>
+
+          <path d="M 1520 1470 C 1840 1470, 2160 1430, 2380 1430" fill="none" stroke="#8b5cf6" stroke-width="4"></path>
+          <circle cx="1520" cy="1470" r="6" fill="#8b5cf6"></circle>
+          <circle cx="2380" cy="1430" r="6" fill="#8b5cf6"></circle>
+          <text class="conn-label" x="1920" y="1442" text-anchor="middle">row 선택</text>
+
+          <path d="M 2940 1380 C 3440 1380, 3820 1380, 4200 1380" fill="none" stroke="#8b5cf6" stroke-width="4"></path>
+          <circle cx="2940" cy="1380" r="6" fill="#8b5cf6"></circle>
+          <circle cx="4200" cy="1380" r="6" fill="#8b5cf6"></circle>
+          <text class="conn-label" x="3560" y="1348" text-anchor="middle">검토 생성 / 상세 연결</text>
+
+          <path d="M 4100 880 C 4100 980, 4100 1100, 4100 1200" fill="none" stroke="#8b5cf6" stroke-width="4"></path>
+          <circle cx="4100" cy="880" r="6" fill="#8b5cf6"></circle>
+          <circle cx="4100" cy="1200" r="6" fill="#8b5cf6"></circle>
+          <text class="conn-label" x="4240" y="1050" text-anchor="middle">큐에서 상세 진입</text>
+
+          <path d="M 5100 1460 C 5480 1460, 5760 1460, 6020 1460" fill="none" stroke="#8b5cf6" stroke-width="4"></path>
+          <circle cx="5100" cy="1460" r="6" fill="#8b5cf6"></circle>
+          <circle cx="6020" cy="1460" r="6" fill="#8b5cf6"></circle>
+          <text class="conn-label" x="5560" y="1426" text-anchor="middle">상신 / 수정</text>
+
+          <path d="M 2180 3160 C 2460 3160, 2580 3020, 2720 3020" fill="none" stroke="#8b5cf6" stroke-width="4"></path>
+          <circle cx="2180" cy="3160" r="6" fill="#8b5cf6"></circle>
+          <circle cx="2720" cy="3020" r="6" fill="#8b5cf6"></circle>
+          <text class="conn-label" x="2440" y="3046" text-anchor="middle">같은 업무 데이터</text>
+
+          <path d="M 1800 3180 C 3560 3180, 4560 3020, 5180 3020" fill="none" stroke="#8b5cf6" stroke-width="4"></path>
+          <circle cx="1800" cy="3180" r="6" fill="#8b5cf6"></circle>
+          <circle cx="5180" cy="3020" r="6" fill="#8b5cf6"></circle>
+          <text class="conn-label" x="3500" y="3136" text-anchor="middle">집계 / 시각화 확장</text>
+
+          <path d="M 960 3340 C 2200 3420, 2700 4220, 2820 4220" fill="none" stroke="#8b5cf6" stroke-width="4"></path>
+          <circle cx="960" cy="3340" r="6" fill="#8b5cf6"></circle>
+          <circle cx="2820" cy="4220" r="6" fill="#8b5cf6"></circle>
+          <text class="conn-label" x="1920" y="3940" text-anchor="middle">모달 / 패널 후보</text>
+        </svg>
+
+        <div class="diamond" style="left:2780px; top:690px;"><span>업무에서<br />검토 진입</span></div>
+        <div class="diamond" style="left:3000px; top:2500px;"><span>같은 데이터<br />다른 뷰</span></div>
+        <div class="diamond" style="left:5280px; top:1960px;"><span>폼 완료 후<br />상세 확인</span></div>
+
+        <div class="sticky yellow" style="left:1160px; top:220px; width:250px;">
+          공통 셸<br />
+          프로젝트는 상위 컨텍스트<br />
+          현재는 테이블만 활성<br />
+          칸반/캘린더/차트/간트는 후속
+        </div>
+        <div class="sticky mint" style="left:2500px; top:1380px; width:250px;">
+          업무 중심 축<br />
+          D&amp;D는 업무 테이블 우선<br />
+          업무 상세에서 검토로 진입<br />
+          서버 저장 방식은 아직 미정
+        </div>
+        <div class="sticky peach" style="left:4520px; top:260px; width:250px;">
+          검토는 독립 엔터티 아님<br />
+          업무 하위 프로세스<br />
+          Inbox는 큐 관점<br />
+          상세는 승인/반려 관점
+        </div>
+        <div class="sticky yellow" style="left:520px; top:3760px; width:280px;">
+          지원 도메인<br />
+          멤버/역할·권한/마일스톤은 관리형 화면<br />
+          업무/검토는 흐름형 화면<br />
+          확정성 태그를 꼭 분리
+        </div>
+        <div class="sticky mint" style="left:5740px; top:4100px; width:320px;">
+          기술 메모<br />
+          실연동은 업무 데이터 준비 후 강화<br />
+          Vercel env에는 공개 가능한 값만<br />
+          mock/live 모드 명시
+        </div>
+
+        <div class="screen shell-card rich-fragment" style="left:290px; top:180px; width:1060px; height:860px;">
+          <div class="top">
+            <div class="left-tags">
+              <div class="card-pill shell">공통</div>
+              <div class="card-pill current">현재 확정</div>
+            </div>
+            <div class="route-pill">shared-shell</div>
+          </div>
+          <h3>워크스페이스 셸</h3>
+          <div class="subtitle">프로젝트 컨텍스트 + 도메인 탭 + 뷰 탭 + 툴바</div>
+          <div class="mock rich-slot" data-fragment="workspace-shell"></div>
+          <ul>
+            <li>프로젝트 선택</li>
+            <li>도메인 탭</li>
+            <li>테이블 활성, 나머지 뷰 비활성</li>
+            <li>검색 / 필터 / 정렬</li>
+          </ul>
+        </div>
+
+        <div class="screen current-card rich-fragment" style="left:440px; top:1480px; width:960px; height:680px;">
+          <div class="top">
+            <div class="left-tags"><div class="card-pill current">현재 확정</div></div>
+            <div class="route-pill">/tasks</div>
+          </div>
+          <h3>업무 보드</h3>
+          <div class="subtitle">드래그앤드롭 우선 적용 영역</div>
+          <div class="mock rich-slot" data-fragment="task-board"></div>
+          <ul>
+            <li>마일스톤 그룹</li>
+            <li>업무 row</li>
+            <li>상태 / 담당자 / 기한</li>
+            <li>검토 진입 버튼</li>
+          </ul>
+        </div>
+
+        <div class="screen current-card rich-fragment" style="left:2380px; top:970px; width:560px; height:780px;">
+          <div class="top">
+            <div class="left-tags"><div class="card-pill current">현재 확정</div><div class="card-pill candidate">패널</div></div>
+            <div class="route-pill">task-detail</div>
+          </div>
+          <h3>업무 상세 패널</h3>
+          <div class="subtitle">업무에서 검토로 넘어가는 연결 지점</div>
+          <div class="mock rich-slot" data-fragment="task-detail"></div>
+          <ul>
+            <li>메타 정보</li>
+            <li>담당자</li>
+            <li>활동 로그</li>
+            <li>검토 상신 CTA</li>
+          </ul>
+        </div>
+
+        <div class="screen current-card rich-review" style="left:3740px; top:240px; width:800px; height:640px;">
+          <div class="top">
+            <div class="left-tags"><div class="card-pill current">현재 확정</div></div>
+            <div class="route-pill">/reviews</div>
+          </div>
+          <h3>검토 Inbox</h3>
+          <div class="subtitle">프로젝트 review 큐 집합</div>
+          <div class="mock rich-slot" data-fragment="review-inbox"></div>
+          <ul>
+            <li>큐 리스트</li>
+            <li>상태 배지</li>
+            <li>최근 라운드</li>
+            <li>검토 흐름 안내</li>
+          </ul>
+        </div>
+
+        <div class="screen current-card rich-review" style="left:4220px; top:1080px; width:980px; height:980px;">
+          <div class="top">
+            <div class="left-tags"><div class="card-pill current">현재 확정</div></div>
+            <div class="route-pill">/reviews/:reviewId</div>
+          </div>
+          <h3>검토 상세</h3>
+          <div class="subtitle">승인 / 반려 중심 화면</div>
+          <div class="mock rich-slot" data-fragment="review-detail"></div>
+          <ul>
+            <li>본문</li>
+            <li>상태 / 메타</li>
+            <li>첨부 / 코멘트</li>
+            <li>히스토리 / 액션</li>
+          </ul>
+        </div>
+
+        <div class="screen current-card rich-review" style="left:5600px; top:1260px; width:620px; height:560px;">
+          <div class="top">
+            <div class="left-tags"><div class="card-pill current">현재 확정</div></div>
+            <div class="route-pill">/tasks/:taskId/reviews/new</div>
+          </div>
+          <h3>검토 상신 / 수정</h3>
+          <div class="subtitle">상신과 수정이 같은 폼 구조 공유</div>
+          <div class="mock rich-slot" data-fragment="review-editor"></div>
+          <ul>
+            <li>본문 입력</li>
+            <li>참조자 / 추가 검토자</li>
+            <li>첨부</li>
+          </ul>
+        </div>
+
+        <div class="screen current-card rich-fragment" style="left:290px; top:2800px; width:560px; height:740px;">
+          <div class="top">
+            <div class="left-tags"><div class="card-pill current">현재 확정</div></div>
+            <div class="route-pill">/members</div>
+          </div>
+          <h3>멤버</h3>
+          <div class="subtitle">초대 기반 온보딩</div>
+          <div class="mock rich-slot" data-fragment="members"></div>
+          <ul>
+            <li>멤버 목록</li><li>초대 상태</li><li>역할 연결</li><li>초대 모달 후보</li>
+          </ul>
+        </div>
+
+        <div class="screen current-card rich-fragment" style="left:1020px; top:2800px; width:640px; height:740px;">
+          <div class="top">
+            <div class="left-tags"><div class="card-pill current">현재 확정</div></div>
+            <div class="route-pill">/roles</div>
+          </div>
+          <h3>역할 / 권한</h3>
+          <div class="subtitle">프로젝트 단위 RBAC</div>
+          <div class="mock rich-slot" data-fragment="roles"></div>
+          <ul>
+            <li>역할 리스트</li><li>권한 매트릭스</li><li>멤버 할당</li><li>정책 미확정</li>
+          </ul>
+        </div>
+
+        <div class="screen current-card rich-fragment" style="left:1790px; top:2800px; width:640px; height:740px;">
+          <div class="top">
+            <div class="left-tags"><div class="card-pill current">현재 확정</div></div>
+            <div class="route-pill">/milestones</div>
+          </div>
+          <h3>마일스톤</h3>
+          <div class="subtitle">집계형 목표 관리</div>
+          <div class="mock rich-slot" data-fragment="milestones"></div>
+          <ul>
+            <li>마일스톤 카드</li><li>진척도</li><li>연결 업무 수</li><li>지연 / 완료 요약</li>
+          </ul>
+        </div>
+
+        <div class="screen future-card" style="left:2720px; top:2800px; width:620px; height:740px;">
+          <div class="top">
+            <div class="left-tags"><div class="card-pill future">후속 확장</div></div>
+            <div class="route-pill">future-view</div>
+          </div>
+          <h3>칸반</h3>
+          <div class="subtitle">같은 업무 데이터의 다른 표현</div>
+          <div class="mock mock-kanban">
+            <div class="column"><div class="bar"></div><div class="card"><div class="cell"></div><div class="cell small"></div></div><div class="card"><div class="cell"></div><div class="cell small"></div></div></div>
+            <div class="column"><div class="bar"></div><div class="card"><div class="cell"></div><div class="cell small"></div></div></div>
+            <div class="column"><div class="bar"></div><div class="card"><div class="cell"></div><div class="cell small"></div></div></div>
+          </div>
+          <ul><li>컬럼 이동 DnD</li><li>상태 중심</li><li>빠른 이동</li></ul>
+        </div>
+
+        <div class="screen future-card" style="left:3470px; top:2800px; width:620px; height:740px;">
+          <div class="top"><div class="left-tags"><div class="card-pill future">후속 확장</div></div><div class="route-pill">future-view</div></div>
+          <h3>캘린더</h3>
+          <div class="subtitle">기한 / 일정 기반</div>
+          <div class="mock mock-calendar">
+            <div class="bar"></div>
+            <div class="grid">
+              <div class="date"></div><div class="date"></div><div class="date"></div><div class="date"></div><div class="date"></div><div class="date"></div><div class="date"></div>
+              <div class="date"></div><div class="date"></div><div class="date"></div><div class="date"></div><div class="date"></div><div class="date"></div><div class="date"></div>
+              <div class="date"></div><div class="date"></div><div class="date"></div><div class="date"></div><div class="date"></div><div class="date"></div><div class="date"></div>
+            </div>
+          </div>
+          <ul><li>월간 뷰</li><li>업무 배치</li><li>리마인더 후보</li></ul>
+        </div>
+
+        <div class="screen future-card" style="left:4220px; top:2800px; width:620px; height:740px;">
+          <div class="top"><div class="left-tags"><div class="card-pill future">후속 확장</div></div><div class="route-pill">future-view</div></div>
+          <h3>차트</h3>
+          <div class="subtitle">마일스톤 / 업무 집계 시각화</div>
+          <div class="mock mock-chart">
+            <div class="summary"><div class="block"></div><div class="block"></div></div>
+            <div class="graph"><div class="bars"><span style="height:44px"></span><span style="height:88px"></span><span style="height:74px"></span><span style="height:112px"></span></div></div>
+          </div>
+          <ul><li>병목 시각화</li><li>진척도 카드</li><li>팀 현황</li></ul>
+        </div>
+
+        <div class="screen future-card" style="left:4970px; top:2800px; width:620px; height:740px;">
+          <div class="top"><div class="left-tags"><div class="card-pill future">후속 확장</div></div><div class="route-pill">future-view</div></div>
+          <h3>간트</h3>
+          <div class="subtitle">타임라인 + 의존성</div>
+          <div class="mock mock-gantt">
+            <div class="bar"></div>
+            <div class="panel">
+              <div class="line"><div class="cell"></div><div class="cell"></div></div>
+              <div class="line"><div class="cell"></div><div class="cell"></div></div>
+              <div class="line"><div class="cell"></div><div class="cell"></div></div>
+            </div>
+          </div>
+          <ul><li>기간 조정</li><li>마일스톤 기준</li><li>의존성</li></ul>
+        </div>
+
+        <div class="screen candidate-card" style="left:2940px; top:4060px; width:420px; height:330px;">
+          <div class="top"><div class="left-tags"><div class="card-pill candidate">미확정 인터랙션</div></div><div class="route-pill">overlay</div></div>
+          <h3 style="font-size:24px;">멤버 초대 모달</h3>
+          <div class="mock mock-modal"><div class="modal-card"><div class="bar"></div><div class="block"></div><div class="block"></div><div class="actions"><div class="button soft"></div><div class="button"></div></div></div></div>
+        </div>
+
+        <div class="screen candidate-card" style="left:3480px; top:4060px; width:420px; height:330px;">
+          <div class="top"><div class="left-tags"><div class="card-pill candidate">미확정 인터랙션</div></div><div class="route-pill">overlay</div></div>
+          <h3 style="font-size:24px;">역할 생성 / 수정</h3>
+          <div class="mock mock-modal"><div class="modal-card"><div class="bar"></div><div class="block"></div><div class="block"></div><div class="actions"><div class="button soft"></div><div class="button"></div></div></div></div>
+        </div>
+
+        <div class="screen candidate-card" style="left:4020px; top:4060px; width:420px; height:330px;">
+          <div class="top"><div class="left-tags"><div class="card-pill candidate">미확정 인터랙션</div></div><div class="route-pill">overlay</div></div>
+          <h3 style="font-size:24px;">검토 처리 모달</h3>
+          <div class="mock mock-modal"><div class="modal-card"><div class="bar"></div><div class="block"></div><div class="block big"></div><div class="actions"><div class="button soft"></div><div class="button"></div></div></div></div>
+        </div>
+      </div>
+    </div>
+    <script>
+      (async function loadFragments() {
+        const nodes = document.querySelectorAll('.rich-slot[data-fragment]');
+        for (const node of nodes) {
+          const name = node.getAttribute('data-fragment');
+          if (!name) continue;
+          try {
+            const res = await fetch(`./wireframes/fragments/${name}.fragment.html`);
+            if (!res.ok) {
+              node.innerHTML = `<div style="padding:16px;color:#b91c1c;font-weight:700;">fragment load failed: ${name}</div>`;
+              continue;
+            }
+            node.innerHTML = await res.text();
+          } catch (error) {
+            node.innerHTML = `<div style="padding:16px;color:#b91c1c;font-weight:700;">fragment error: ${name}</div>`;
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>
