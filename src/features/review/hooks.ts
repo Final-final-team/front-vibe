@@ -7,10 +7,10 @@ import {
   createComment,
   deleteAttachment,
   deleteComment,
+  fetchAttachmentDownload,
   fetchReviewDetail,
   fetchReviewHistories,
   fetchTaskReviews,
-  fetchTasks,
   rejectReview,
   removeAdditionalReviewer,
   removeReference,
@@ -19,6 +19,7 @@ import {
   updateReview,
   uploadAttachment,
 } from './api';
+import { useProjectTasks } from '../tasks/hooks';
 import type { ReviewCancelInput, ReviewCreateInput, ReviewUpdateInput } from './types';
 
 export const reviewKeys = {
@@ -26,13 +27,17 @@ export const reviewKeys = {
   taskReviews: (taskId: number) => ['tasks', taskId, 'reviews'] as const,
   detail: (reviewId: number) => ['reviews', reviewId] as const,
   histories: (reviewId: number) => ['reviews', reviewId, 'histories'] as const,
+  attachmentDownload: (reviewId: number, attachmentId: number) =>
+    ['reviews', reviewId, 'attachments', attachmentId, 'download'] as const,
 };
 
 export function useTasks() {
-  return useQuery({
-    queryKey: reviewKeys.tasks,
-    queryFn: fetchTasks,
-  });
+  const query = useProjectTasks();
+
+  return {
+    ...query,
+    data: query.data?.items ?? [],
+  };
 }
 
 export function useTaskReviews(taskId: number, enabled = true) {
@@ -66,7 +71,7 @@ export function useSubmitReview() {
     mutationFn: ({ taskId, input }: { taskId: number; input: ReviewCreateInput }) =>
       submitReview(taskId, input),
     onSuccess: (review) => {
-      void queryClient.invalidateQueries({ queryKey: reviewKeys.tasks });
+      void queryClient.invalidateQueries({ queryKey: ['projects'] });
       void queryClient.invalidateQueries({ queryKey: reviewKeys.taskReviews(review.taskId) });
     },
   });
@@ -79,6 +84,7 @@ export function useUpdateReview(reviewId: number) {
     mutationFn: ({ lockVersion, input }: { lockVersion: number; input: ReviewUpdateInput }) =>
       updateReview(reviewId, lockVersion, input),
     onSuccess: (review) => {
+      void queryClient.invalidateQueries({ queryKey: ['projects'] });
       void queryClient.invalidateQueries({ queryKey: reviewKeys.detail(review.reviewId) });
       void queryClient.invalidateQueries({ queryKey: reviewKeys.taskReviews(review.taskId) });
       void queryClient.invalidateQueries({ queryKey: reviewKeys.histories(review.reviewId) });
@@ -176,6 +182,13 @@ export function useDeleteComment(reviewId: number) {
   );
 }
 
+export function useAttachmentDownload(reviewId: number) {
+  return useMutation({
+    mutationFn: ({ attachmentId }: { attachmentId: number }) =>
+      fetchAttachmentDownload(reviewId, attachmentId),
+  });
+}
+
 function useReviewMutation<TVariables>(
   _reviewId: number,
   mutationFn: (variables: TVariables) => Promise<{ reviewId: number; taskId: number }>,
@@ -185,7 +198,7 @@ function useReviewMutation<TVariables>(
   return useMutation({
     mutationFn,
     onSuccess: (review) => {
-      void queryClient.invalidateQueries({ queryKey: reviewKeys.tasks });
+      void queryClient.invalidateQueries({ queryKey: ['projects'] });
       void queryClient.invalidateQueries({ queryKey: reviewKeys.detail(review.reviewId) });
       void queryClient.invalidateQueries({ queryKey: reviewKeys.taskReviews(review.taskId) });
       void queryClient.invalidateQueries({ queryKey: reviewKeys.histories(review.reviewId) });

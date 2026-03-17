@@ -70,7 +70,7 @@ export default function ReviewDetailModal({ reviewId, open, onOpenChange }: Prop
               />
               <MetaBlock
                 label="업무 요약"
-                value={task?.summary ?? '연결된 업무 요약이 아직 없습니다.'}
+                value={task ? `업무 상태 ${task.status} · 우선순위 ${task.priority}` : '연결된 업무 요약이 아직 없습니다.'}
                 multiline
               />
             </div>
@@ -123,7 +123,7 @@ export default function ReviewDetailModal({ reviewId, open, onOpenChange }: Prop
           <section className="border-t border-border/70 pt-5">
             <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">최근 이력</div>
             <div className="mt-4 space-y-3">
-              {(historiesQuery.data ?? []).slice(0, 6).map((history) => (
+              {(historiesQuery.data?.items ?? []).slice(0, 6).map((history) => (
                 <div key={history.historyId} className="rounded-2xl border border-border/70 bg-muted/10 px-4 py-4 text-sm">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="font-medium text-foreground">{getHistoryActionLabel(history.actionType)}</div>

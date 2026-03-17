@@ -4,6 +4,7 @@ import Button from '../../../shared/ui/Button';
 import type { ReviewStatus } from '../types';
 
 type Props = {
+  projectId: number;
   taskId: number;
   reviewId: number;
   status: ReviewStatus;
@@ -18,6 +19,7 @@ type Props = {
 };
 
 export default function ReviewActionBar({
+  projectId,
   taskId,
   reviewId,
   status,
@@ -55,7 +57,7 @@ export default function ReviewActionBar({
         </Button>
       )}
       {canResubmit && status !== 'SUBMITTED' && (
-        <Link to={`/tasks/${taskId}/reviews/new`}>
+        <Link to={`/projects/${projectId}/tasks/${taskId}/reviews/new`}>
           <Button variant="secondary" icon={<SendHorizontal size={16} />}>
             재상신
           </Button>

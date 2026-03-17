@@ -13,6 +13,16 @@ export type ReviewSummary = {
   decidedAt: string | null;
 };
 
+export type ReviewPageResult<T> = {
+  items: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+};
+
 export type ReferenceInfo = {
   userId: number;
   addedBy: number;
@@ -122,4 +132,11 @@ export type ApiErrorShape = {
   message: string;
   status: number;
   path?: string;
+};
+
+export type ReviewAttachmentDownload = {
+  attachmentId: number;
+  originalName: string;
+  downloadUrl: string;
+  expiresAt: string;
 };

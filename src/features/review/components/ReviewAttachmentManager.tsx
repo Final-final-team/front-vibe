@@ -11,6 +11,7 @@ type Props = {
   uploading: boolean;
   onUpload: (file: File) => Promise<void>;
   onDelete: (attachmentId: number) => Promise<void>;
+  onDownload: (attachmentId: number) => Promise<void>;
 };
 
 export default function ReviewAttachmentManager({
@@ -19,6 +20,7 @@ export default function ReviewAttachmentManager({
   uploading,
   onUpload,
   onDelete,
+  onDownload,
 }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -72,11 +74,16 @@ export default function ReviewAttachmentManager({
                 {formatBytes(attachment.sizeBytes)} · {formatDate(attachment.createdAt)}
               </div>
             </div>
-            {canManage && (
-              <Button variant="ghost" onClick={() => void onDelete(attachment.attachmentId)}>
-                제거
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" onClick={() => void onDownload(attachment.attachmentId)}>
+                다운로드
               </Button>
-            )}
+              {canManage && (
+                <Button variant="ghost" onClick={() => void onDelete(attachment.attachmentId)}>
+                  제거
+                </Button>
+              )}
+            </div>
           </div>
         ))}
       </div>

@@ -1,52 +1,48 @@
 import { useQueries } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import type { ReactNode } from 'react';
 import { ChevronRight, FileSearch, SendHorizontal } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { fetchTaskReviews } from '../features/review/api';
 import ReviewDetailModal from '../features/review/components/ReviewDetailModal';
-import { reviewKeys, useTasks } from '../features/review/hooks';
-import { useProjectTaskMeta } from '../features/workspace/hooks';
+import { reviewKeys } from '../features/review/hooks';
+import { useProjectTasks } from '../features/tasks/hooks';
 import { useWorkspace } from '../features/workspace/use-workspace';
 import StatusPill from '../shared/ui/StatusPill';
+import { formatDate } from '../shared/lib/format';
 
 export default function ReviewInboxPage() {
   const { currentProject } = useWorkspace();
-  const { data: taskMeta = [] } = useProjectTaskMeta(currentProject?.id ?? null);
-  const { data: tasks = [] } = useTasks();
+  const { projectId: projectIdParam } = useParams();
+  const projectId = Number(projectIdParam ?? currentProject?.id ?? 0);
+  const { data: taskPage, isLoading, error } = useProjectTasks(projectId);
+  const tasks = useMemo(() => taskPage?.items ?? [], [taskPage?.items]);
   const [selectedReviewId, setSelectedReviewId] = useState<number | null>(null);
 
   const reviewQueries = useQueries({
-    queries: taskMeta.map((meta) => ({
-      queryKey: reviewKeys.taskReviews(meta.taskId),
-      queryFn: () => fetchTaskReviews(meta.taskId),
+    queries: tasks.map((task) => ({
+      queryKey: reviewKeys.taskReviews(task.id),
+      queryFn: () => fetchTaskReviews(task.id),
     })),
   });
 
   const inboxRows = useMemo(
     () =>
-      taskMeta
-        .map((meta, index) => {
-          const task = tasks.find((item) => item.id === meta.taskId);
-          const latestReview = reviewQueries[index]?.data?.[0] ?? null;
-
-          return {
-            meta,
-            task,
-            latestReview,
-          };
-        })
+      tasks
+        .map((task, index) => ({
+          task,
+          latestReview: reviewQueries[index]?.data?.items?.[0] ?? null,
+        }))
         .sort((a, b) => {
           const aTime = a.latestReview?.submittedAt ? new Date(a.latestReview.submittedAt).getTime() : 0;
           const bTime = b.latestReview?.submittedAt ? new Date(b.latestReview.submittedAt).getTime() : 0;
           return bTime - aTime;
         }),
-    [reviewQueries, taskMeta, tasks],
+    [reviewQueries, tasks],
   );
 
-  const waitingQueue = inboxRows.filter((row) => row.task?.latestReviewStatus === 'IN_REVIEW');
+  const waitingQueue = inboxRows.filter((row) => row.task.status === 'IN_REVIEW');
   const approved = inboxRows.filter((row) => row.latestReview?.status === 'APPROVED');
   const rejected = inboxRows.filter((row) => row.latestReview?.status === 'REJECTED');
   const noReviewCount = inboxRows.filter((row) => !row.latestReview).length;
@@ -62,7 +58,7 @@ export default function ReviewInboxPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           <Badge variant="outline" className="rounded-md">
-            {currentProject?.code ?? '검토'}
+            {currentProject?.code ?? `PRJ-${projectId}`}
           </Badge>
           <Badge variant="outline" className="rounded-md">
             {inboxRows.length}건
@@ -71,48 +67,49 @@ export default function ReviewInboxPage() {
         </div>
       </section>
 
-      <section className="bg-background pt-4">
-        <div className="flex items-end justify-between gap-3 border-b border-border/70 pb-4 pt-2">
-          <div>
-            <h2 className="text-base font-semibold tracking-tight text-foreground">검토 보관함</h2>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {`${currentProject?.name ?? '프로젝트'} 기준으로 이미 생성된 검토와 아직 첫 상신이 없는 업무를 함께 확인합니다.`}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="outline" className="rounded-md">
-              대기 {waitingQueue.length}
-            </Badge>
-            <Badge variant="outline" className="rounded-md">
-              승인 {approved.length}
-            </Badge>
-            <Badge variant="outline" className="rounded-md">
-              반려 {rejected.length}
-            </Badge>
-            <Badge variant="outline" className="rounded-md">
-              미상신 {noReviewCount}
-            </Badge>
-          </div>
+      {error ? (
+        <div className="rounded-3xl border border-rose-200 bg-rose-50 px-6 py-5 text-sm text-rose-700">
+          {(error as Error).message}
         </div>
+      ) : isLoading ? (
+        <div className="rounded-3xl border border-border/70 bg-background px-6 py-12 text-sm text-muted-foreground">
+          검토 보관함을 불러오는 중입니다.
+        </div>
+      ) : (
+        <section className="bg-background pt-4">
+          <div className="flex items-end justify-between gap-3 border-b border-border/70 pb-4 pt-2">
+            <div>
+              <h2 className="text-base font-semibold tracking-tight text-foreground">검토 보관함</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                백엔드 프로젝트 업무를 기준으로 최신 검토 라운드와 미상신 업무를 함께 확인합니다.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="outline" className="rounded-md">대기 {waitingQueue.length}</Badge>
+              <Badge variant="outline" className="rounded-md">승인 {approved.length}</Badge>
+              <Badge variant="outline" className="rounded-md">반려 {rejected.length}</Badge>
+            </div>
+          </div>
 
-        <div className="pt-5">
-          <div className="hidden grid-cols-[minmax(0,2.2fr)_minmax(120px,0.8fr)_minmax(120px,0.9fr)_minmax(130px,0.9fr)_minmax(140px,1fr)_minmax(140px,1fr)_96px] gap-4 border-b border-border/70 px-2 pb-3 text-[11px] font-semibold tracking-[0.08em] text-muted-foreground lg:grid">
-            <div>업무</div>
-            <div>업무 영역</div>
-            <div>최신 라운드</div>
-            <div>검토 상태</div>
-            <div>상신 시각</div>
-            <div>처리 시각</div>
-            <div className="text-right">상세</div>
+          <div className="pt-5">
+            <div className="hidden grid-cols-[minmax(0,2.2fr)_110px_110px_120px_140px_140px_96px] gap-4 border-b border-border/70 px-2 pb-3 text-[11px] font-semibold tracking-[0.08em] text-muted-foreground lg:grid">
+              <div>업무</div>
+              <div>업무 상태</div>
+              <div>최신 라운드</div>
+              <div>검토 상태</div>
+              <div>상신 시각</div>
+              <div>처리 시각</div>
+              <div className="text-right">상세</div>
+            </div>
+            <div className="hidden divide-y divide-border/70 lg:block">
+              {inboxRows.length > 0 ? inboxRows.map((row) => <InboxDesktopRow key={row.task.id} row={row} projectId={projectId} onOpenDetail={setSelectedReviewId} />) : <ReviewEmptyState projectId={projectId} />}
+            </div>
+            <div className="space-y-3 lg:hidden">
+              {inboxRows.length > 0 ? inboxRows.map((row) => <InboxMobileRow key={row.task.id} row={row} projectId={projectId} onOpenDetail={setSelectedReviewId} />) : <ReviewEmptyState projectId={projectId} />}
+            </div>
           </div>
-          <div className="hidden divide-y divide-border/70 lg:block">
-            {inboxRows.length > 0 ? inboxRows.map((row) => <InboxDesktopRow key={row.meta.taskId} row={row} onOpenDetail={setSelectedReviewId} />) : <ReviewEmptyState />}
-          </div>
-          <div className="space-y-3 lg:hidden">
-            {inboxRows.length > 0 ? inboxRows.map((row) => <InboxMobileRow key={row.meta.taskId} row={row} onOpenDetail={setSelectedReviewId} />) : <ReviewEmptyState />}
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <ReviewDetailModal
         reviewId={selectedReviewId}
@@ -129,11 +126,11 @@ export default function ReviewInboxPage() {
 
 function InboxDesktopRow({
   row,
+  projectId,
   onOpenDetail,
 }: {
   row: {
-    meta: { taskId: number; domain: string };
-    task?: { title: string; summary: string } | undefined;
+    task: { id: number; title: string; status: string };
     latestReview: {
       reviewId: number;
       roundNo: number;
@@ -142,20 +139,19 @@ function InboxDesktopRow({
       decidedAt: string | null;
     } | null;
   };
+  projectId: number;
   onOpenDetail: (reviewId: number) => void;
 }) {
-  const { meta, task, latestReview } = row;
+  const { task, latestReview } = row;
 
   return (
-    <div className="grid grid-cols-[minmax(0,2.2fr)_minmax(120px,0.8fr)_minmax(120px,0.9fr)_minmax(130px,0.9fr)_minmax(140px,1fr)_minmax(140px,1fr)_96px] gap-4 px-2 py-4">
+    <div className="grid grid-cols-[minmax(0,2.2fr)_110px_110px_120px_140px_140px_96px] gap-4 px-2 py-4">
       <div className="min-w-0">
-        <div className="truncate font-semibold text-foreground">{task?.title ?? `업무 #${meta.taskId}`}</div>
-        <div className="mt-1 line-clamp-2 text-sm leading-6 text-muted-foreground">
-          {task?.summary ?? '연결된 업무 요약이 아직 없습니다.'}
-        </div>
+        <div className="truncate font-semibold text-foreground">{task.title}</div>
+        <div className="mt-1 text-sm text-muted-foreground">업무 #{task.id}</div>
       </div>
       <div className="flex items-start pt-1">
-        <StatusPill tone="teal">{meta.domain}</StatusPill>
+        <StatusPill tone={getTaskTone(task.status)}>{getTaskStatusLabel(task.status)}</StatusPill>
       </div>
       <div className="pt-1 text-sm font-medium text-foreground">{latestReview ? `${latestReview.roundNo}차` : '-'}</div>
       <div className="flex items-start pt-1">
@@ -175,7 +171,7 @@ function InboxDesktopRow({
           </Button>
         ) : (
           <Button asChild variant="outline" className="h-8 rounded-lg px-3 text-xs">
-            <Link to={`/tasks/${meta.taskId}/reviews/new`}>첫 상신</Link>
+            <Link to={`/projects/${projectId}/tasks/${task.id}/reviews/new`}>첫 상신</Link>
           </Button>
         )}
       </div>
@@ -185,11 +181,11 @@ function InboxDesktopRow({
 
 function InboxMobileRow({
   row,
+  projectId,
   onOpenDetail,
 }: {
   row: {
-    meta: { taskId: number; domain: string };
-    task?: { title: string } | undefined;
+    task: { id: number; title: string; status: string };
     latestReview: {
       reviewId: number;
       roundNo: number;
@@ -198,34 +194,27 @@ function InboxMobileRow({
       decidedAt: string | null;
     } | null;
   };
+  projectId: number;
   onOpenDetail: (reviewId: number) => void;
 }) {
-  const { meta, task, latestReview } = row;
+  const { task, latestReview } = row;
 
   return (
     <div className="border-b border-border/70 pb-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="font-semibold text-foreground">{task?.title ?? `업무 #${meta.taskId}`}</div>
-          <div className="mt-1 text-sm text-muted-foreground">{meta.domain}</div>
+          <div className="font-semibold text-foreground">{task.title}</div>
+          <div className="mt-1 text-sm text-muted-foreground">업무 #{task.id}</div>
         </div>
         <StatusPill tone={latestReview ? getReviewTone(latestReview.status) : 'slate'}>
           {latestReview ? getReviewStatusLabel(latestReview.status) : '검토 없음'}
         </StatusPill>
       </div>
       <div className="mt-3 grid gap-2 text-sm text-muted-foreground">
-        <div className="flex items-center justify-between gap-3">
-          <span>최신 라운드</span>
-          <span className="font-medium text-foreground">{latestReview ? `${latestReview.roundNo}차` : '-'}</span>
-        </div>
-        <div className="flex items-center justify-between gap-3">
-          <span>상신 시각</span>
-          <span className="font-medium text-foreground">{formatCompactDate(latestReview?.submittedAt ?? null)}</span>
-        </div>
-        <div className="flex items-center justify-between gap-3">
-          <span>처리 시각</span>
-          <span className="font-medium text-foreground">{formatCompactDate(latestReview?.decidedAt ?? null)}</span>
-        </div>
+        <MetaRow label="업무 상태" value={getTaskStatusLabel(task.status)} />
+        <MetaRow label="최신 라운드" value={latestReview ? `${latestReview.roundNo}차` : '-'} />
+        <MetaRow label="상신 시각" value={formatCompactDate(latestReview?.submittedAt ?? null)} />
+        <MetaRow label="처리 시각" value={formatCompactDate(latestReview?.decidedAt ?? null)} />
       </div>
       <div className="mt-3 flex justify-end">
         {latestReview ? (
@@ -235,7 +224,7 @@ function InboxMobileRow({
           </Button>
         ) : (
           <Button asChild variant="outline" className="h-8 rounded-lg px-3 text-xs">
-            <Link to={`/tasks/${meta.taskId}/reviews/new`}>첫 상신</Link>
+            <Link to={`/projects/${projectId}/tasks/${task.id}/reviews/new`}>첫 상신</Link>
           </Button>
         )}
       </div>
@@ -243,7 +232,7 @@ function InboxMobileRow({
   );
 }
 
-function ReviewEmptyState() {
+function ReviewEmptyState({ projectId }: { projectId: number }) {
   return (
     <div className="flex flex-col items-center justify-center gap-4 border border-dashed border-border/70 px-5 py-12 text-center">
       <div className="text-base font-semibold text-foreground">검토가 아직 없습니다</div>
@@ -251,43 +240,33 @@ function ReviewEmptyState() {
         현재 프로젝트에 생성된 검토 라운드가 없습니다. 업무 화면에서 첫 상신을 시작하면 이 화면에서 최신 검토 흐름을 바로 관리할 수 있습니다.
       </p>
       <Button asChild className="rounded-xl px-4">
-        <Link to="/tasks">업무에서 첫 상신 시작</Link>
+        <Link to={`/projects/${projectId}/tasks`}>업무에서 첫 상신 시작</Link>
       </Button>
     </div>
   );
 }
 
-function InlineStat({
-  label,
-  value,
-  icon,
-}: {
-  label: string;
-  value: string;
-  icon: ReactNode;
-}) {
+function InlineStat({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
   return (
-    <div className="flex min-w-[106px] items-center gap-3.5 pr-2">
-      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted/35 text-muted-foreground">{icon}</div>
+    <div className="flex items-center gap-3">
+      <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/70 bg-background text-primary">
+        {icon}
+      </div>
       <div>
-        <div className="text-[10px] font-semibold tracking-[0.08em] text-muted-foreground">{label}</div>
-        <div className="mt-1 text-xl font-semibold leading-none tracking-tight text-foreground">{value}</div>
+        <div className="text-xs text-muted-foreground">{label}</div>
+        <div className="text-sm font-semibold text-foreground">{value}</div>
       </div>
     </div>
   );
 }
 
-function formatCompactDate(value: string | null) {
-  if (!value) {
-    return '-';
-  }
-
-  return new Date(value).toLocaleDateString('ko-KR', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+function MetaRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span>{label}</span>
+      <span className="font-medium text-foreground">{value}</span>
+    </div>
+  );
 }
 
 function getReviewStatusLabel(status: 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'CANCELLED') {
@@ -314,4 +293,34 @@ function getReviewTone(status: 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'CANCELLE
     default:
       return 'amber';
   }
+}
+
+function getTaskStatusLabel(status: string) {
+  switch (status) {
+    case 'PENDING':
+      return '대기';
+    case 'IN_PROGRESS':
+      return '진행중';
+    case 'IN_REVIEW':
+      return '검토중';
+    default:
+      return '완료';
+  }
+}
+
+function getTaskTone(status: string) {
+  switch (status) {
+    case 'PENDING':
+      return 'slate';
+    case 'IN_PROGRESS':
+      return 'blue';
+    case 'IN_REVIEW':
+      return 'amber';
+    default:
+      return 'green';
+  }
+}
+
+function formatCompactDate(value: string | null) {
+  return value ? formatDate(value) : '-';
 }

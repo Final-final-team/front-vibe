@@ -2,13 +2,10 @@ import {
   CalendarClock,
   ChartColumn,
   ChevronRight,
-  History,
   Home,
   KanbanSquare,
   LayoutTemplate,
   Search,
-  ShieldCheck,
-  Users,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { NavLink, useLocation, useSearchParams } from 'react-router-dom';
@@ -41,6 +38,7 @@ import {
   DropdownMenuTrigger,
 } from '../../components/ui/dropdown-menu';
 import { Button } from '../../components/ui/button';
+import { appConfig } from '../config/app-config';
 
 type Props = {
   children: ReactNode;
@@ -52,7 +50,8 @@ export default function WorkspaceLayout({ children }: Props) {
   const shell = getShellConfig(location.pathname);
   const { projects, currentProject, selectedProjectId, setSelectedProjectId } = useWorkspace();
   const taskView = searchParams.get('view') ?? 'table';
-  const showTaskViewExpansion = shell.domainPath === '/tasks';
+  const showTaskViewExpansion = shell.domainPath === 'tasks';
+  const projectBasePath = `/projects/${currentProject?.id ?? appConfig.defaultProjectId}`;
 
   return (
     <SidebarProvider defaultOpen>
@@ -105,15 +104,11 @@ export default function WorkspaceLayout({ children }: Props) {
             <SidebarGroupContent>
               <SidebarMenu>
                 {[
-                  { to: '/tasks', label: '업무', icon: LayoutTemplate, count: currentProject?.openTaskCount },
-                  { to: '/reviews', label: '검토', icon: CalendarClock, count: currentProject?.reviewQueueCount },
-                  { to: '/logs', label: '감사 로그', icon: History },
-                  { to: '/members', label: '멤버', icon: Users, count: currentProject?.memberCount },
-                  { to: '/roles', label: '역할 / 권한', icon: ShieldCheck },
-                  { to: '/milestones', label: '마일스톤', icon: KanbanSquare, count: currentProject?.milestoneCount },
+                  { to: `${projectBasePath}/tasks`, domainKey: 'tasks', label: '업무', icon: LayoutTemplate, count: currentProject?.openTaskCount },
+                  { to: `${projectBasePath}/reviews`, domainKey: 'reviews', label: '검토', icon: CalendarClock, count: currentProject?.reviewQueueCount },
                 ].map((item) => (
                   <SidebarMenuItem key={item.to}>
-                    <SidebarMenuButton asChild isActive={shell.domainPath === item.to} tooltip={item.label}>
+                    <SidebarMenuButton asChild isActive={shell.domainPath === item.domainKey} tooltip={item.label}>
                       <NavLink to={item.to}>
                         <item.icon />
                         <span>{item.label}</span>
@@ -206,7 +201,7 @@ export default function WorkspaceLayout({ children }: Props) {
               compactMeta
             />
 
-            {shell.domainPath === '/tasks' ? (
+            {shell.domainPath === 'tasks' ? (
               <>
                 <div className="hidden items-center gap-1 overflow-x-auto px-4 pb-1 hide-scrollbar md:flex">
                 <ViewSwitchButton
@@ -346,66 +341,66 @@ function updateView(
 }
 
 function getShellConfig(pathname: string) {
-  if (pathname.startsWith('/members')) {
+  if (pathname.includes('/members')) {
     return {
       domain: 'members',
-      domainPath: '/members',
+      domainPath: 'members',
       title: '멤버',
-      subtitle: '초대 기반 멤버십과 프로젝트 역할 연결을 관리합니다.',
-      primaryLabel: '멤버 초대',
-      primaryTo: '/members#invite',
+      subtitle: '현재 백엔드에 멤버 관리 API가 없어 메인 플로우에서 제외된 화면입니다.',
+      primaryLabel: '업무로 이동',
+      primaryTo: `/projects/${appConfig.defaultProjectId}/tasks`,
       contextLabel: 'members',
-      filterLabels: ['초대 상태', '역할', '팀'],
+      filterLabels: ['백엔드 미지원'],
     };
   }
 
-  if (pathname.startsWith('/logs')) {
+  if (pathname.includes('/logs')) {
     return {
       domain: 'logs',
-      domainPath: '/logs',
+      domainPath: 'logs',
       title: '감사 로그',
-      subtitle: '운영자가 확인해야 하는 최근 변경 이력과 정책 반영 내역을 조회합니다.',
-      primaryLabel: '로그 보기',
-      primaryTo: '/logs',
+      subtitle: '현재 백엔드에 감사 로그 API가 없어 메인 플로우에서 제외된 화면입니다.',
+      primaryLabel: '검토로 이동',
+      primaryTo: `/projects/${appConfig.defaultProjectId}/reviews`,
       contextLabel: 'logs',
-      filterLabels: ['작업', '작성자', '업무 영역'],
+      filterLabels: ['백엔드 미지원'],
     };
   }
 
-  if (pathname.startsWith('/roles')) {
+  if (pathname.includes('/roles')) {
     return {
       domain: 'roles',
-      domainPath: '/roles',
+      domainPath: 'roles',
       title: '역할 / 권한',
-      subtitle: '프로젝트 단위 RBAC 카탈로그와 권한 매핑을 다룹니다.',
-      primaryLabel: '역할 카탈로그',
-      primaryTo: '/roles',
+      subtitle: '현재 백엔드에 역할/권한 관리 API가 없어 메인 플로우에서 제외된 화면입니다.',
+      primaryLabel: '업무로 이동',
+      primaryTo: `/projects/${appConfig.defaultProjectId}/tasks`,
       contextLabel: 'rbac',
-      filterLabels: ['카테고리', '할당 멤버'],
+      filterLabels: ['백엔드 미지원'],
     };
   }
 
-  if (pathname.startsWith('/milestones')) {
+  if (pathname.includes('/milestones')) {
     return {
       domain: 'milestones',
-      domainPath: '/milestones',
+      domainPath: 'milestones',
       title: '마일스톤',
-      subtitle: '큰 목표와 연결 업무 진행률만 집계해서 보여줍니다.',
-      primaryLabel: '마일스톤 보기',
-      primaryTo: '/milestones',
+      subtitle: '현재 백엔드에 마일스톤 API가 없어 메인 플로우에서 제외된 화면입니다.',
+      primaryLabel: '업무로 이동',
+      primaryTo: `/projects/${appConfig.defaultProjectId}/tasks`,
       contextLabel: 'milestones',
-      filterLabels: ['헬스 상태', '기한'],
+      filterLabels: ['백엔드 미지원'],
     };
   }
 
   if (pathname.startsWith('/reviews/') && pathname.endsWith('/edit')) {
     return {
       domain: 'reviews',
-      domainPath: '/reviews',
+      domainPath: 'reviews',
       title: '검토 수정',
       subtitle: '기존 review 라운드를 수정합니다.',
       primaryLabel: '검토 inbox로 이동',
-      primaryTo: '/reviews',
+      primaryTo: `/projects/${appConfig.defaultProjectId}/reviews`,
       contextLabel: 'reviews',
       filterLabels: ['상태', '라운드'],
     };
@@ -414,11 +409,11 @@ function getShellConfig(pathname: string) {
   if (pathname.startsWith('/reviews/')) {
     return {
       domain: 'reviews',
-      domainPath: '/reviews',
+      domainPath: 'reviews',
       title: '검토 상세',
       subtitle: '본문, 첨부, 코멘트, 이력을 하나의 화면에서 확인합니다.',
       primaryLabel: '검토 inbox로 이동',
-      primaryTo: '/reviews',
+      primaryTo: `/projects/${appConfig.defaultProjectId}/reviews`,
       contextLabel: 'reviews',
       filterLabels: ['상태', '라운드'],
     };
@@ -427,24 +422,24 @@ function getShellConfig(pathname: string) {
   if (pathname.endsWith('/reviews/new')) {
     return {
       domain: 'reviews',
-      domainPath: '/reviews',
+      domainPath: 'reviews',
       title: '검토 상신',
       subtitle: '업무에서 review 라운드를 생성하거나 재상신합니다.',
       primaryLabel: '업무 목록으로 이동',
-      primaryTo: '/tasks',
+      primaryTo: `/projects/${appConfig.defaultProjectId}/tasks`,
       contextLabel: 'reviews',
       filterLabels: ['상태', '라운드'],
     };
   }
 
-  if (pathname === '/reviews') {
+  if (pathname.endsWith('/reviews')) {
     return {
       domain: 'reviews',
-      domainPath: '/reviews',
+      domainPath: 'reviews',
       title: '검토 보관함',
       subtitle: '프로젝트 전체 검토 큐와 최근 라운드를 모아서 봅니다.',
       primaryLabel: '검토 큐 보기',
-      primaryTo: '/reviews',
+      primaryTo: pathname,
       contextLabel: 'reviews',
       filterLabels: ['상태', '라운드', '참조자'],
     };
@@ -453,11 +448,11 @@ function getShellConfig(pathname: string) {
   if (pathname.includes('/reviews')) {
     return {
       domain: 'reviews',
-      domainPath: '/reviews',
+      domainPath: 'reviews',
       title: '검토 보드',
       subtitle: '업무별 검토 라운드를 탐색합니다.',
       primaryLabel: '검토 상신',
-      primaryTo: pathname.endsWith('/reviews') ? `${pathname}/new` : '/reviews',
+      primaryTo: pathname.endsWith('/reviews') ? `${pathname}/new` : `/projects/${appConfig.defaultProjectId}/reviews`,
       contextLabel: 'reviews',
       filterLabels: ['상태', '라운드', '참조자'],
     };
@@ -465,12 +460,12 @@ function getShellConfig(pathname: string) {
 
   return {
     domain: 'tasks',
-    domainPath: '/tasks',
+    domainPath: 'tasks',
     title: '업무 보드',
-    subtitle: '마일스톤 단위 보드와 업무-검토 진입 패널을 제공합니다.',
+    subtitle: '백엔드 프로젝트 업무와 검토 진입 흐름을 기준으로 보여줍니다.',
     primaryLabel: '업무 보드 보기',
-    primaryTo: '/tasks',
+    primaryTo: `/projects/${appConfig.defaultProjectId}/tasks`,
     contextLabel: 'tasks',
-    filterLabels: ['마일스톤', '상태', '담당자'],
+    filterLabels: ['상태', '우선순위', '검토 상태'],
   };
 }

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Paperclip, Users } from 'lucide-react';
+import { Users } from 'lucide-react';
 import Button from '../../../shared/ui/Button';
 import Card from '../../../shared/ui/Card';
 import { parseIdList } from '../../../shared/lib/format';
@@ -21,8 +21,6 @@ export default function ReviewForm({ mode, initialReview, onSubmit, submitting }
   const [references, setReferences] = useState(
     initialReview?.references.map((reference) => String(reference.userId)).join(', ') ?? '',
   );
-  const [files, setFiles] = useState<File[]>([]);
-
   const parsedReferences = useMemo(() => parseIdList(references), [references]);
 
   return (
@@ -64,25 +62,9 @@ export default function ReviewForm({ mode, initialReview, onSubmit, submitting }
           </label>
 
           {mode === 'create' && (
-            <label className="block">
-              <span className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-700">
-                <Paperclip size={15} />
-                초기 첨부 초안
-              </span>
-              <input
-                type="file"
-                multiple
-                onChange={(event) => setFiles(Array.from(event.target.files ?? []))}
-                className="block w-full rounded-2xl border border-dashed border-gray-300 px-4 py-5 text-sm text-gray-600"
-              />
-              {files.length > 0 && (
-                <ul className="mt-3 space-y-2 text-sm text-gray-600">
-                  {files.map((file) => (
-                    <li key={`${file.name}-${file.size}`}>{file.name}</li>
-                  ))}
-                </ul>
-              )}
-            </label>
+            <div className="rounded-2xl border border-dashed border-gray-300 px-4 py-5 text-sm text-gray-600">
+              최신 백엔드 계약 기준으로 초기 첨부 presign API는 아직 없습니다. 상신 후 상세 화면에서 첨부를 추가하세요.
+            </div>
           )}
 
           <div className="rounded-2xl bg-gray-50 px-4 py-3 text-sm text-gray-600">
@@ -103,7 +85,7 @@ export default function ReviewForm({ mode, initialReview, onSubmit, submitting }
             onSubmit({
               content,
               referenceUserIds: parsedReferences,
-              files,
+              files: [],
             })
           }
           disabled={!content.trim() || submitting}

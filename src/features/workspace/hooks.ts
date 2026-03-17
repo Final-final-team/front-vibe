@@ -1,13 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import {
-  getPermissions,
-  getProjectAuditLogs,
-  getProjectMembers,
-  getProjectMilestones,
-  getProjectRoles,
-  getProjects,
-  getProjectTaskMeta,
-} from './mock';
+import { appConfig } from '../../shared/config/app-config';
+import type { WorkspaceProject } from './types';
 
 export const workspaceKeys = {
   projects: ['workspace', 'projects'] as const,
@@ -22,14 +15,29 @@ export const workspaceKeys = {
 export function useProjects() {
   return useQuery({
     queryKey: workspaceKeys.projects,
-    queryFn: getProjects,
+    queryFn: async () =>
+      [
+        {
+          id: String(appConfig.defaultProjectId),
+          name: `프로젝트 ${appConfig.defaultProjectId}`,
+          code: `PRJ-${appConfig.defaultProjectId}`,
+          description: '백엔드 task/review API 기준으로 연결된 기본 프로젝트',
+          ownerName: '백엔드 기준 연동',
+          memberCount: 0,
+          milestoneCount: 0,
+          openTaskCount: 0,
+          reviewQueueCount: 0,
+          progress: 0,
+          updatedAt: new Date().toISOString(),
+        } satisfies WorkspaceProject,
+      ],
   });
 }
 
 export function useProjectMembers(projectId: string | null) {
   return useQuery({
     queryKey: workspaceKeys.members(projectId ?? 'none'),
-    queryFn: () => getProjectMembers(projectId ?? ''),
+    queryFn: async () => [],
     enabled: Boolean(projectId),
   });
 }
@@ -37,14 +45,14 @@ export function useProjectMembers(projectId: string | null) {
 export function usePermissions() {
   return useQuery({
     queryKey: workspaceKeys.permissions,
-    queryFn: getPermissions,
+    queryFn: async () => [],
   });
 }
 
 export function useProjectAuditLogs(projectId: string | null) {
   return useQuery({
     queryKey: workspaceKeys.auditLogs(projectId ?? 'none'),
-    queryFn: () => getProjectAuditLogs(projectId ?? ''),
+    queryFn: async () => [],
     enabled: Boolean(projectId),
   });
 }
@@ -52,7 +60,7 @@ export function useProjectAuditLogs(projectId: string | null) {
 export function useProjectRoles(projectId: string | null) {
   return useQuery({
     queryKey: workspaceKeys.roles(projectId ?? 'none'),
-    queryFn: () => getProjectRoles(projectId ?? ''),
+    queryFn: async () => [],
     enabled: Boolean(projectId),
   });
 }
@@ -60,7 +68,7 @@ export function useProjectRoles(projectId: string | null) {
 export function useProjectMilestones(projectId: string | null) {
   return useQuery({
     queryKey: workspaceKeys.milestones(projectId ?? 'none'),
-    queryFn: () => getProjectMilestones(projectId ?? ''),
+    queryFn: async () => [],
     enabled: Boolean(projectId),
   });
 }
@@ -68,7 +76,7 @@ export function useProjectMilestones(projectId: string | null) {
 export function useProjectTaskMeta(projectId: string | null) {
   return useQuery({
     queryKey: workspaceKeys.taskMeta(projectId ?? 'none'),
-    queryFn: () => getProjectTaskMeta(projectId ?? ''),
+    queryFn: async () => [],
     enabled: Boolean(projectId),
   });
 }

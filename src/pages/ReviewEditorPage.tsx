@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import ReviewForm from '../features/review/components/ReviewForm';
 import { useReviewDetail, useSubmitReview, useUpdateReview } from '../features/review/hooks';
-import type { ReviewCreateInput } from '../features/review/types';
 import { ApiError } from '../features/review/api';
 
 type Props = {
@@ -11,7 +10,8 @@ type Props = {
 
 export default function ReviewEditorPage({ mode }: Props) {
   const navigate = useNavigate();
-  const { taskId: taskIdParam, reviewId: reviewIdParam } = useParams();
+  const { projectId: projectIdParam, taskId: taskIdParam, reviewId: reviewIdParam } = useParams();
+  const projectId = Number(projectIdParam);
   const taskId = Number(taskIdParam);
   const reviewId = Number(reviewIdParam);
   const submitMutation = useSubmitReview();
@@ -29,20 +29,12 @@ export default function ReviewEditorPage({ mode }: Props) {
 
     try {
       if (mode === 'create') {
-        const attachments: ReviewCreateInput['attachments'] = payload.files.map((file, index) => ({
-          objectKey: `reviews/${taskId}/draft/${Date.now()}-${file.name}`,
-          originalName: file.name,
-          contentType: file.type || null,
-          sizeBytes: file.size,
-          sortOrder: index,
-        }));
-
         const created = await submitMutation.mutateAsync({
           taskId,
           input: {
             content: payload.content,
             referenceUserIds: payload.referenceUserIds,
-            attachments,
+            attachments: [],
           },
         });
 
@@ -67,11 +59,11 @@ export default function ReviewEditorPage({ mode }: Props) {
   }
 
   if (mode === 'edit' && detailQuery.isLoading) {
-    return <PageShell title="검토 수정">검토 상세를 불러오는 중입니다.</PageShell>;
+    return <PageShell title="검토 수정" projectId={projectId}>검토 상세를 불러오는 중입니다.</PageShell>;
   }
 
   return (
-    <PageShell title={mode === 'create' ? '검토 상신 / 재상신' : '검토 수정'}>
+    <PageShell title={mode === 'create' ? '검토 상신 / 재상신' : '검토 수정'} projectId={projectId}>
       {errorMessage && (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
           {errorMessage}
@@ -88,7 +80,7 @@ export default function ReviewEditorPage({ mode }: Props) {
   );
 }
 
-function PageShell({ title, children }: { title: string; children: React.ReactNode }) {
+function PageShell({ title, projectId, children }: { title: string; projectId: number; children: React.ReactNode }) {
   return (
     <div className="space-y-6">
       <section className="flex items-center justify-between rounded-3xl border border-gray-200 bg-white px-6 py-5">
@@ -99,7 +91,7 @@ function PageShell({ title, children }: { title: string; children: React.ReactNo
           <h2 className="mt-2 text-2xl font-semibold text-gray-900">{title}</h2>
         </div>
         <Link
-          to="/tasks"
+          to={`/projects/${projectId}/tasks`}
           className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-blue-200 hover:text-blue-700"
         >
           업무 목록

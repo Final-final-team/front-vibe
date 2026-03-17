@@ -12,6 +12,7 @@ import {
   useAddAdditionalReviewer,
   useAddReference,
   useApproveReview,
+  useAttachmentDownload,
   useCancelReview,
   useCreateComment,
   useDeleteAttachment,
@@ -26,6 +27,7 @@ import {
   useUploadAttachment,
 } from '../features/review/hooks';
 import { REVIEW_PERMISSIONS, getCurrentActor } from '../shared/lib/session';
+import { appConfig } from '../shared/config/app-config';
 import { formatDate } from '../shared/lib/format';
 import Button from '../shared/ui/Button';
 import Card from '../shared/ui/Card';
@@ -51,6 +53,7 @@ export default function ReviewDetailPage() {
   const removeAdditionalReviewerMutation = useRemoveAdditionalReviewer(reviewId);
   const uploadAttachmentMutation = useUploadAttachment(reviewId);
   const deleteAttachmentMutation = useDeleteAttachment(reviewId);
+  const downloadAttachmentMutation = useAttachmentDownload(reviewId);
   const createCommentMutation = useCreateComment(reviewId);
   const updateCommentMutation = useUpdateComment(reviewId);
   const deleteCommentMutation = useDeleteComment(reviewId);
@@ -150,18 +153,19 @@ export default function ReviewDetailPage() {
           </div>
           <div className="flex flex-wrap gap-3">
             <Link
-              to={`/tasks/${review.taskId}/reviews`}
+              to={`/projects/${task?.projectId ?? appConfig.defaultProjectId}/tasks/${review.taskId}/reviews`}
               className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-blue-200 hover:text-blue-700"
             >
               라운드 목록
             </Link>
-            <Button variant="secondary" onClick={() => navigate(`/tasks/${review.taskId}/reviews/new`)}>
+            <Button variant="secondary" onClick={() => navigate(`/projects/${task?.projectId ?? appConfig.defaultProjectId}/tasks/${review.taskId}/reviews/new`)}>
               새 검토
             </Button>
           </div>
         </div>
         <div className="mt-6">
           <ReviewActionBar
+            projectId={task?.projectId ?? appConfig.defaultProjectId}
             taskId={review.taskId}
             reviewId={review.reviewId}
             status={review.status}
@@ -229,6 +233,12 @@ export default function ReviewDetailPage() {
                 });
               }).then(() => undefined)
             }
+            onDownload={(attachmentId) =>
+              runAction(async () => {
+                const download = await downloadAttachmentMutation.mutateAsync({ attachmentId });
+                window.open(download.downloadUrl, '_blank', 'noopener,noreferrer');
+              }).then(() => undefined)
+            }
           />
 
           <ReviewCommentThread
@@ -285,7 +295,7 @@ export default function ReviewDetailPage() {
             }
           />
 
-          <ReviewHistoryTimeline items={historiesQuery.data ?? []} />
+          <ReviewHistoryTimeline items={historiesQuery.data?.items ?? []} />
 
           <Card title="상태 규칙 요약" description="현재 상태에 따라 허용되는 액션을 정리합니다.">
             <div className="space-y-3 text-sm text-gray-600">

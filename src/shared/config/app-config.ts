@@ -16,12 +16,18 @@ function parseBoolean(value: string | undefined, fallback: boolean) {
 
 const publicApiBaseUrl = import.meta.env.VITE_PUBLIC_API_BASE_URL?.replace(/\/$/, '') ?? '';
 const useMock = parseBoolean(import.meta.env.VITE_USE_MOCK, true);
+const defaultProjectId = Number(import.meta.env.VITE_DEFAULT_PROJECT_ID ?? '10');
 
 if (!useMock && !publicApiBaseUrl) {
   throw new Error('VITE_PUBLIC_API_BASE_URL is required when VITE_USE_MOCK is false.');
 }
 
+if (!Number.isInteger(defaultProjectId) || defaultProjectId <= 0) {
+  throw new Error('VITE_DEFAULT_PROJECT_ID must be a positive integer.');
+}
+
 export const appConfig = {
   publicApiBaseUrl,
   useMock,
+  defaultProjectId,
 } as const;
