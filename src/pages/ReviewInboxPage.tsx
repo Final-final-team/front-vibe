@@ -39,31 +39,31 @@ export default function ReviewInboxPage() {
   const empty = inboxRows.filter((row) => !row.latestReview);
 
   return (
-    <div className="space-y-5">
-      <section className="flex flex-wrap items-end justify-between gap-4 border-b border-border/70 pb-4">
-        <div className="flex flex-wrap items-center gap-6">
+    <div className="space-y-4">
+      <section className="flex flex-wrap items-end justify-between gap-3 border-b border-border/70 pb-3">
+        <div className="flex flex-wrap items-center gap-5">
           <InlineStat label="검토 대기" value={`${waitingQueue.length}건`} icon={<SendHorizontal size={15} />} />
           <InlineStat label="최근 승인" value={`${approved.length}건`} icon={<FileSearch size={15} />} />
           <InlineStat label="미상신" value={`${empty.length}건`} icon={<MessageSquareWarning size={15} />} />
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <Badge variant="outline" className="rounded-md">{currentProject?.code ?? 'REVIEWS'}</Badge>
-          <Badge variant="outline" className="rounded-md">{inboxRows.length} rows</Badge>
-          <span>project review queue</span>
+          <Badge variant="outline" className="rounded-md">{currentProject?.code ?? '검토'}</Badge>
+          <Badge variant="outline" className="rounded-md">{inboxRows.length}건</Badge>
+          <span>프로젝트 검토 큐</span>
         </div>
       </section>
 
       <section className="border-t border-border/70 bg-background">
-        <div className="flex items-end justify-between gap-4 border-b border-border/70 pb-4 pt-4">
+        <div className="flex items-end justify-between gap-3 border-b border-border/70 pb-3 pt-3">
           <div>
-            <h2 className="text-lg font-semibold tracking-tight text-foreground">Review Inbox</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <h2 className="text-base font-semibold tracking-tight text-foreground">검토 보관함</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
               {currentProject?.name ?? '프로젝트'} 기준 검토 큐와 최신 라운드를 한 화면에서 확인합니다.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Badge variant="outline" className="rounded-md">pending {waitingQueue.length}</Badge>
-            <Badge variant="outline" className="rounded-md">approved {approved.length}</Badge>
+            <Badge variant="outline" className="rounded-md">대기 {waitingQueue.length}</Badge>
+            <Badge variant="outline" className="rounded-md">승인 {approved.length}</Badge>
           </div>
         </div>
 
@@ -119,7 +119,7 @@ export default function ReviewInboxPage() {
                               : 'amber'
                       }
                     >
-                      Round {latestReview.roundNo} · {latestReview.status}
+                        {latestReview.roundNo}차 · {getReviewStatusLabel(latestReview.status)}
                     </StatusPill>
                   ) : (
                     <span className="text-sm text-muted-foreground">미상신</span>
@@ -162,12 +162,25 @@ function InlineStat({
   icon: ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2.5">
       <div className="text-muted-foreground">{icon}</div>
       <div>
-        <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
-        <div className="mt-1 text-xl font-semibold tracking-tight text-foreground">{value}</div>
+        <div className="text-[10px] font-semibold tracking-[0.08em] text-muted-foreground">{label}</div>
+        <div className="mt-0.5 text-lg font-semibold tracking-tight text-foreground">{value}</div>
       </div>
     </div>
   );
+}
+
+function getReviewStatusLabel(status: 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'CANCELLED') {
+  switch (status) {
+    case 'APPROVED':
+      return '승인';
+    case 'REJECTED':
+      return '반려';
+    case 'CANCELLED':
+      return '취소';
+    default:
+      return '제출';
+  }
 }

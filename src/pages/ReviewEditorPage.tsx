@@ -67,11 +67,11 @@ export default function ReviewEditorPage({ mode }: Props) {
   }
 
   if (mode === 'edit' && detailQuery.isLoading) {
-    return <PageShell title="Review Edit">review 상세를 불러오는 중입니다.</PageShell>;
+    return <PageShell title="검토 수정">검토 상세를 불러오는 중입니다.</PageShell>;
   }
 
   return (
-    <PageShell title={mode === 'create' ? 'Review Submit / Resubmit' : 'Review Edit'}>
+    <PageShell title={mode === 'create' ? '검토 상신 / 재상신' : '검토 수정'}>
       {errorMessage && (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
           {errorMessage}
@@ -93,8 +93,8 @@ function PageShell({ title, children }: { title: string; children: React.ReactNo
     <div className="space-y-6">
       <section className="flex items-center justify-between rounded-3xl border border-gray-200 bg-white px-6 py-5">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">
-            Editor
+          <div className="text-xs font-semibold tracking-[0.1em] text-blue-600">
+            편집 화면
           </div>
           <h2 className="mt-2 text-2xl font-semibold text-gray-900">{title}</h2>
         </div>

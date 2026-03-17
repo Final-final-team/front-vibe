@@ -28,11 +28,11 @@ export default function ReviewForm({ mode, initialReview, onSubmit, submitting }
   return (
     <div className="space-y-6">
       <Card
-        title={mode === 'create' ? 'Review Submit / Resubmit' : 'Review Edit'}
+        title={mode === 'create' ? '검토 상신 / 재상신' : '검토 수정'}
         description={
           mode === 'create'
-            ? '업무 진행 중인 상태에서 새 review를 상신합니다.'
-            : 'SUBMITTED 상태의 review 본문을 수정합니다.'
+            ? '업무 진행 중인 상태에서 새 검토를 상신합니다.'
+            : '제출된 검토 본문을 수정합니다.'
         }
       >
         <div className="space-y-5">
@@ -90,7 +90,7 @@ export default function ReviewForm({ mode, initialReview, onSubmit, submitting }
             {initialReview && (
               <>
                 <span className="mx-2 text-gray-300">|</span>
-                현재 lock version: <strong>v{initialReview.lockVersion}</strong>
+                현재 잠금 버전: <strong>v{initialReview.lockVersion}</strong>
               </>
             )}
           </div>

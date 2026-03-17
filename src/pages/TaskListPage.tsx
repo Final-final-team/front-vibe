@@ -111,22 +111,22 @@ export default function TaskListPage() {
   }
 
   return (
-    <div className="space-y-5">
-      <section className="flex flex-wrap items-end justify-between gap-4 border-b border-border/70 pb-4">
-        <div className="flex flex-wrap items-center gap-6">
+    <div className="space-y-4">
+      <section className="flex flex-wrap items-end justify-between gap-3 border-b border-border/70 pb-3">
+        <div className="flex flex-wrap items-center gap-5">
           <InlineStat label="마일스톤" value={`${milestones.length}개`} icon={<Rows3 size={15} />} />
           <InlineStat label="검토중" value={`${reviewCount}건`} icon={<SendHorizontal size={15} />} />
           <InlineStat label="완료" value={`${completedCount}건`} icon={<ChartColumn size={15} />} />
           <InlineStat label="담당자" value={`${activeAssignees}명`} icon={<Users2 size={15} />} />
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <Badge variant="outline" className="rounded-md">{currentProject?.code ?? 'TASKS'}</Badge>
+          <Badge variant="outline" className="rounded-md">{currentProject?.code ?? '업무'}</Badge>
           <Badge variant="outline" className="rounded-md">{getViewLabel(currentView)}</Badge>
-          <span>backend mapping ready</span>
+          <span>백엔드 매핑 준비 완료</span>
         </div>
       </section>
 
-      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
         <section className="min-w-0 border-t border-border/70 bg-background">
           {currentView === 'table' ? (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -138,11 +138,11 @@ export default function TaskListPage() {
                   const progress = Math.round((done / total) * 100);
 
                   return (
-                    <section key={milestone.id} className="py-5 first:pt-0">
-                      <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
+                    <section key={milestone.id} className="py-4 first:pt-0">
+                      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
                         <div>
                           <div className="flex items-center gap-2">
-                            <h2 className="text-lg font-semibold tracking-tight text-foreground">{milestone.name}</h2>
+                            <h2 className="text-base font-semibold tracking-tight text-foreground">{milestone.name}</h2>
                             <StatusPill tone="slate">{progress}%</StatusPill>
                             <StatusPill
                               tone={
@@ -153,17 +153,17 @@ export default function TaskListPage() {
                                     : 'teal'
                               }
                             >
-                              {milestone.health}
+                              {getMilestoneHealthLabel(milestone.health)}
                             </StatusPill>
                           </div>
-                          <p className="mt-1 text-sm text-muted-foreground">{milestone.summary}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">{milestone.summary}</p>
                         </div>
-                        <div className="min-w-[220px]">
-                          <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                            <div className="h-full rounded-full bg-primary" style={{ width: `${progress}%` }} />
+                        <div className="min-w-[190px]">
+                          <div className="h-1.5 overflow-hidden bg-muted">
+                            <div className="h-full bg-primary" style={{ width: `${progress}%` }} />
                           </div>
                           <div className="mt-2 text-right text-xs text-muted-foreground">
-                            {milestoneTasks.length} tasks · due {formatDate(milestone.dueDate)}
+                            {milestoneTasks.length}건 · 마감 {formatDate(milestone.dueDate)}
                           </div>
                         </div>
                       </div>
@@ -211,46 +211,46 @@ export default function TaskListPage() {
           )}
         </section>
 
-        <aside className="xl:sticky xl:top-[112px] xl:h-fit">
-          <div className="border-l border-border/70 pl-6">
+        <aside className="xl:self-start">
+          <div className="border-l border-border/70 pl-5">
             {selectedTask ? (
-              <div className="space-y-5">
-                <div className="space-y-3 border-b border-border/70 pb-5">
+              <div className="space-y-4">
+                <div className="space-y-3 border-b border-border/70 pb-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusPill tone="teal">{selectedTask.domain}</StatusPill>
                     <StatusPill tone="purple">{selectedTask.assigneeName}</StatusPill>
                     <StatusPill tone="slate">{selectedTask.milestoneName}</StatusPill>
                   </div>
                   <div>
-                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                      selected task
+                    <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground">
+                      선택된 업무
                     </div>
-                    <div className="mt-2 text-[28px] font-semibold tracking-tight text-foreground">{selectedTask.title}</div>
-                    <p className="mt-2 text-sm leading-7 text-muted-foreground">{selectedTask.summary}</p>
+                    <div className="mt-1.5 text-[24px] font-semibold tracking-tight text-foreground">{selectedTask.title}</div>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{selectedTask.summary}</p>
                   </div>
                 </div>
 
-                <div className="grid gap-4 border-b border-border/70 pb-5">
+                <div className="grid gap-3 border-b border-border/70 pb-4">
                   <MetaRow label="기한" value={formatDate(selectedTask.dueDate)} />
                   <MetaRow label="시작" value={formatDate(selectedTask.startDate)} />
-                  <MetaRow label="우선순위" value={selectedTask.priority} />
+                  <MetaRow label="우선순위" value={getPriorityLabel(selectedTask.priority)} />
                   <MetaRow label="현재 상태" value={getStatusLabel(selectedTask.status)} />
                 </div>
 
                 <div className="space-y-3">
-                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    actions
+                  <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground">
+                    바로가기
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <Button asChild className="rounded-lg">
+                    <Button asChild className="h-9 rounded-md px-3">
                       <Link to={`/tasks/${selectedTask.id}/reviews`}>
-                        review 목록
+                        검토 목록
                         <ArrowRight size={16} />
                       </Link>
                     </Button>
-                    <Button asChild variant="outline" className="rounded-lg">
+                    <Button asChild variant="outline" className="h-9 rounded-md px-3">
                       <Link to={`/tasks/${selectedTask.id}/reviews/new`}>
-                        새 review
+                        새 검토 상신
                       </Link>
                     </Button>
                   </div>
@@ -283,30 +283,30 @@ function KanbanView({
   ];
 
   return (
-    <div className="grid gap-6 xl:grid-cols-3">
+    <div className="grid gap-5 xl:grid-cols-3">
       {columns.map((column) => (
         <section key={column.key} className="min-w-0">
-          <div className="flex items-center justify-between border-b border-border/70 pb-3">
+          <div className="flex items-center justify-between border-b border-border/70 pb-2">
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-semibold text-foreground">{column.title}</h2>
               <StatusPill tone={column.tone}>{column.items.length}</StatusPill>
             </div>
           </div>
-          <div className="space-y-3 pt-4">
+          <div className="space-y-2.5 pt-3">
             {column.items.map((task) => (
               <button
                 key={task.id}
                 type="button"
                 onClick={() => onSelect(task.id)}
                 className={[
-                  'w-full border-b border-border/70 px-0 pb-4 text-left transition last:border-b-0 hover:border-primary/30',
+                  'w-full border-b border-border/70 px-0 pb-3 text-left transition last:border-b-0 hover:border-primary/30',
                   selectedTaskId === task.id ? 'border-primary/30' : '',
                 ].join(' ')}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="font-semibold text-foreground">{task.title}</div>
-                    <div className="mt-1 text-sm leading-6 text-muted-foreground">{task.summary}</div>
+                    <div className="mt-1 text-[13px] leading-5 text-muted-foreground">{task.summary}</div>
                   </div>
                   <StatusPill tone={column.tone}>{getStatusLabel(task.status)}</StatusPill>
                 </div>
@@ -344,10 +344,10 @@ function CalendarView({
   }, {});
 
   return (
-    <div className="border-t border-border/70 pt-4">
-            <div className="grid grid-cols-7 gap-2">
+    <div className="border-t border-border/70 pt-3">
+            <div className="grid grid-cols-7 gap-1.5">
         {['일', '월', '화', '수', '목', '금', '토'].map((day) => (
-          <div key={day} className="px-2 pb-2 text-xs font-semibold text-muted-foreground">
+          <div key={day} className="px-1.5 pb-1.5 text-[11px] font-semibold text-muted-foreground">
             {day}
           </div>
         ))}
@@ -357,20 +357,20 @@ function CalendarView({
             <div
               key={`${day}-${index}`}
                   className={[
-                'min-h-[128px] border-t border-border/70 bg-background p-2',
+                'min-h-[104px] border-t border-border/70 bg-background p-1.5',
                 day <= 0 || day > daysInMonth ? 'bg-muted/25' : '',
               ].join(' ')}
             >
               {day > 0 && day <= daysInMonth ? (
                 <>
-                  <div className="text-sm font-semibold text-foreground">{day}</div>
-                  <div className="mt-2 space-y-2">
+                  <div className="text-xs font-semibold text-foreground">{day}</div>
+                  <div className="mt-1.5 space-y-1.5">
                     {dayTasks.map((task) => (
                       <button
                         key={task.id}
                         type="button"
                         onClick={() => onSelect(task.id)}
-                        className="block w-full border-l-2 border-primary px-2 py-1 text-left text-xs transition hover:bg-muted/30"
+                        className="block w-full border-l-2 border-primary px-1.5 py-1 text-left text-[11px] transition hover:bg-muted/30"
                       >
                         <div className="font-semibold text-foreground">{task.title}</div>
                         <div className="mt-1 text-muted-foreground">{task.assigneeName}</div>
@@ -398,13 +398,13 @@ function ChartView({
   const groups = groupTasksByStatus(items);
 
   return (
-    <div className="grid gap-8 xl:grid-cols-2">
-      <section className="border-t border-border/70 pt-4">
-        <div className="pb-4">
-          <h2 className="text-lg font-semibold text-foreground">상태 분포</h2>
-          <p className="mt-1 text-sm text-muted-foreground">현재 업무 분포를 상태별로 확인합니다.</p>
+    <div className="grid gap-6 xl:grid-cols-2">
+      <section className="border-t border-border/70 pt-3">
+        <div className="pb-3">
+          <h2 className="text-base font-semibold text-foreground">상태 분포</h2>
+          <p className="mt-1 text-xs text-muted-foreground">현재 업무 분포를 상태별로 확인합니다.</p>
         </div>
-        <div className="space-y-5">
+        <div className="space-y-4">
           {[
             { label: '진행중', value: groups.IN_PROGRESS.length, tone: 'slate' as const },
             { label: '검토중', value: groups.IN_REVIEW.length, tone: 'amber' as const },
@@ -429,12 +429,12 @@ function ChartView({
         </div>
       </section>
 
-      <section className="border-t border-border/70 pt-4">
-        <div className="pb-4">
-          <h2 className="text-lg font-semibold text-foreground">마일스톤 부담</h2>
-          <p className="mt-1 text-sm text-muted-foreground">마일스톤별 연결 업무와 완료 비율</p>
+      <section className="border-t border-border/70 pt-3">
+        <div className="pb-3">
+          <h2 className="text-base font-semibold text-foreground">마일스톤 부담</h2>
+          <p className="mt-1 text-xs text-muted-foreground">마일스톤별 연결 업무와 완료 비율</p>
         </div>
-        <div className="space-y-5">
+        <div className="space-y-4">
           {milestones.map((milestone) => {
             const milestoneTasks = items.filter((item) => item.milestoneId === milestone.id);
             const done = milestoneTasks.filter((item) => item.status === 'COMPLETED').length;
@@ -449,7 +449,7 @@ function ChartView({
               <div className="h-3 overflow-hidden bg-muted">
                   <div className="h-full bg-primary" style={{ width: `${progress}%` }} />
               </div>
-                <div className="mt-2 text-xs text-muted-foreground">{milestoneTasks.length} tasks</div>
+                <div className="mt-2 text-xs text-muted-foreground">{milestoneTasks.length}건</div>
               </div>
             );
           })}
@@ -478,12 +478,12 @@ function GanttView({
   });
 
   return (
-    <div className="border-t border-border/70 pt-4">
+    <div className="border-t border-border/70 pt-3">
       <div className="overflow-x-auto">
-        <div className="min-w-[960px]">
+        <div className="min-w-[860px]">
           <div
             className="grid gap-2 border-b border-border/70 pb-3"
-            style={{ gridTemplateColumns: `220px repeat(${days.length}, minmax(36px, 1fr))` }}
+            style={{ gridTemplateColumns: `200px repeat(${days.length}, minmax(32px, 1fr))` }}
           >
             <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">업무</div>
             {days.map((day) => (
@@ -504,10 +504,10 @@ function GanttView({
                   type="button"
                   onClick={() => onSelect(task.id)}
                   className={[
-                    'grid w-full items-center gap-2 px-3 py-3 text-left transition hover:bg-muted/35',
+                    'grid w-full items-center gap-2 px-2.5 py-2.5 text-left transition hover:bg-muted/35',
                     selectedTaskId === task.id ? 'bg-primary/5' : '',
                   ].join(' ')}
-                  style={{ gridTemplateColumns: `220px repeat(${days.length}, minmax(36px, 1fr))` }}
+                  style={{ gridTemplateColumns: `200px repeat(${days.length}, minmax(32px, 1fr))` }}
                 >
                   <div>
                     <div className="font-semibold text-foreground">{task.title}</div>
@@ -516,7 +516,7 @@ function GanttView({
                   {days.map((_, index) => {
                     const active = index >= offset && index < offset + span;
                     return (
-                      <div key={`${task.id}-${index}`} className="h-8 bg-muted/35">
+                      <div key={`${task.id}-${index}`} className="h-7 bg-muted/35">
                         {active ? <div className="h-full bg-primary/85" /> : null}
                       </div>
                     );
@@ -603,7 +603,7 @@ function SortableTaskRow({
             onPointerDown={(event) => event.stopPropagation()}
             onClick={(event) => event.stopPropagation()}
           >
-            review
+            검토
           </Link>
           <Link
             to={`/tasks/${task.id}/reviews/new`}
@@ -621,11 +621,11 @@ function SortableTaskRow({
 
 function InlineStat({ label, value, icon }: { label: string; value: string; icon: ReactNode }) {
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2.5">
       <div className="text-muted-foreground">{icon}</div>
       <div>
-        <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
-        <div className="mt-1 text-xl font-semibold tracking-tight text-foreground">{value}</div>
+        <div className="text-[10px] font-semibold tracking-[0.08em] text-muted-foreground">{label}</div>
+        <div className="mt-0.5 text-lg font-semibold tracking-tight text-foreground">{value}</div>
       </div>
     </div>
   );
@@ -650,14 +650,36 @@ function getCurrentView(value: string | null): TaskView {
 function getViewLabel(view: TaskView) {
   switch (view) {
     case 'kanban':
-      return 'kanban';
+      return '칸반';
     case 'calendar':
-      return 'calendar';
+      return '캘린더';
     case 'chart':
-      return 'chart';
+      return '차트';
     case 'gantt':
-      return 'gantt';
+      return '간트';
     default:
-      return 'table';
+      return '테이블';
+  }
+}
+
+function getPriorityLabel(priority: TaskViewItem['priority']) {
+  switch (priority) {
+    case 'HIGH':
+      return '높음';
+    case 'MEDIUM':
+      return '보통';
+    default:
+      return '낮음';
+  }
+}
+
+function getMilestoneHealthLabel(health: 'AT_RISK' | 'ON_TRACK' | 'COMPLETE') {
+  switch (health) {
+    case 'AT_RISK':
+      return '주의';
+    case 'COMPLETE':
+      return '완료';
+    default:
+      return '정상';
   }
 }

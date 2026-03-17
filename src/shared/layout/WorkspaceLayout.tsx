@@ -53,8 +53,8 @@ export default function WorkspaceLayout({ children }: Props) {
               <Home size={18} />
             </div>
             <div className="min-w-0">
-              <div className="truncate text-sm font-semibold text-sidebar-foreground">front-vibe</div>
-              <div className="text-xs text-sidebar-foreground/70">workspace shell</div>
+            <div className="truncate text-sm font-semibold text-sidebar-foreground">front-vibe</div>
+              <div className="text-xs text-sidebar-foreground/70">협업 워크스페이스</div>
             </div>
           </div>
           <div className="relative mt-3">
@@ -71,7 +71,7 @@ export default function WorkspaceLayout({ children }: Props) {
             <SidebarGroupLabel>프로젝트</SidebarGroupLabel>
             <SidebarGroupContent className="px-2">
               <Select value={selectedProjectId ?? currentProject?.id ?? ''} onValueChange={setSelectedProjectId}>
-                <SelectTrigger className="h-10 rounded-xl border-sidebar-border bg-sidebar text-sidebar-foreground shadow-none">
+                <SelectTrigger className="h-9 rounded-lg border-sidebar-border bg-sidebar text-sidebar-foreground shadow-none">
                   <SelectValue placeholder="프로젝트 선택" />
                 </SelectTrigger>
                 <SelectContent>
@@ -161,8 +161,8 @@ export default function WorkspaceLayout({ children }: Props) {
             <div className="border-t border-sidebar-border px-1 pt-3 text-xs text-sidebar-foreground/80">
               <div className="font-semibold text-sidebar-foreground">{currentProject.ownerName}</div>
               <div className="mt-1">업데이트 {formatDate(currentProject.updatedAt)}</div>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-sidebar/70">
-                <div className="h-full rounded-full bg-primary" style={{ width: `${currentProject.progress}%` }} />
+              <div className="mt-3 h-1.5 overflow-hidden bg-sidebar/70">
+                <div className="h-full bg-primary" style={{ width: `${currentProject.progress}%` }} />
               </div>
             </div>
           )}
@@ -171,7 +171,7 @@ export default function WorkspaceLayout({ children }: Props) {
 
       <SidebarInset className="bg-[linear-gradient(180deg,#f7f8fb_0%,#fbfcfe_100%)]">
         <div className="flex min-h-screen flex-col">
-          <div className="sticky top-0 z-20 border-b border-border/70 bg-background/94 backdrop-blur">
+          <div className="border-b border-border/70 bg-background/94 backdrop-blur">
             <Header
               title={shell.title}
               subtitle={shell.subtitle}
@@ -195,7 +195,7 @@ export default function WorkspaceLayout({ children }: Props) {
             />
 
             {shell.domainPath === '/tasks' ? (
-              <div className="flex items-center gap-2 overflow-x-auto px-6 pb-2 hide-scrollbar">
+              <div className="flex items-center gap-1 overflow-x-auto px-5 pb-1.5 hide-scrollbar">
                 <ViewSwitchButton
                   icon={<LayoutTemplate size={16} />}
                   active={taskView === 'table'}
@@ -235,7 +235,7 @@ export default function WorkspaceLayout({ children }: Props) {
             ) : null}
           </div>
 
-          <main className="flex-1 px-6 pb-8 pt-3">{children}</main>
+          <main className="flex-1 px-5 pb-6 pt-2">{children}</main>
         </div>
       </SidebarInset>
     </SidebarProvider>
@@ -258,7 +258,7 @@ function ViewSwitchButton({
       type="button"
       onClick={onClick}
       className={[
-        'inline-flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors',
+        'inline-flex items-center gap-2 border-b-2 px-2.5 py-1.5 text-[15px] font-medium transition-colors',
         active
           ? 'border-primary text-foreground'
           : 'border-transparent bg-transparent text-muted-foreground hover:border-border hover:text-foreground',
@@ -285,7 +285,7 @@ function getShellConfig(pathname: string) {
     return {
       domain: 'members',
       domainPath: '/members',
-      title: 'Members',
+      title: '멤버',
       subtitle: '초대 기반 멤버십과 프로젝트 역할 연결을 관리합니다.',
       primaryLabel: '멤버 초대',
       primaryTo: '/members#invite',
@@ -298,7 +298,7 @@ function getShellConfig(pathname: string) {
     return {
       domain: 'roles',
       domainPath: '/roles',
-      title: 'Roles & Permissions',
+      title: '역할 / 권한',
       subtitle: '프로젝트 단위 RBAC 카탈로그와 권한 매핑을 다룹니다.',
       primaryLabel: '역할 카탈로그',
       primaryTo: '/roles',
@@ -311,7 +311,7 @@ function getShellConfig(pathname: string) {
     return {
       domain: 'milestones',
       domainPath: '/milestones',
-      title: 'Milestones',
+      title: '마일스톤',
       subtitle: '큰 목표와 연결 업무 진행률만 집계해서 보여줍니다.',
       primaryLabel: '마일스톤 보기',
       primaryTo: '/milestones',
@@ -324,7 +324,7 @@ function getShellConfig(pathname: string) {
     return {
       domain: 'reviews',
       domainPath: '/reviews',
-      title: 'Review Edit',
+      title: '검토 수정',
       subtitle: '기존 review 라운드를 수정합니다.',
       primaryLabel: '검토 inbox로 이동',
       primaryTo: '/reviews',
@@ -337,7 +337,7 @@ function getShellConfig(pathname: string) {
     return {
       domain: 'reviews',
       domainPath: '/reviews',
-      title: 'Review Detail',
+      title: '검토 상세',
       subtitle: '본문, 첨부, 코멘트, 이력을 하나의 화면에서 확인합니다.',
       primaryLabel: '검토 inbox로 이동',
       primaryTo: '/reviews',
@@ -350,7 +350,7 @@ function getShellConfig(pathname: string) {
     return {
       domain: 'reviews',
       domainPath: '/reviews',
-      title: 'Review Submit',
+      title: '검토 상신',
       subtitle: '업무에서 review 라운드를 생성하거나 재상신합니다.',
       primaryLabel: '업무 목록으로 이동',
       primaryTo: '/tasks',
@@ -363,7 +363,7 @@ function getShellConfig(pathname: string) {
     return {
       domain: 'reviews',
       domainPath: '/reviews',
-      title: 'Review Inbox',
+      title: '검토 보관함',
       subtitle: '프로젝트 전체 review 큐와 최근 라운드를 모아서 봅니다.',
       primaryLabel: '검토 큐 보기',
       primaryTo: '/reviews',
@@ -376,7 +376,7 @@ function getShellConfig(pathname: string) {
     return {
       domain: 'reviews',
       domainPath: '/reviews',
-      title: 'Review Board',
+      title: '검토 보드',
       subtitle: '업무별 review 라운드를 탐색합니다.',
       primaryLabel: '검토 상신',
       primaryTo: pathname.endsWith('/reviews') ? `${pathname}/new` : '/reviews',
@@ -388,7 +388,7 @@ function getShellConfig(pathname: string) {
   return {
     domain: 'tasks',
     domainPath: '/tasks',
-    title: 'Task Board',
+    title: '업무 보드',
     subtitle: '마일스톤 단위 보드와 업무-검토 진입 패널을 제공합니다.',
     primaryLabel: '업무 보드 보기',
     primaryTo: '/tasks',

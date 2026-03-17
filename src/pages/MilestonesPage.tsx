@@ -34,19 +34,19 @@ export default function MilestonesPage() {
     <div className="space-y-6">
       <section className="grid gap-4 xl:grid-cols-3">
         <MetricCard
-          label="Milestones"
+          label="마일스톤"
           value={`${milestones.length}개`}
           hint="독립 워크플로우가 아닌 큰 목표 묶음"
           icon={<Flag size={18} />}
         />
         <MetricCard
-          label="Linked Tasks"
+          label="연결 업무"
           value={`${totalTasks}개`}
           hint="마일스톤에 연결된 전체 업무"
           icon={<ListTodo size={18} />}
         />
         <MetricCard
-          label="Completed"
+          label="완료 업무"
           value={`${completedTasks}개`}
           hint="연결 업무 완료 기준으로 집계"
           icon={<TimerReset size={18} />}
@@ -78,7 +78,7 @@ export default function MilestonesPage() {
                   <StatusPill tone={healthToneMap[milestone.health]}>
                     {healthLabelMap[milestone.health]}
                   </StatusPill>
-                  <StatusPill tone="slate">DUE {formatDate(milestone.dueDate)}</StatusPill>
+                  <StatusPill tone="slate">마감 {formatDate(milestone.dueDate)}</StatusPill>
                 </div>
               }
             >
@@ -126,7 +126,7 @@ export default function MilestonesPage() {
                       <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-500">
                         <StatusPill tone="teal">{meta.domain}</StatusPill>
                         <StatusPill tone="purple">{meta.assigneeName}</StatusPill>
-                        <StatusPill tone="slate">DUE {formatDate(meta.dueDate)}</StatusPill>
+                        <StatusPill tone="slate">마감 {formatDate(meta.dueDate)}</StatusPill>
                       </div>
                     </div>
                   ))}

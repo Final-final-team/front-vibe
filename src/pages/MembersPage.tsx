@@ -79,25 +79,25 @@ export default function MembersPage() {
     <div className="space-y-6">
       <section className="grid gap-4 xl:grid-cols-4">
         <MetricCard
-          label="Active Members"
+          label="활성 멤버"
           value={`${activeCount}명`}
           hint="프로젝트에 실제 참여 중인 멤버"
           icon={<Users size={18} />}
         />
         <MetricCard
-          label="Pending Invites"
+          label="대기 초대"
           value={`${invitedCount}건`}
           hint="수락을 기다리는 초대"
           icon={<MailPlus size={18} />}
         />
         <MetricCard
-          label="Role Binding"
+          label="역할 연결"
           value={`${roles.length}개`}
           hint="현재 프로젝트 역할 카탈로그"
           icon={<ShieldCheck size={18} />}
         />
         <MetricCard
-          label="Needs Follow-up"
+          label="추가 확인"
           value={`${pendingCount}명`}
           hint="만료 또는 거절 상태 포함"
           icon={<UserCheck size={18} />}
@@ -112,7 +112,7 @@ export default function MembersPage() {
           <div className="overflow-x-auto">
             <div className="min-w-[900px]">
               <div className="grid grid-cols-[2.1fr_1fr_1.2fr_1.5fr_1fr] border-b border-gray-200 pb-3 text-xs font-semibold uppercase tracking-[0.14em] text-gray-400">
-                <div>Member</div>
+                <div>멤버</div>
                 <div>상태</div>
                 <div>소속 팀</div>
                 <div>연결 역할</div>

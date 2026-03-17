@@ -21,19 +21,19 @@ export default function RolesPermissionsPage() {
     <div className="space-y-6">
       <section className="grid gap-4 xl:grid-cols-3">
         <MetricCard
-          label="Role Catalog"
+          label="역할 카탈로그"
           value={`${roles.length}개`}
           hint="프로젝트별로 독립된 역할 집합"
           icon={<Shield size={18} />}
         />
         <MetricCard
-          label="Permission Set"
+          label="권한 집합"
           value={`${permissions.length}개`}
           hint="AWS IAM처럼 역할이 권한 집합을 보유"
           icon={<LockKeyhole size={18} />}
         />
         <MetricCard
-          label="Assigned Members"
+          label="할당 멤버"
           value={`${members.filter((member) => member.roleIds.length > 0).length}명`}
           hint="최소 1개 역할이 연결된 멤버"
           icon={<UserCog size={18} />}
@@ -74,7 +74,7 @@ export default function RolesPermissionsPage() {
           <Card
             title={selectedRole?.name ?? '역할 상세'}
             description={selectedRole?.description ?? '역할을 선택하면 상세 권한을 보여줍니다.'}
-            action={<StatusPill tone="purple">Project-scoped role</StatusPill>}
+            action={<StatusPill tone="purple">프로젝트 전용 역할</StatusPill>}
           >
             <div className="grid gap-5 lg:grid-cols-2">
               {categories.map((category) => {

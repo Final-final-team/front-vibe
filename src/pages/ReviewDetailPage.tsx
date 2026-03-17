@@ -71,7 +71,7 @@ export default function ReviewDetailPage() {
   if (detailQuery.isLoading) {
     return (
       <div className="rounded-3xl border border-gray-200 bg-white px-6 py-12 text-sm text-gray-500">
-        review 상세를 불러오는 중입니다.
+        검토 상세를 불러오는 중입니다.
       </div>
     );
   }
@@ -79,7 +79,7 @@ export default function ReviewDetailPage() {
   if (detailQuery.error || !review) {
     return (
       <div className="rounded-3xl border border-rose-200 bg-rose-50 px-6 py-12 text-sm text-rose-700">
-        {(detailQuery.error as Error)?.message ?? 'review를 찾을 수 없습니다.'}
+        {(detailQuery.error as Error)?.message ?? '검토 정보를 찾을 수 없습니다.'}
       </div>
     );
   }
@@ -133,19 +133,19 @@ export default function ReviewDetailPage() {
         <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">
-              Review Detail
+              검토 상세
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <h2 className="text-2xl font-semibold text-gray-900">
-                {task?.title ?? `Review #${review.reviewId}`}
+                {task?.title ?? `검토 #${review.reviewId}`}
               </h2>
               <ReviewStatusBadge status={review.status} />
               <span className="rounded-full border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-600">
-                Round #{review.roundNo}
+                {review.roundNo}차
               </span>
             </div>
             <div className="mt-3 text-sm text-gray-500">
-              reviewId #{review.reviewId} · taskId #{review.taskId} · lock version v{review.lockVersion}
+              검토 ID #{review.reviewId} · 업무 ID #{review.taskId} · 잠금 버전 v{review.lockVersion}
             </div>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -156,7 +156,7 @@ export default function ReviewDetailPage() {
               라운드 목록
             </Link>
             <Button variant="secondary" onClick={() => navigate(`/tasks/${review.taskId}/reviews/new`)}>
-              새 review
+              새 검토
             </Button>
           </div>
         </div>
