@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { ChevronDown, ChevronRight, LockKeyhole, Plus, Shield, UserCog } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { usePermissions, useProjectRoles } from '../features/workspace/hooks';
 import { useWorkspace } from '../features/workspace/use-workspace';
-import MetricCard from '../shared/ui/MetricCard';
 import AppModal from '../shared/ui/AppModal';
 import StatusPill from '../shared/ui/StatusPill';
 import type { ProjectRole } from '../features/workspace/types';
@@ -97,13 +96,6 @@ export default function RolesPermissionsPage() {
 
   return (
     <div className="space-y-7">
-      <section className="grid gap-4 xl:grid-cols-4">
-        <MetricCard label="역할 카탈로그" value={`${roles.length}개`} hint="프로젝트 운영 역할" icon={<Shield size={18} />} />
-        <MetricCard label="전체 권한" value={`${permissions.length}개`} hint="현재 정의된 권한 수" icon={<LockKeyhole size={18} />} />
-        <MetricCard label="카테고리" value={`${categories.length}개`} hint="권한 묶음 범주" icon={<UserCog size={18} />} />
-        <MetricCard label="현재 프로젝트" value={currentProject?.code ?? '-'} hint="역할이 적용되는 스코프" icon={<Shield size={18} />} />
-      </section>
-
       <section className="border-t border-border/70 pt-8">
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -114,7 +106,7 @@ export default function RolesPermissionsPage() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => setCatalogOpen(true)}>
-              전체 권한 보기
+              전체 권한 관리
             </Button>
             <Button type="button" className="rounded-xl px-4" onClick={() => setCreateRoleOpen(true)}>
               <Plus size={15} />
@@ -143,9 +135,12 @@ export default function RolesPermissionsPage() {
                     </div>
                     <p className="mt-2 text-sm leading-6 text-muted-foreground">{role.description}</p>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <StatusPill tone="slate">{effectiveKeys.length}개 권한</StatusPill>
-                    <StatusPill tone="blue">{categoryCount}개 카테고리</StatusPill>
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <span>{effectiveKeys.length}개 권한</span>
+                    <span>·</span>
+                    <span>{categoryCount}개 카테고리</span>
+                    <span>·</span>
+                    <span>{currentProject?.code ?? '-'}</span>
                   </div>
                 </div>
                 <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -167,7 +162,7 @@ export default function RolesPermissionsPage() {
                     className="h-8 rounded-lg px-3 text-sm font-medium text-primary"
                     onClick={() => openPermissionModal(role.id)}
                   >
-                    권한 관리
+                    권한 보기
                   </Button>
                 </div>
               </div>
@@ -343,6 +338,24 @@ export default function RolesPermissionsPage() {
       >
         {permissionRole ? (
           <div className="space-y-6">
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-lg px-3"
+                onClick={() => setDraftPermissionKeys(permissions.map((permission) => permission.key))}
+              >
+                전체 허용
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-lg px-3"
+                onClick={() => setDraftPermissionKeys([])}
+              >
+                전체 해제
+              </Button>
+            </div>
             {groupedCatalog.map(({ category, items }) => (
               <section key={category} className="border-t border-border/60 pt-4 first:border-t-0 first:pt-0">
                 <div className="mb-3 flex items-center justify-between gap-3">
@@ -382,8 +395,8 @@ export default function RolesPermissionsPage() {
       <AppModal
         open={catalogOpen}
         onOpenChange={setCatalogOpen}
-        title="전체 권한 보기"
-        description="현재 프로젝트에서 정의된 모든 권한과 설명을 한 줄씩 확인합니다."
+        title="전체 권한 관리"
+        description="현재 프로젝트에서 정의된 전체 권한을 확인하고 역할 편집 전 기준 카탈로그로 참고합니다."
         badges={
           <>
             <StatusPill tone="slate">{permissions.length}개 권한</StatusPill>

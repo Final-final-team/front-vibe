@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { AlertTriangle, Flag, ListTodo, Plus, TimerReset } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Input } from '../components/ui/input';
 import { useTasks } from '../features/review/hooks';
 import {
@@ -16,7 +16,6 @@ import type { ProjectMilestone } from '../features/workspace/types';
 import { useWorkspace } from '../features/workspace/use-workspace';
 import { formatDate } from '../shared/lib/format';
 import AppModal from '../shared/ui/AppModal';
-import MetricCard from '../shared/ui/MetricCard';
 import StatusPill from '../shared/ui/StatusPill';
 import { Button } from '../components/ui/button';
 
@@ -94,10 +93,6 @@ export default function MilestonesPage() {
     [milestones, detailMilestoneId],
   );
   const detailBundle = milestoneCards.find((item) => item.milestone.id === detailMilestone?.id) ?? null;
-  const totalTasks = taskItems.length;
-  const completedTasks = taskItems.filter((task) => task.status === 'COMPLETED').length;
-  const atRiskTasks = taskItems.filter((task) => isAtRisk(task)).length;
-
   function createMilestone() {
     const trimmedName = draft.name.trim();
     const trimmedSummary = draft.summary.trim();
@@ -124,13 +119,6 @@ export default function MilestonesPage() {
 
   return (
     <div className="space-y-7">
-      <section className="grid gap-4 xl:grid-cols-4">
-        <MetricCard label="마일스톤" value={`${milestones.length}개`} hint="현재 프로젝트 기준" icon={<Flag size={18} />} />
-        <MetricCard label="연결 업무" value={`${totalTasks}개`} hint="전체 연결 업무 수" icon={<ListTodo size={18} />} />
-        <MetricCard label="완료 업무" value={`${completedTasks}개`} hint="완료 상태 기준" icon={<TimerReset size={18} />} />
-        <MetricCard label="위험 업무" value={`${atRiskTasks}개`} hint="기한 초과 또는 위험 상태" icon={<AlertTriangle size={18} />} />
-      </section>
-
       <section className="border-t border-border/70 pt-8">
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -147,7 +135,12 @@ export default function MilestonesPage() {
 
         <div className="grid gap-4 xl:grid-cols-2">
           {milestoneCards.map(({ milestone, linkedTasks, progress, reviewCount, riskCount, nextDueTask }) => (
-            <div key={milestone.id} className="border-b border-border/70 px-1 py-5">
+            <button
+              key={milestone.id}
+              type="button"
+              onClick={() => setDetailMilestoneId(milestone.id)}
+              className="border-b border-border/70 px-1 py-5 text-left transition hover:bg-muted/10"
+            >
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
@@ -156,7 +149,15 @@ export default function MilestonesPage() {
                   </div>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">{milestone.summary}</p>
                 </div>
-                <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => setDetailMilestoneId(milestone.id)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl px-4"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setDetailMilestoneId(milestone.id);
+                  }}
+                >
                   상세 보기
                 </Button>
               </div>
@@ -177,7 +178,7 @@ export default function MilestonesPage() {
                   <div className="h-2 rounded-full bg-primary transition-all" style={{ width: `${progress}%` }} />
                 </div>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </section>
