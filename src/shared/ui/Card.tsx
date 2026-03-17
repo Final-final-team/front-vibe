@@ -13,20 +13,20 @@ export default function Card({ title, description, action, children, className }
   return (
     <section
       className={cn(
-        'overflow-hidden rounded-[28px] border border-border/70 bg-card/95 shadow-[0_18px_50px_rgba(15,23,42,0.06)] backdrop-blur',
+        'overflow-hidden rounded-2xl border border-border/70 bg-card/98 shadow-[0_10px_30px_rgba(15,23,42,0.04)] backdrop-blur',
         className,
       )}
     >
       {(title || description || action) && (
-        <header className="flex items-start justify-between gap-4 border-b border-border/60 bg-muted/20 px-6 py-5">
+        <header className="flex items-start justify-between gap-4 border-b border-border/60 bg-muted/10 px-5 py-4">
           <div className="min-w-0">
-            {title && <h2 className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>}
-            {description && <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{description}</p>}
+            {title && <h2 className="text-base font-semibold tracking-tight text-foreground">{title}</h2>}
+            {description && <p className="mt-1 text-sm leading-6 text-muted-foreground">{description}</p>}
           </div>
           {action}
         </header>
       )}
-      <div className="px-6 py-5">{children}</div>
+      <div className="px-5 py-4">{children}</div>
     </section>
   );
 }

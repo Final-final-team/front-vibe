@@ -48,9 +48,9 @@ export default function WorkspaceLayout({ children }: Props) {
     <SidebarProvider defaultOpen>
       <Sidebar variant="inset" collapsible="none" className="border-r border-border/60">
         <SidebarHeader className="px-3 py-4">
-          <div className="rounded-2xl border border-sidebar-border bg-sidebar-accent/70 p-3 shadow-sm">
+          <div className="rounded-xl border border-sidebar-border bg-sidebar-accent/70 p-3 shadow-sm">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
                 <Home size={18} />
               </div>
               <div className="min-w-0">
@@ -63,7 +63,7 @@ export default function WorkspaceLayout({ children }: Props) {
             <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sidebar-foreground/55" />
             <Input
               placeholder="업무, 검토, 멤버 검색"
-              className="h-10 rounded-xl border-sidebar-border bg-sidebar pl-9 text-sidebar-foreground placeholder:text-sidebar-foreground/50"
+              className="h-10 rounded-lg border-sidebar-border bg-sidebar pl-9 text-sidebar-foreground placeholder:text-sidebar-foreground/50"
             />
           </div>
         </SidebarHeader>
@@ -140,7 +140,7 @@ export default function WorkspaceLayout({ children }: Props) {
 
         <SidebarFooter className="px-3 pb-4">
           {currentProject && (
-            <div className="rounded-2xl border border-sidebar-border bg-sidebar-accent/70 p-3 text-xs text-sidebar-foreground/80">
+            <div className="rounded-xl border border-sidebar-border bg-sidebar-accent/70 p-3 text-xs text-sidebar-foreground/80">
               <div className="font-semibold text-sidebar-foreground">{currentProject.ownerName}</div>
               <div className="mt-1">업데이트 {formatDate(currentProject.updatedAt)}</div>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-sidebar/70">
@@ -151,9 +151,9 @@ export default function WorkspaceLayout({ children }: Props) {
         </SidebarFooter>
       </Sidebar>
 
-      <SidebarInset className="bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.08),transparent_20%),linear-gradient(180deg,#f7f9fc_0%,#fbfcfe_100%)]">
+      <SidebarInset className="bg-[linear-gradient(180deg,#f7f8fb_0%,#fbfcfe_100%)]">
         <div className="flex min-h-screen flex-col">
-          <div className="border-b border-border/60 bg-background/92 backdrop-blur">
+          <div className="bg-background/92 backdrop-blur">
             <Header
               title={shell.title}
               subtitle={shell.subtitle}
@@ -176,8 +176,8 @@ export default function WorkspaceLayout({ children }: Props) {
               compactMeta
             />
 
-            <div className="px-6">
-              <div className="flex items-center overflow-x-auto rounded-t-[24px] border border-b-0 border-border/70 bg-card px-4 hide-scrollbar">
+            <div>
+              <div className="flex items-center overflow-x-auto border-b border-border/70 bg-background px-6 hide-scrollbar">
                 <NavItem to="/tasks" icon={<LayoutTemplate size={16} />}>
                   테이블
                 </NavItem>
@@ -196,7 +196,7 @@ export default function WorkspaceLayout({ children }: Props) {
             </div>
           </div>
 
-          <main className="flex-1 px-6 pb-10 pt-1">{children}</main>
+          <main className="flex-1 px-6 pb-8 pt-4">{children}</main>
         </div>
       </SidebarInset>
     </SidebarProvider>
@@ -215,10 +215,10 @@ function NavItem({ to, icon, children }: NavItemProps) {
       to={to}
       className={({ isActive }) =>
         [
-          'px-3 py-3 text-sm font-medium whitespace-nowrap flex items-center gap-1.5 mr-2 group border-b-2 transition-colors rounded-t-xl',
+          'mr-2 flex items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-3 text-sm font-medium transition-colors',
           isActive
-            ? 'border-primary text-primary bg-primary/5'
-            : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/60',
+            ? 'border-primary text-foreground'
+            : 'border-transparent text-muted-foreground hover:text-foreground',
         ].join(' ')
       }
     >

@@ -39,45 +39,38 @@ export default function ReviewInboxPage() {
   const empty = inboxRows.filter((row) => !row.latestReview);
 
   return (
-    <div className="space-y-6">
-      <section className="flex flex-wrap items-center gap-2">
-        <Badge className="rounded-full bg-emerald-500/12 px-3 py-1 text-emerald-700 hover:bg-emerald-500/12">
-          Review Queue
-        </Badge>
-        <Badge variant="outline" className="rounded-full px-3 py-1">
-          {currentProject?.name ?? '프로젝트'}
-        </Badge>
-        <Badge variant="outline" className="rounded-full px-3 py-1">
-          latest rounds
-        </Badge>
-      </section>
-
+    <div className="space-y-4">
       <section className="grid gap-3 xl:grid-cols-3">
         <MiniMetric
-          label="Pending Review"
+          label="검토 대기"
           value={`${waitingQueue.length}건`}
-          hint="승인 또는 반려 대기"
+          hint="즉시 처리 대상"
           icon={<SendHorizontal size={16} />}
         />
         <MiniMetric
-          label="Approved Rounds"
+          label="최근 승인"
           value={`${approved.length}건`}
-          hint="최근 승인된 라운드"
+          hint="완료 라운드"
           icon={<FileSearch size={16} />}
         />
         <MiniMetric
-          label="No Review Yet"
+          label="미상신 업무"
           value={`${empty.length}건`}
-          hint="아직 검토 미생성"
+          hint="review 미생성"
           icon={<MessageSquareWarning size={16} />}
         />
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_360px]">
+      <div className="grid gap-4">
         <Card
           title="Review Inbox"
-          description="프로젝트 단위 검토 큐와 최근 라운드를 한 곳에서 추적합니다."
-          action={<Badge variant="outline" className="rounded-full px-3 py-1">{inboxRows.length} queue rows</Badge>}
+          description={`${currentProject?.name ?? '프로젝트'} 기준 검토 큐와 최신 라운드를 한 화면에서 확인합니다.`}
+          action={
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="rounded-lg px-2.5 py-1">{inboxRows.length} rows</Badge>
+              <Badge variant="outline" className="rounded-lg px-2.5 py-1">pending {waitingQueue.length}</Badge>
+            </div>
+          }
         >
           <div className="overflow-x-auto">
             <div className="min-w-[860px]">
@@ -92,7 +85,7 @@ export default function ReviewInboxPage() {
                 {inboxRows.map(({ meta, task, latestReview }) => (
                   <div
                     key={meta.taskId}
-                    className="grid grid-cols-[1.8fr_1fr_1fr_1fr_1fr] gap-4 rounded-[22px] px-3 py-4 text-sm transition hover:bg-muted/35"
+                    className="grid grid-cols-[1.8fr_1fr_1fr_1fr_1fr] gap-4 rounded-xl px-3 py-4 text-sm transition hover:bg-muted/35"
                   >
                     <div>
                       <div className="font-semibold text-foreground">{task?.title}</div>
@@ -159,24 +152,6 @@ export default function ReviewInboxPage() {
             </div>
           </div>
         </Card>
-
-        <div className="space-y-6">
-          <Card title="처리 패턴" description="이 화면이 실제로 담당하는 역할">
-            <ul className="space-y-3 text-sm leading-7 text-muted-foreground">
-              <li>업무 탭에서는 row나 상세 패널을 통해 검토 흐름으로 진입합니다.</li>
-              <li>검토 탭은 inbox 스타일로 현재 처리할 라운드를 모아보는 목적에 집중합니다.</li>
-              <li>상세, 수정, 상신 화면은 기존 review 라우트를 그대로 사용합니다.</li>
-            </ul>
-          </Card>
-
-          <Card title="정책 미확정" description="실제 연동 전 합의가 필요한 항목">
-            <ul className="space-y-3 text-sm leading-7 text-muted-foreground">
-              <li>프로젝트 종료/재개/삭제 전이 규칙은 아직 확정되지 않았습니다.</li>
-              <li>역할 해제 이벤트와 보고 승인 권한 모델은 추후 정책 합의가 필요합니다.</li>
-              <li>알림/실시간 정책은 review 도메인 이벤트 확정 이후 단계로 남겨둡니다.</li>
-            </ul>
-          </Card>
-        </div>
       </div>
     </div>
   );
@@ -194,13 +169,13 @@ function MiniMetric({
   icon: ReactNode;
 }) {
   return (
-    <section className="flex items-center justify-between rounded-[22px] border border-border/70 bg-card/95 px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+    <section className="flex items-center justify-between rounded-xl border border-border/70 bg-card/96 px-4 py-3 shadow-[0_8px_20px_rgba(15,23,42,0.03)]">
       <div>
         <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
-        <div className="mt-1.5 text-[28px] font-semibold tracking-tight text-foreground">{value}</div>
-        <div className="mt-1 text-sm text-muted-foreground">{hint}</div>
+        <div className="mt-1 text-[24px] font-semibold tracking-tight text-foreground">{value}</div>
+        <div className="mt-0.5 text-xs text-muted-foreground">{hint}</div>
       </div>
-      <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-border/70 bg-muted/35 text-foreground/75">
+      <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-border/70 bg-muted/30 text-foreground/75">
         {icon}
       </div>
     </section>
