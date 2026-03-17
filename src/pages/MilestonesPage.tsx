@@ -30,8 +30,8 @@ export default function MilestonesPage() {
   ).length;
 
   return (
-    <div className="space-y-5">
-      <section className="flex flex-wrap items-end justify-between gap-3 border-b border-border/70 pb-3">
+    <div className="space-y-6">
+      <section className="flex flex-wrap items-end justify-between gap-3 border-b border-border/70 pb-4 pt-2">
         <div className="flex flex-wrap items-center gap-5">
           <InlineStat label="마일스톤" value={`${milestones.length}개`} icon={<Flag size={15} />} />
           <InlineStat label="연결 업무" value={`${totalTasks}개`} icon={<ListTodo size={15} />} />
@@ -40,7 +40,7 @@ export default function MilestonesPage() {
         <div className="text-xs text-muted-foreground">체크포인트와 연결 업무 기준으로 진행을 추적합니다.</div>
       </section>
 
-      <section className="border-t border-border/70 pt-4">
+      <section className="border-t border-border/70 pt-5">
         <div className="grid gap-8 xl:grid-cols-[300px_minmax(0,1fr)]">
           <aside className="space-y-3">
             <div>
@@ -88,6 +88,18 @@ export default function MilestonesPage() {
               : milestone.health === 'COMPLETE'
                 ? '연결 업무 기준으로 완료 상태입니다.'
                 : '현재 리듬은 안정적이며 연결 업무가 계획대로 진행 중입니다.';
+          const milestoneStage =
+            milestone.health === 'COMPLETE'
+              ? '마감 완료'
+              : progress >= 70
+                ? '마감 직전'
+                : progress >= 35
+                  ? '진행 중'
+                  : '착수 단계';
+          const linkedReviewCount = linkedTasks.filter((item) => item.task?.latestReviewStatus === 'IN_REVIEW').length;
+          const lastUpdatedAt = linkedTasks
+            .map(({ meta }) => new Date(meta.dueDate).getTime())
+            .sort((a, b) => b - a)[0];
 
           return (
             <section key={milestone.id} className="border-t border-border/70 pt-4 first:border-t-0 first:pt-0">
@@ -122,7 +134,7 @@ export default function MilestonesPage() {
                   </div>
                 </div>
 
-                <div className="grid gap-4 border-y border-border/60 py-4 lg:grid-cols-3">
+                <div className="grid gap-4 border-y border-border/60 py-4 lg:grid-cols-5">
                   <div>
                     <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">다음 체크포인트</div>
                     <div className="mt-2 text-sm font-medium leading-6 text-foreground">
@@ -139,6 +151,18 @@ export default function MilestonesPage() {
                         <StatusPill key={domain} tone="teal">{domain}</StatusPill>
                       ))}
                     </div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">현재 단계</div>
+                    <div className="mt-2 text-sm font-medium text-foreground">{milestoneStage}</div>
+                    <div className="mt-1 text-sm text-muted-foreground">{linkedReviewCount}개 검토 대기 업무</div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">최근 변경</div>
+                    <div className="mt-2 text-sm font-medium text-foreground">
+                      {lastUpdatedAt ? formatDate(new Date(lastUpdatedAt).toISOString()) : '변경 없음'}
+                    </div>
+                    <div className="mt-1 text-sm text-muted-foreground">마감 기준 최신 일정</div>
                   </div>
                   <div>
                     <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">위험 메모</div>

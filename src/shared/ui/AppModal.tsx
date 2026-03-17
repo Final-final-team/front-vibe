@@ -24,6 +24,7 @@ type Props = {
   bodyClassName?: string;
   footerClassName?: string;
   sideClassName?: string;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
 };
 
 export default function AppModal({
@@ -39,28 +40,39 @@ export default function AppModal({
   bodyClassName,
   footerClassName,
   sideClassName,
+  size = 'lg',
 }: Props) {
+  const sizeClassName =
+    size === 'sm'
+      ? 'w-[min(640px,calc(100vw-2.5rem))] max-w-[calc(100vw-2.5rem)] sm:max-w-[640px]'
+      : size === 'md'
+        ? 'w-[min(820px,calc(100vw-2.5rem))] max-w-[calc(100vw-2.5rem)] sm:max-w-[820px]'
+        : size === 'xl'
+          ? 'w-[min(1180px,calc(100vw-2.5rem))] max-w-[calc(100vw-2.5rem)] sm:max-w-[1180px]'
+          : 'w-[min(1024px,calc(100vw-2.5rem))] max-w-[calc(100vw-2.5rem)] sm:max-w-[1024px]';
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
         className={cn(
-          'w-[min(1120px,calc(100vw-3rem))] max-w-[calc(100vw-3rem)] overflow-hidden rounded-[30px] border border-border/80 p-0 shadow-[0_28px_90px_rgba(15,23,42,0.18)] sm:max-w-[1120px]',
+          'overflow-hidden rounded-[28px] border border-border/80 p-0 shadow-[0_28px_90px_rgba(15,23,42,0.18)]',
+          sizeClassName,
           className,
         )}
       >
-        <div className="m-3 overflow-hidden rounded-[24px] border border-border/70 bg-background">
-          <div className="flex items-start justify-between gap-4 border-b border-border/70 px-5 py-4">
+        <div className="m-3 overflow-hidden rounded-[22px] border border-border/70 bg-background">
+          <div className="flex items-start justify-between gap-4 border-b border-border/70 px-6 py-5">
             <DialogHeader className="min-w-0">
               {badges ? <div className="mb-3 flex flex-wrap items-center gap-2">{badges}</div> : null}
-              <DialogTitle className="break-keep text-[24px] font-semibold tracking-tight">{title}</DialogTitle>
+              <DialogTitle className="break-keep text-[24px] font-semibold tracking-tight leading-tight">{title}</DialogTitle>
               {description ? <DialogDescription className="mt-2 text-sm leading-6">{description}</DialogDescription> : null}
             </DialogHeader>
             <DialogClose asChild>
               <Button
                 variant="outline"
                 size="icon-sm"
-                className="h-9 w-9 rounded-full border-border/70 bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
+                className="h-9 w-9 rounded-full border-border/70 bg-background text-muted-foreground shadow-none hover:bg-muted hover:text-foreground"
               >
                 <X size={16} />
                 <span className="sr-only">닫기</span>
@@ -71,7 +83,7 @@ export default function AppModal({
           <div
             className={cn(
               'grid items-start gap-8 px-6 py-6',
-              side ? 'lg:grid-cols-[minmax(0,1fr)_300px]' : '',
+              side ? 'lg:grid-cols-[minmax(0,1fr)_320px]' : '',
               bodyClassName,
             )}
           >
@@ -80,7 +92,7 @@ export default function AppModal({
           </div>
 
           {footer ? (
-            <div className={cn('flex justify-end border-t border-border/70 bg-muted/15 px-6 py-4', footerClassName)}>
+            <div className={cn('flex justify-end border-t border-border/70 bg-muted/10 px-6 py-4', footerClassName)}>
               {footer}
             </div>
           ) : null}

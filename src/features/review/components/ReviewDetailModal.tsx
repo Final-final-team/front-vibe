@@ -66,7 +66,7 @@ export default function ReviewDetailModal({ reviewId, open, onOpenChange }: Prop
           닫기
         </Button>
       }
-      className="w-[min(980px,calc(100vw-2.5rem))] max-w-[calc(100vw-2.5rem)] sm:max-w-[980px]"
+      size="lg"
       sideClassName="lg:max-w-[320px]"
     >
       {!review ? (
@@ -76,12 +76,18 @@ export default function ReviewDetailModal({ reviewId, open, onOpenChange }: Prop
       ) : (
         <div className="space-y-5">
           <section className="grid gap-4 border-b border-border/70 pb-5 lg:grid-cols-2">
-            <MetaBlock label="본문" value={review.content} multiline />
+            <MetaBlock label="검토 본문" value={review.content} multiline />
             <MetaBlock
               label="반려 사유"
               value={review.rejectionReason ?? '반려 사유 없음'}
               multiline
             />
+          </section>
+
+          <section className="grid gap-4 border-b border-border/70 pb-5 lg:grid-cols-3">
+            <MetaBlock label="상신자" value={`#${review.submittedBy}`} />
+            <MetaBlock label="결정자" value={review.decidedBy ? `#${review.decidedBy}` : '-'} />
+            <MetaBlock label="취소자" value={review.cancelledBy ? `#${review.cancelledBy}` : '-'} />
           </section>
 
           <section className="grid gap-4 border-b border-border/70 pb-5 lg:grid-cols-2">

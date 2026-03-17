@@ -45,6 +45,7 @@ export default function TaskListPage() {
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [selectedReviewId, setSelectedReviewId] = useState<number | null>(null);
   const [taskOrderByMilestone, setTaskOrderByMilestone] = useState<Record<string, number[]>>({});
+  const [taskScope, setTaskScope] = useState<'milestone' | 'timeline' | 'mine'>('milestone');
   const [calendarCursor, setCalendarCursor] = useState(() => {
     const baseDate = taskMeta[0]?.dueDate ?? new Date().toISOString();
     const base = new Date(baseDate);
@@ -76,12 +77,22 @@ export default function TaskListPage() {
     [milestones, taskMeta, tasks],
   );
 
+  const scopedTaskItems = useMemo(() => {
+    if (taskScope === 'mine') {
+      return taskItems
+        .filter((task) => task.assigneeName === currentProject?.ownerName)
+        .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+    }
+
+    return [...taskItems].sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+  }, [currentProject?.ownerName, taskItems, taskScope]);
+
   const sourceOrderByMilestone = useMemo(() => {
     return milestones.reduce<Record<string, number[]>>((acc, milestone) => {
-      acc[milestone.id] = taskItems.filter((task) => task.milestoneId === milestone.id).map((task) => task.id);
+      acc[milestone.id] = scopedTaskItems.filter((task) => task.milestoneId === milestone.id).map((task) => task.id);
       return acc;
     }, {});
-  }, [taskItems, milestones]);
+  }, [scopedTaskItems, milestones]);
 
   const reviewQueries = useQueries({
     queries: taskItems.map((task) => ({
@@ -103,15 +114,15 @@ export default function TaskListPage() {
   const selectedTaskReviewsQuery = useTaskReviews(selectedTaskId ?? 0, Boolean(selectedTaskId));
   const selectedTaskReviews = selectedTaskReviewsQuery.data ?? [];
   const latestSelectedReview = selectedTaskReviews[0] ?? null;
-  const groupedByStatus = groupTasksByStatus(taskItems);
+  const groupedByStatus = groupTasksByStatus(scopedTaskItems);
   const reviewCount = groupedByStatus.IN_REVIEW.length;
   const completedCount = groupedByStatus.COMPLETED.length;
-  const activeAssignees = new Set(taskItems.map((task) => task.assigneeName)).size;
+  const activeAssignees = new Set(scopedTaskItems.map((task) => task.assigneeName)).size;
 
   function getMilestoneTasks(milestoneId: string) {
     const fallbackOrder = sourceOrderByMilestone[milestoneId] ?? [];
     const taskMap = new Map(
-      taskItems.filter((task) => task.milestoneId === milestoneId).map((task) => [task.id, task] as const),
+      scopedTaskItems.filter((task) => task.milestoneId === milestoneId).map((task) => [task.id, task] as const),
     );
     const currentOrder = taskOrderByMilestone[milestoneId] ?? fallbackOrder;
 
@@ -153,8 +164,8 @@ export default function TaskListPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <section className="flex flex-wrap items-end justify-between gap-3 border-b border-border/70 pb-3">
+    <div className="space-y-5">
+      <section className="flex flex-wrap items-end justify-between gap-3 border-b border-border/70 pb-4 pt-2">
         <div className="flex flex-wrap items-center gap-5">
           <InlineStat label="마일스톤" value={`${milestones.length}개`} icon={<Rows3 size={15} />} />
           <InlineStat label="검토중" value={`${reviewCount}건`} icon={<SendHorizontal size={15} />} />
@@ -168,11 +179,32 @@ export default function TaskListPage() {
         </div>
       </section>
 
-      <section className="min-w-0 border-t border-border/70 bg-background">
+      <section className="min-w-0 border-t border-border/70 bg-background pt-2">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <ScopeButton active={taskScope === 'milestone'} onClick={() => setTaskScope('milestone')}>
+                마일스톤별 보기
+              </ScopeButton>
+              <ScopeButton active={taskScope === 'timeline'} onClick={() => setTaskScope('timeline')}>
+                시간순 보기
+              </ScopeButton>
+              <ScopeButton active={taskScope === 'mine'} onClick={() => setTaskScope('mine')}>
+                내 업무만
+              </ScopeButton>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {taskScope === 'milestone'
+                ? '마일스톤 단위로 업무를 묶어 봅니다.'
+                : taskScope === 'timeline'
+                  ? '기한이 가까운 순서로 업무를 봅니다.'
+                  : `${currentProject?.ownerName ?? '현재 사용자'}에게 연결된 업무만 봅니다.`}
+            </div>
+          </div>
           {currentView === 'table' ? (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
               <div className="divide-y divide-border/70">
-                {milestones.map((milestone) => {
+                {taskScope === 'milestone'
+                  ? milestones.map((milestone) => {
                   const milestoneTasks = getMilestoneTasks(milestone.id);
                   const total = milestoneTasks.length || 1;
                   const done = milestoneTasks.filter((task) => task.status === 'COMPLETED').length;
@@ -251,14 +283,70 @@ export default function TaskListPage() {
                       </Table>
                     </section>
                   );
-                })}
+                })
+                  : (
+                    <section className="py-2">
+                      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <h2 className="text-base font-semibold tracking-tight text-foreground">
+                            {taskScope === 'mine' ? '내 업무' : '시간순 업무'}
+                          </h2>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {taskScope === 'mine'
+                              ? '현재 운영자에게 연결된 업무만 시간순으로 봅니다.'
+                              : '기한 기준으로 전체 업무를 시간순 정렬합니다.'}
+                          </p>
+                        </div>
+                        <StatusPill tone="slate">{scopedTaskItems.length}건</StatusPill>
+                      </div>
+                      <Table className="border-t border-border/70">
+                        <TableHeader>
+                          <TableRow className="hover:bg-transparent">
+                            <TableHead>업무</TableHead>
+                            <TableHead>마일스톤</TableHead>
+                            <TableHead>담당자</TableHead>
+                            <TableHead>우선순위</TableHead>
+                            <TableHead>상태</TableHead>
+                            <TableHead>기한</TableHead>
+                            <TableHead>진입</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          <SortableContext items={scopedTaskItems.map((task) => task.id)} strategy={verticalListSortingStrategy}>
+                            {scopedTaskItems.map((task) => (
+                              <SortableTaskRow
+                                key={task.id}
+                                task={task}
+                                selected={selectedTask?.id === task.id}
+                                onSelect={() => {
+                                  if (Date.now() < suppressClickUntilRef.current) {
+                                    return;
+                                  }
+                                  setSelectedTaskId(task.id);
+                                }}
+                                onOpenReview={() => {
+                                  const reviewId = latestReviewByTaskId[task.id];
+                                  if (reviewId) {
+                                    setSelectedReviewId(reviewId);
+                                    return;
+                                  }
+                                  setSelectedTaskId(task.id);
+                                }}
+                                showMilestone
+                              />
+                            ))}
+                          </SortableContext>
+                        </TableBody>
+                      </Table>
+                    </section>
+                  )}
               </div>
             </DndContext>
           ) : currentView === 'kanban' ? (
-            <KanbanView items={taskItems} selectedTaskId={selectedTask?.id ?? null} onSelect={setSelectedTaskId} />
+            <KanbanView items={scopedTaskItems} selectedTaskId={selectedTask?.id ?? null} onSelect={setSelectedTaskId} />
           ) : currentView === 'calendar' ? (
             <CalendarView
-              items={taskItems}
+              items={scopedTaskItems}
               cursor={calendarCursor}
               onMoveMonth={(offset) => {
                 setCalendarCursor((current) => {
@@ -277,10 +365,10 @@ export default function TaskListPage() {
               onSelect={setSelectedTaskId}
             />
           ) : currentView === 'chart' ? (
-            <ChartView items={taskItems} milestones={milestones} />
+            <ChartView items={scopedTaskItems} milestones={milestones} />
           ) : (
             <GanttView
-              items={taskItems}
+              items={scopedTaskItems}
               cursor={calendarCursor}
               onMoveMonth={(offset) => {
                 setCalendarCursor((current) => {
@@ -775,11 +863,13 @@ function SortableTaskRow({
   selected,
   onSelect,
   onOpenReview,
+  showMilestone = false,
 }: {
   task: TaskViewItem;
   selected: boolean;
   onSelect: () => void;
   onOpenReview: () => void;
+  showMilestone?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
@@ -817,6 +907,7 @@ function SortableTaskRow({
           </div>
         </div>
       </TableCell>
+      {showMilestone ? <TableCell>{task.milestoneName}</TableCell> : null}
       <TableCell>{task.assigneeName}</TableCell>
       <TableCell>
         <StatusPill tone={task.priority === 'HIGH' ? 'rose' : task.priority === 'MEDIUM' ? 'amber' : 'teal'}>
@@ -864,6 +955,31 @@ function InlineStat({ label, value, icon }: { label: string; value: string; icon
         <div className="mt-0.5 text-lg font-semibold tracking-tight text-foreground">{value}</div>
       </div>
     </div>
+  );
+}
+
+function ScopeButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        'rounded-full border px-3 py-1.5 text-sm transition',
+        active
+          ? 'border-primary/30 bg-primary/8 text-foreground'
+          : 'border-border/70 text-muted-foreground hover:border-border hover:text-foreground',
+      ].join(' ')}
+    >
+      {children}
+    </button>
   );
 }
 

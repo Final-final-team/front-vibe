@@ -44,12 +44,12 @@ export default function ReviewInboxPage() {
   const reviewRows = inboxRows.filter(
     (row): row is typeof row & { latestReview: NonNullable<typeof row.latestReview> } => Boolean(row.latestReview),
   );
-  const visibleRows = reviewRows.length > 0 ? reviewRows : inboxRows;
+  const visibleRows = inboxRows;
   const emptyTask = inboxRows.find((row) => row.meta.taskId === emptyTaskId)?.task ?? null;
 
   return (
-    <div className="space-y-4">
-      <section className="flex flex-wrap items-end justify-between gap-3 border-b border-border/70 pb-4">
+    <div className="space-y-5">
+      <section className="flex flex-wrap items-end justify-between gap-3 border-b border-border/70 pb-5 pt-2">
         <div className="flex flex-wrap items-center gap-5">
           <InlineStat label="검토 대기" value={`${waitingQueue.length}건`} icon={<SendHorizontal size={15} />} />
           <InlineStat label="최근 승인" value={`${approved.length}건`} icon={<FileSearch size={15} />} />
@@ -62,8 +62,8 @@ export default function ReviewInboxPage() {
         </div>
       </section>
 
-      <section className="border-t border-border/70 bg-background">
-        <div className="flex items-end justify-between gap-3 border-b border-border/70 pb-4 pt-4">
+      <section className="border-t border-border/70 bg-background pt-2">
+        <div className="flex items-end justify-between gap-3 border-b border-border/70 pb-5 pt-4">
           <div>
             <h2 className="text-base font-semibold tracking-tight text-foreground">검토 보관함</h2>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -86,27 +86,18 @@ export default function ReviewInboxPage() {
               <TableHead>현재 상태</TableHead>
               <TableHead>최신 라운드</TableHead>
               <TableHead>상신 시각</TableHead>
+              <TableHead>처리 시각</TableHead>
               <TableHead className="text-right">상세</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {visibleRows.map(({ meta, task, latestReview }) => (
-              <TableRow
-                key={meta.taskId}
-                className="cursor-pointer transition hover:bg-muted/20"
-                onClick={() => {
-                  if (latestReview) {
-                    setSelectedReviewId(latestReview.reviewId);
-                    return;
-                  }
-                  setEmptyTaskId(meta.taskId);
-                }}
-              >
+            {visibleRows.length > 0 ? visibleRows.map(({ meta, task, latestReview }) => (
+              <TableRow key={meta.taskId} className="transition hover:bg-muted/20">
                 <TableCell className="py-4">
                   <div className="min-w-0">
-                    <div className="font-semibold text-foreground">{task?.title}</div>
+                    <div className="font-semibold text-foreground">{task?.title ?? `업무 #${meta.taskId}`}</div>
                     <div className="mt-1 line-clamp-2 text-sm leading-6 text-muted-foreground">
-                      {task?.summary}
+                      {task?.summary ?? '검토 대상 업무 정보가 아직 연결되지 않았습니다.'}
                     </div>
                   </div>
                 </TableCell>
@@ -159,12 +150,21 @@ export default function ReviewInboxPage() {
                       })
                     : '미상신'}
                 </TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  {latestReview?.decidedAt
+                    ? new Date(latestReview.decidedAt).toLocaleDateString('ko-KR', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                    : '-'}
+                </TableCell>
                 <TableCell className="text-right">
                   <button
                     type="button"
                     className="inline-flex items-center gap-1 text-xs font-medium text-primary"
-                    onClick={(event) => {
-                      event.stopPropagation();
+                    onClick={() => {
                       if (latestReview) {
                         setSelectedReviewId(latestReview.reviewId);
                         return;
@@ -177,7 +177,13 @@ export default function ReviewInboxPage() {
                   </button>
                 </TableCell>
               </TableRow>
-            ))}
+            )) : (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
+                  아직 연결된 검토 대상이 없습니다.
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </section>
