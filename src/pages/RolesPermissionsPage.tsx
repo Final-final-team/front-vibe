@@ -16,7 +16,6 @@ export default function RolesPermissionsPage() {
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
   const [detailRoleId, setDetailRoleId] = useState<string | null>(null);
   const [permissionRoleId, setPermissionRoleId] = useState<string | null>(null);
-  const [catalogOpen, setCatalogOpen] = useState(false);
   const [showPolicyStatements, setShowPolicyStatements] = useState(false);
   const [permissionOverrides, setPermissionOverrides] = useState<RolePermissionOverrides>({});
   const [draftPermissionKeys, setDraftPermissionKeys] = useState<string[]>([]);
@@ -69,17 +68,14 @@ export default function RolesPermissionsPage() {
       </section>
 
       <section className="border-t border-border/70 pt-8">
-        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold tracking-tight text-foreground">역할 카탈로그</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              역할 / 권한 화면은 역할 정책을 설계하는 곳입니다. 사람에게 역할을 연결하는 조작은 멤버 화면에서만 진행합니다.
-            </p>
+          <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold tracking-tight text-foreground">역할 카탈로그</h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                역할 / 권한 화면은 역할 정책을 설계하는 곳입니다. 사람에게 역할을 연결하는 조작은 멤버 화면에서만 진행합니다.
+              </p>
+            </div>
           </div>
-          <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => setCatalogOpen(true)}>
-            전체 권한 보기
-          </Button>
-        </div>
 
         <div className="grid gap-10 xl:grid-cols-[380px_minmax(0,1fr)]">
           <aside className="space-y-3 border-t border-border/60 pt-4">
@@ -127,7 +123,7 @@ export default function RolesPermissionsPage() {
                       <ChevronRight size={14} />
                     </Button>
                     <Button type="button" variant="ghost" className="h-8 rounded-lg px-3 text-sm font-medium text-primary" onClick={() => openPermissionModal(role.id)}>
-                      권한 보기
+                      권한 관리
                     </Button>
                   </div>
                 </div>
@@ -158,62 +154,46 @@ export default function RolesPermissionsPage() {
                     />
                     <RoleCountCard label="적용 범위" value={`project/${currentProject?.code ?? 'default'}/*`} wide />
                   </div>
+                  <div className="mt-5 flex flex-wrap gap-2 border-t border-border/60 pt-4">
+                    <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => setDetailRoleId(selectedRole.id)}>
+                      상세 보기
+                    </Button>
+                    <Button type="button" className="rounded-xl px-4" onClick={() => openPermissionModal(selectedRole.id)}>
+                      전체 권한 관리
+                    </Button>
+                  </div>
                 </div>
 
-                <div className="grid gap-8 border-t border-border/60 pt-8 lg:grid-cols-[minmax(0,1fr)_340px]">
-                  <div className="space-y-6">
-                    <div>
-                      <div className="mb-4 text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">허용 권한 요약</div>
-                      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                        {categories.map((category) => {
-                          const count = selectedPermissionDefinitions.filter((permission) => permission.category === category).length;
-                          if (count === 0) return null;
-                          return (
-                            <div key={category} className="rounded-[22px] border border-border/70 bg-background px-4 py-4">
-                              <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">{category}</div>
-                              <div className="mt-2 text-xl font-semibold tracking-tight text-foreground">{count}개</div>
-                              <div className="mt-1 text-sm text-muted-foreground">현재 역할에 허용됨</div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="mb-4 text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">현재 허용 권한</div>
-                      <div className="grid gap-3 md:grid-cols-2">
-                        {selectedPermissionDefinitions.map((permission) => (
-                          <div key={permission.key} className="rounded-[22px] border border-border/70 bg-background px-4 py-4">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-foreground">{permission.name}</span>
-                              <StatusPill tone="blue">허용</StatusPill>
-                            </div>
-                            <p className="mt-2 text-sm leading-6 text-muted-foreground">{permission.description}</p>
+                <div className="space-y-6 border-t border-border/60 pt-8">
+                  <div>
+                    <div className="mb-4 text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">허용 권한 요약</div>
+                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                      {categories.map((category) => {
+                        const count = selectedPermissionDefinitions.filter((permission) => permission.category === category).length;
+                        if (count === 0) return null;
+                        return (
+                          <div key={category} className="rounded-[22px] border border-border/70 bg-background px-4 py-4">
+                            <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">{category}</div>
+                            <div className="mt-2 text-xl font-semibold tracking-tight text-foreground">{count}개</div>
+                            <div className="mt-1 text-sm text-muted-foreground">현재 역할에 허용됨</div>
                           </div>
-                        ))}
-                      </div>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    <div className="rounded-[24px] border border-border/70 bg-muted/15 px-4 py-4 text-sm leading-6 text-muted-foreground">
-                      역할 카드에서는 정책 문장을 숨기고, 권한 설명과 허용 범위만 빠르게 읽게 합니다.
-                    </div>
-                    <div className="rounded-[24px] border border-border/70 bg-background px-4 py-4 text-sm">
-                      <div className="text-muted-foreground">적용 범위</div>
-                      <div className="mt-1 font-medium text-foreground">project/{currentProject?.code ?? 'default'}/*</div>
-                    </div>
-                    <div className="rounded-[24px] border border-border/70 bg-background px-4 py-4 text-sm">
-                      <div className="text-muted-foreground">권한 관리 주체</div>
-                      <div className="mt-1 font-medium text-foreground">최종관리자만 수정 가능</div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => setDetailRoleId(selectedRole.id)}>
-                        상세 보기
-                      </Button>
-                      <Button type="button" className="rounded-xl px-4" onClick={() => openPermissionModal(selectedRole.id)}>
-                        권한 보기
-                      </Button>
+                  <div>
+                    <div className="mb-4 text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">현재 허용 권한</div>
+                    <div className="space-y-3">
+                      {selectedPermissionDefinitions.map((permission) => (
+                        <div key={permission.key} className="flex items-start justify-between gap-4 border-b border-border/60 pb-3">
+                          <div className="min-w-0">
+                            <div className="font-medium text-foreground">{permission.name}</div>
+                            <p className="mt-2 text-sm leading-6 text-muted-foreground">{permission.description}</p>
+                          </div>
+                          <StatusPill tone="blue">허용</StatusPill>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -298,7 +278,7 @@ export default function RolesPermissionsPage() {
           }
         }}
         title={permissionRole ? `${permissionRole.name} 권한 보기` : ''}
-        description="최종관리자는 현재 역할에 허용할 권한을 추가하거나 제거할 수 있습니다."
+        description="최종관리자는 현재 역할에 부여할 전체 권한을 허용 또는 미허용으로 조정합니다."
         badges={
           permissionRole ? (
             <>
@@ -356,35 +336,6 @@ export default function RolesPermissionsPage() {
         ) : null}
       </AppModal>
 
-      <AppModal
-        open={catalogOpen}
-        onOpenChange={setCatalogOpen}
-        title="전체 권한 보기"
-        description="현재 시스템에 정의된 권한 카탈로그를 카테고리별로 확인합니다."
-        size="md"
-        className="sm:max-w-[760px]"
-        footer={
-          <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => setCatalogOpen(false)}>
-            닫기
-          </Button>
-        }
-      >
-        <div className="max-h-[62vh] space-y-6 overflow-y-auto pr-1">
-          {groupedCatalog.map(({ category, items }) => (
-            <section key={category} className="border-t border-border/60 pt-4 first:border-t-0 first:pt-0">
-              <h3 className="text-base font-semibold text-foreground">{category}</h3>
-              <div className="mt-3 space-y-3">
-                {items.map((permission) => (
-                  <div key={permission.key} className="border-b border-border/60 pb-3">
-                    <div className="font-medium text-foreground">{permission.name}</div>
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{permission.description}</p>
-                  </div>
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
-      </AppModal>
     </div>
   );
 }

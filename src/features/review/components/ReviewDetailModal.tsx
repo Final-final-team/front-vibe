@@ -33,44 +33,12 @@ export default function ReviewDetailModal({ reviewId, open, onOpenChange }: Prop
           </>
         ) : null
       }
-      side={
-        review ? (
-          <div className="space-y-5">
-            <div>
-              <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">처리 메타</div>
-              <div className="mt-3 space-y-3 text-sm text-muted-foreground">
-                <MetaLine label="상신 시각" value={formatDate(review.submittedAt)} />
-                <MetaLine label="처리 시각" value={formatDate(review.decidedAt)} />
-                <MetaLine label="취소 시각" value={formatDate(review.cancelledAt)} />
-                <MetaLine label="잠금 버전" value={`v${review.lockVersion}`} />
-                <MetaLine label="참조자" value={`${review.references.length}명`} />
-                <MetaLine label="추가 검토자" value={`${review.additionalReviewers.length}명`} />
-                <MetaLine label="첨부" value={`${review.attachments.length}개`} />
-                <MetaLine label="코멘트" value={`${review.comments.length}개`} />
-              </div>
-            </div>
-            <div>
-              <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">최근 이력</div>
-              <div className="mt-3 space-y-2">
-                {(historiesQuery.data ?? []).slice(0, 4).map((history) => (
-                  <div key={history.historyId} className="border-b border-border/50 pb-2 text-sm">
-                    <div className="font-medium text-foreground">{getHistoryActionLabel(history.actionType)}</div>
-                    <div className="mt-1 text-muted-foreground">{formatDate(history.occurredAt)}</div>
-                    {history.reason ? <div className="mt-1 text-muted-foreground">{history.reason}</div> : null}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        ) : null
-      }
       footer={
         <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => onOpenChange(false)}>
           닫기
         </Button>
       }
       size="xl"
-      sideClassName="lg:max-w-[320px]"
     >
       {!review ? (
         <div className="rounded-2xl border border-dashed border-border/70 px-4 py-8 text-sm text-muted-foreground">
@@ -83,6 +51,13 @@ export default function ReviewDetailModal({ reviewId, open, onOpenChange }: Prop
             <SummaryTile label="라운드" value={`${review.roundNo}차`} />
             <SummaryTile label="잠금 버전" value={`v${review.lockVersion}`} />
             <SummaryTile label="연결 업무" value={task?.title ?? `업무 #${review.taskId}`} />
+          </section>
+
+          <section className="grid gap-4 border-b border-border/70 pb-5 md:grid-cols-2 xl:grid-cols-4">
+            <MetaCompact label="상신 시각" value={formatDate(review.submittedAt)} />
+            <MetaCompact label="처리 시각" value={formatDate(review.decidedAt)} />
+            <MetaCompact label="취소 시각" value={formatDate(review.cancelledAt)} />
+            <MetaCompact label="참여자 수" value={`참조 ${review.references.length}명 · 검토 ${review.additionalReviewers.length}명`} />
           </section>
 
           <section className="grid gap-4 border-b border-border/70 pb-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
@@ -144,6 +119,21 @@ export default function ReviewDetailModal({ reviewId, open, onOpenChange }: Prop
               multiline
             />
           </section>
+
+          <section className="border-t border-border/70 pt-5">
+            <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">최근 이력</div>
+            <div className="mt-4 space-y-3">
+              {(historiesQuery.data ?? []).slice(0, 6).map((history) => (
+                <div key={history.historyId} className="rounded-2xl border border-border/70 bg-muted/10 px-4 py-4 text-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="font-medium text-foreground">{getHistoryActionLabel(history.actionType)}</div>
+                    <div className="text-muted-foreground">{formatDate(history.occurredAt)}</div>
+                  </div>
+                  {history.reason ? <div className="mt-2 text-muted-foreground">{history.reason}</div> : null}
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
       )}
     </AppModal>
@@ -155,15 +145,6 @@ function SummaryTile({ label, value }: { label: string; value: string }) {
     <div className="border border-border/70 bg-muted/10 px-4 py-4">
       <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">{label}</div>
       <div className="mt-2 text-sm font-semibold leading-6 text-foreground">{value}</div>
-    </div>
-  );
-}
-
-function MetaLine({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-4 border-b border-border/50 pb-2">
-      <span>{label}</span>
-      <span className="font-medium text-foreground">{value}</span>
     </div>
   );
 }
@@ -180,6 +161,15 @@ function MetaBlock({ label, value, multiline = false }: { label: string; value: 
       >
         {value}
       </div>
+    </div>
+  );
+}
+
+function MetaCompact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-border/70 bg-muted/10 px-4 py-4">
+      <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">{label}</div>
+      <div className="mt-2 text-sm font-medium leading-6 text-foreground">{value}</div>
     </div>
   );
 }
