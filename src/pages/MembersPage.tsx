@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { MailPlus, ShieldCheck, UserCheck, Users } from 'lucide-react';
 import { useProjectMembers, useProjectRoles } from '../features/workspace/hooks';
 import { useWorkspace } from '../features/workspace/use-workspace';
@@ -31,35 +31,17 @@ export default function MembersPage() {
   const [assignmentMemberId, setAssignmentMemberId] = useState<number | null>(null);
   const [draftRoleIds, setDraftRoleIds] = useState<string[]>([]);
 
-  const mergedMembers = useMemo(() => members, [members]);
-  const profileMember = mergedMembers.find((member) => member.id === profileMemberId) ?? null;
-  const assignmentMember = mergedMembers.find((member) => member.id === assignmentMemberId) ?? null;
+  const profileMember = members.find((member) => member.id === profileMemberId) ?? null;
+  const assignmentMember = members.find((member) => member.id === assignmentMemberId) ?? null;
 
-  const invitedCount = mergedMembers.filter((member) => member.inviteStatus === 'INVITED').length;
-  const activeCount = mergedMembers.filter((member) => member.inviteStatus === 'ACTIVE').length;
-  const pendingCount = mergedMembers.filter((member) => member.inviteStatus !== 'ACTIVE').length;
+  const invitedCount = members.filter((member) => member.inviteStatus === 'INVITED').length;
+  const activeCount = members.filter((member) => member.inviteStatus === 'ACTIVE').length;
+  const pendingCount = members.filter((member) => member.inviteStatus !== 'ACTIVE').length;
   const profileRoles = roles.filter((role) => profileMember?.roleIds.includes(role.id));
   const profilePermissionKeys = [...new Set(profileRoles.flatMap((role) => role.permissionKeys))];
 
   const effectiveRoleIds = draftRoleIds.length > 0 ? draftRoleIds : assignmentMember?.roleIds ?? [];
   const effectiveRoles = roles.filter((role) => effectiveRoleIds.includes(role.id));
-  const effectivePermissionKeys = [...new Set(effectiveRoles.flatMap((role) => role.permissionKeys))];
-  const permissionPreview = (roleIds: string[]) => {
-    const permissionNames = [
-      ...new Set(
-        roles
-          .filter((role) => roleIds.includes(role.id))
-          .flatMap((role) => role.permissionKeys)
-          .slice(0, 3),
-      ),
-    ];
-
-    if (permissionNames.length === 0) {
-      return ['권한 없음'];
-    }
-
-    return permissionNames.map((key) => buildPermissionLabel(key));
-  };
 
   function toggleRole(roleId: string) {
     setDraftRoleIds((current) =>
@@ -108,30 +90,25 @@ export default function MembersPage() {
             </Button>
           </div>
           <div className="overflow-x-auto">
-            <div className="min-w-[1080px]">
-              <div className="grid grid-cols-[1.8fr_0.9fr_1.1fr_1.5fr_1.5fr_1fr_0.9fr] border-b border-gray-200 pb-3 text-xs font-semibold uppercase tracking-[0.14em] text-gray-400">
+            <div className="min-w-[980px]">
+              <div className="grid grid-cols-[2fr_0.9fr_1.1fr_1.7fr_1fr_0.9fr] border-b border-gray-200 pb-3 text-xs font-semibold uppercase tracking-[0.14em] text-gray-400">
                 <div>멤버</div>
                 <div>상태</div>
                 <div>소속 팀</div>
                 <div>연결 역할</div>
-                <div>권한 미리보기</div>
                 <div>최근 활동</div>
                 <div className="text-right">관리</div>
               </div>
               <div className="divide-y divide-gray-100">
-                {mergedMembers.map((member) => (
-                  <div
+                {members.map((member) => (
+                  <button
                     key={member.id}
-                    className="grid grid-cols-[1.8fr_0.9fr_1.1fr_1.5fr_1.5fr_1fr_0.9fr] gap-4 py-4 text-sm"
+                    type="button"
+                    onClick={() => setProfileMemberId(member.id)}
+                    className="grid w-full grid-cols-[2fr_0.9fr_1.1fr_1.7fr_1fr_0.9fr] gap-4 py-4 text-left text-sm transition hover:bg-muted/10"
                   >
                     <div>
-                      <button
-                        type="button"
-                        className="font-semibold text-gray-900 transition hover:text-primary"
-                        onClick={() => setProfileMemberId(member.id)}
-                      >
-                        {member.name}
-                      </button>
+                      <div className="font-semibold text-gray-900">{member.name}</div>
                       <div className="mt-1 text-gray-500">{member.email}</div>
                     </div>
                     <div className="flex items-center">
@@ -154,13 +131,6 @@ export default function MembersPage() {
                         );
                       })}
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {permissionPreview(member.roleIds).map((label) => (
-                        <StatusPill key={`${member.id}-${label}`} tone="slate">
-                          {label}
-                        </StatusPill>
-                      ))}
-                    </div>
                     <div className="flex items-center text-gray-500">
                       {member.lastActiveAt ? formatDate(member.lastActiveAt) : '아직 미참여'}
                     </div>
@@ -168,15 +138,16 @@ export default function MembersPage() {
                       <Button
                         variant="ghost"
                         className="h-9 rounded-xl px-3 text-sm font-medium"
-                        onClick={() => {
+                        onClick={(event) => {
+                          event.stopPropagation();
                           setAssignmentMemberId(member.id);
                           setDraftRoleIds(member.roleIds);
                         }}
                       >
-                        역할 연결
+                        역할 부여
                       </Button>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -308,8 +279,8 @@ export default function MembersPage() {
             setDraftRoleIds([]);
           }
         }}
-        title={assignmentMember ? `${assignmentMember.name} 역할 연결` : ''}
-        description="멤버에게 직접 권한을 주지 않고 역할만 연결합니다. 선택한 역할이 가진 권한 묶음은 오른쪽에서 바로 확인할 수 있습니다."
+        title={assignmentMember ? `${assignmentMember.name} 역할 부여` : ''}
+        description="멤버에게 직접 권한을 주지 않고 역할만 부여합니다. 권한 설계와 수정은 역할 / 권한 화면에서 관리합니다."
         badges={
           assignmentMember ? (
             <>
@@ -317,35 +288,6 @@ export default function MembersPage() {
               <StatusPill tone="teal">{assignmentMember.team}</StatusPill>
               <StatusPill tone="purple">{effectiveRoles.length}개 역할</StatusPill>
             </>
-          ) : null
-        }
-        side={
-          assignmentMember ? (
-            <div className="space-y-5">
-              <div>
-                <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">권한 반영 결과</div>
-                <div className="mt-3 space-y-2">
-                  {effectivePermissionKeys.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-border/70 px-4 py-4 text-sm leading-6 text-muted-foreground">
-                      역할을 선택하면 해당 멤버에게 연결될 권한 묶음이 여기 표시됩니다.
-                    </div>
-                  ) : (
-                    effectivePermissionKeys.map((permissionKey) => (
-                      <div key={permissionKey} className="flex items-center justify-between gap-3 border-b border-border/50 pb-2 text-sm">
-                        <span className="font-medium text-foreground">{buildPermissionLabel(permissionKey)}</span>
-                        <StatusPill tone="blue">권한 반영</StatusPill>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-              <div>
-                <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">적용 원칙</div>
-                <div className="mt-3 rounded-2xl border border-border/70 bg-muted/15 px-4 py-4 text-sm leading-6 text-muted-foreground">
-                  멤버 화면에서는 역할만 연결합니다. 권한 추가/삭제와 정책 문장 관리는 <span className="font-semibold text-foreground">역할 / 권한</span> 화면에서 다룹니다.
-                </div>
-              </div>
-            </div>
           ) : null
         }
         footer={
@@ -356,12 +298,11 @@ export default function MembersPage() {
                 닫기
               </Button>
               <Button type="button" className="rounded-xl px-4" onClick={() => setAssignmentMemberId(null)}>
-                현재 안으로 검토
+                역할 적용
               </Button>
             </div>
           </div>
         }
-        sideClassName="lg:max-w-[340px]"
       >
         {assignmentMember ? (
           <div className="space-y-5">
@@ -430,13 +371,6 @@ export default function MembersPage() {
                             <StatusPill tone={active ? 'blue' : 'slate'}>{active ? '선택됨' : '미선택'}</StatusPill>
                           </div>
                           <p className="mt-2 text-sm leading-6 text-muted-foreground">{role.description}</p>
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            {role.permissionKeys.slice(0, 3).map((permissionKey) => (
-                              <StatusPill key={permissionKey} tone="slate">
-                                {buildPermissionLabel(permissionKey)}
-                              </StatusPill>
-                            ))}
-                          </div>
                         </div>
                         <div className="text-xs font-semibold text-muted-foreground">{role.permissionKeys.length}개 권한</div>
                       </div>

@@ -14,19 +14,21 @@ export default function RolesPermissionsPage() {
   const { data: members = [] } = useProjectMembers(currentProject?.id ?? null);
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
   const [detailRoleId, setDetailRoleId] = useState<string | null>(null);
+  const visiblePermissions = useMemo(() => permissions.filter((permission) => permission.key !== 'AUDIT_LOG_VIEW'), [permissions]);
 
   const selectedRole = roles.find((role) => role.id === selectedRoleId) ?? roles[0];
   const detailRole = roles.find((role) => role.id === detailRoleId) ?? null;
-  const assignedMembers = members.filter((member) => selectedRole?.memberIds.includes(member.id));
   const categories = useMemo(
-    () => [...new Set(permissions.map((permission) => permission.category))],
-    [permissions],
+    () => [...new Set(visiblePermissions.map((permission) => permission.category))],
+    [visiblePermissions],
   );
-  const policyStatements = (selectedRole?.permissionKeys ?? []).map((permissionKey) => buildPolicyStatement(permissionKey));
+  const policyStatements = (selectedRole?.permissionKeys ?? [])
+    .filter((permissionKey) => permissionKey !== 'AUDIT_LOG_VIEW')
+    .map((permissionKey) => buildPolicyStatement(permissionKey));
   const selectedRoleCategories = categories
     .map((category) => ({
       category,
-      count: permissions.filter(
+      count: visiblePermissions.filter(
         (permission) => permission.category === category && selectedRole?.permissionKeys.includes(permission.key),
       ).length,
     }))
@@ -35,9 +37,9 @@ export default function RolesPermissionsPage() {
     () =>
       categories.map((category) => ({
         category,
-        items: permissions.filter((permission) => permission.category === category),
+        items: visiblePermissions.filter((permission) => permission.category === category),
       })),
-    [categories, permissions],
+    [categories, visiblePermissions],
   );
 
   return (
@@ -167,46 +169,26 @@ export default function RolesPermissionsPage() {
             </div>
           </section>
 
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <section className="border-t border-border/70 pt-4">
-              <div className="mb-4">
-                <h2 className="text-base font-semibold tracking-tight text-foreground">멤버 할당</h2>
-                <p className="mt-1 text-sm text-muted-foreground">현재 선택된 역할에 연결된 프로젝트 멤버</p>
+          <section className="border-t border-border/70 pt-4">
+            <div className="mb-4">
+              <h2 className="text-base font-semibold tracking-tight text-foreground">권한 설계 원칙</h2>
+              <p className="mt-1 text-sm text-muted-foreground">멤버에게 역할을 연결하는 조작은 멤버 화면에서 진행하고, 이 화면은 역할 정책과 권한 집합의 설계만 담당합니다.</p>
+            </div>
+            <div className="grid gap-4 lg:grid-cols-3">
+              <div className="border-b border-border/70 pb-4">
+                <div className="text-sm font-semibold text-foreground">역할은 정책 묶음</div>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">직접 권한을 사람에게 주지 않고, 역할에 권한을 모아 반복 가능한 정책 단위로 관리합니다.</p>
               </div>
-              <div className="space-y-3">
-                {assignedMembers.length === 0 ? (
-                  <div className="border-b border-dashed border-border/70 px-0 py-6 text-sm text-gray-500">
-                    아직 이 역할에 연결된 멤버가 없습니다.
-                  </div>
-                ) : (
-                  assignedMembers.map((member) => (
-                    <div
-                      key={member.id}
-                      className="flex items-center justify-between gap-4 border-b border-border/60 px-0 py-3"
-                    >
-                      <div>
-                        <div className="font-semibold text-gray-900">{member.name}</div>
-                        <div className="mt-1 text-sm text-gray-500">{member.team}</div>
-                      </div>
-                      <StatusPill tone="teal">{member.inviteStatus === 'ACTIVE' ? '활성' : '대기'}</StatusPill>
-                    </div>
-                  ))
-                )}
+              <div className="border-b border-border/70 pb-4">
+                <div className="text-sm font-semibold text-foreground">멤버 할당은 별도 흐름</div>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">운영자는 멤버 화면에서 사람을 고르고 역할만 부여합니다. 권한 변경은 이 화면에서만 처리합니다.</p>
               </div>
-            </section>
-
-            <section className="border-t border-border/70 pt-4">
-              <div className="mb-4">
-                <h2 className="text-base font-semibold tracking-tight text-foreground">정책 미확정</h2>
-                <p className="mt-1 text-sm text-muted-foreground">이벤트스토밍에서 아직 비어 있는 지점</p>
+              <div className="border-b border-border/70 pb-4">
+                <div className="text-sm font-semibold text-foreground">로그는 별도 페이지</div>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">감사 로그와 변경 이력 탐색은 별도 로그 페이지에서 다루고, 역할 상세에서는 정책 자체만 보여줍니다.</p>
               </div>
-              <ul className="space-y-3 text-sm leading-6 text-gray-600">
-                <li>역할 삭제/해제 이벤트와 감사 로그 표현은 아직 확정되지 않았습니다.</li>
-                <li>전역 역할과 프로젝트 역할 혼합 모델은 범위에서 제외되어 있습니다.</li>
-                <li>권한 변경이 기존 승인 효력에 미치는 영향은 review 정책과 맞춰야 합니다.</li>
-              </ul>
-            </section>
-          </div>
+            </div>
+          </section>
         </div>
       </div>
 
@@ -219,11 +201,13 @@ export default function RolesPermissionsPage() {
         }}
         title={detailRole?.name ?? ''}
         description={detailRole?.description}
+        className="w-[min(920px,calc(100vw-2.5rem))] max-w-[calc(100vw-2.5rem)] sm:max-w-[920px]"
+        bodyClassName="gap-6 px-5 py-5 lg:grid-cols-[minmax(0,1fr)_240px]"
+        footerClassName="px-5 py-3"
         badges={
           detailRole ? (
             <>
               <StatusPill tone="purple">역할 정책</StatusPill>
-              <StatusPill tone="slate">{detailRole.memberIds.length}명 연결</StatusPill>
               <StatusPill tone="blue">{detailRole.permissionKeys.length}개 권한</StatusPill>
             </>
           ) : null
@@ -239,33 +223,23 @@ export default function RolesPermissionsPage() {
                     <span className="font-medium text-foreground">project/{currentProject?.code ?? 'default'}/*</span>
                   </div>
                   <div className="flex items-center justify-between border-b border-border/50 pb-2">
-                    <span>연결 멤버 수</span>
-                    <span className="font-medium text-foreground">{detailRole.memberIds.length}명</span>
-                  </div>
-                  <div className="flex items-center justify-between border-b border-border/50 pb-2">
                     <span>권한 카테고리</span>
-                    <span className="font-medium text-foreground">{categories.length}개</span>
+                    <span className="font-medium text-foreground">{selectedRoleCategories.length}개</span>
                   </div>
                 </div>
               </div>
               <div>
-                <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">연결 멤버</div>
-                <div className="mt-3 space-y-2">
-                  {members
-                    .filter((member) => detailRole.memberIds.includes(member.id))
-                    .map((member) => (
-                      <div key={member.id} className="flex items-center justify-between border-b border-border/50 pb-2 text-sm">
-                        <span className="font-medium text-foreground">{member.name}</span>
-                        <StatusPill tone="teal">{member.team}</StatusPill>
-                      </div>
-                    ))}
+                <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">운영 메모</div>
+                <div className="mt-3 rounded-2xl border border-border/70 bg-muted/15 px-4 py-4 text-sm leading-6 text-muted-foreground">
+                  멤버 할당은 멤버 화면에서 처리합니다. 이 모달에서는 역할이 가진 정책과 허용 범위만 검토합니다.
                 </div>
               </div>
             </div>
           ) : null
         }
+        sideClassName="lg:max-w-[240px]"
         footer={
-          <Button type="button" variant="outline" size="lg" className="min-w-24 rounded-xl px-4" onClick={() => setDetailRoleId(null)}>
+          <Button type="button" variant="outline" className="min-w-24 rounded-xl px-4" onClick={() => setDetailRoleId(null)}>
             닫기
           </Button>
         }
