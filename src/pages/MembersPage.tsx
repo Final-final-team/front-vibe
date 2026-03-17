@@ -253,7 +253,7 @@ export default function MembersPage() {
         open={invitePlanOpen}
         onOpenChange={setInvitePlanOpen}
         title="멤버 초대 기능 준비 중"
-        description="초대 발송, 토큰 검증, 수락/만료 처리 플로우는 사용자/이메일 도메인이 정리된 뒤 연결합니다."
+        description="초대 발송, 토큰 검증, 수락/만료 처리 플로우는 사용자/이메일 체계가 정리된 뒤 연결합니다."
         badges={
           <>
             <StatusPill tone="blue">초대 플로우</StatusPill>

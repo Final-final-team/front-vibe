@@ -339,7 +339,7 @@ export default function TaskListPage() {
               <MetaRow label="시작" value={formatDate(selectedTask.startDate)} />
               <MetaRow label="우선순위" value={getPriorityLabel(selectedTask.priority)} />
               <MetaRow label="현재 상태" value={getStatusLabel(selectedTask.status)} />
-              <MetaRow label="도메인" value={selectedTask.domain} />
+              <MetaRow label="업무 영역" value={selectedTask.domain} />
               <MetaRow label="마일스톤" value={selectedTask.milestoneName} />
               <MetaRow label="담당자" value={selectedTask.assigneeName} />
               <MetaRow label="연결 검토" value={`${selectedTaskReviews.length}건`} />
@@ -349,9 +349,9 @@ export default function TaskListPage() {
                 <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground">업무 메모</div>
                 <p className="break-keep text-sm leading-6 text-muted-foreground">{selectedTask.summary}</p>
                 <div className="rounded-2xl border border-border/70 bg-muted/10 px-4 py-4 text-sm leading-6 text-muted-foreground">
-                  이 업무는 <span className="font-semibold text-foreground">{selectedTask.domain}</span> 도메인에 속하고, 현재{' '}
+                  이 업무는 <span className="font-semibold text-foreground">{selectedTask.domain}</span> 업무 영역에 속하고, 현재{' '}
                   <span className="font-semibold text-foreground">{selectedTask.milestoneName}</span> 마일스톤 안에서 운영됩니다.
-                  실제 task 도메인 개발이 완료되면 체크리스트, 산출물 규칙, 상태 전이 정책이 이 영역에 함께 표시됩니다.
+                  실제 task 기능 개발이 완료되면 체크리스트, 산출물 규칙, 상태 전이 정책이 이 영역에 함께 표시됩니다.
                 </div>
               </div>
               <div className="space-y-2">

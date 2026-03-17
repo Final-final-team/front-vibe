@@ -1,4 +1,5 @@
 import type {
+  AuditLogItem,
   PermissionDefinition,
   ProjectMember,
   ProjectMilestone,
@@ -346,7 +347,7 @@ const taskMetaByProject: Record<string, ProjectTaskMeta[]> = {
       milestoneId: 'milestone-review-core',
       assigneeId: 101,
       assigneeName: '김하늘',
-      domain: '검토',
+      domain: '검토 운영',
       priority: 'HIGH',
       dueDate: '2026-03-14T09:00:00Z',
     },
@@ -356,7 +357,7 @@ const taskMetaByProject: Record<string, ProjectTaskMeta[]> = {
       milestoneId: 'milestone-review-core',
       assigneeId: 201,
       assigneeName: '박정민',
-      domain: '정책',
+      domain: '정책 관리',
       priority: 'MEDIUM',
       dueDate: '2026-03-18T09:00:00Z',
     },
@@ -366,7 +367,7 @@ const taskMetaByProject: Record<string, ProjectTaskMeta[]> = {
       milestoneId: 'milestone-artifacts',
       assigneeId: 301,
       assigneeName: '최민서',
-      domain: '첨부',
+      domain: '파일 관리',
       priority: 'MEDIUM',
       dueDate: '2026-03-12T09:00:00Z',
     },
@@ -386,7 +387,7 @@ const taskMetaByProject: Record<string, ProjectTaskMeta[]> = {
       milestoneId: 'milestone-member-rbac',
       assigneeId: 101,
       assigneeName: '김하늘',
-      domain: '권한',
+      domain: '역할 정책',
       priority: 'LOW',
       dueDate: '2026-03-22T09:00:00Z',
     },
@@ -398,7 +399,7 @@ const taskMetaByProject: Record<string, ProjectTaskMeta[]> = {
       milestoneId: 'milestone-ops-template',
       assigneeId: 501,
       assigneeName: '정서윤',
-      domain: '템플릿',
+      domain: '운영 템플릿',
       priority: 'HIGH',
       dueDate: '2026-03-21T09:00:00Z',
     },
@@ -408,7 +409,7 @@ const taskMetaByProject: Record<string, ProjectTaskMeta[]> = {
       milestoneId: 'milestone-ops-template',
       assigneeId: 502,
       assigneeName: '오현우',
-      domain: '운영',
+      domain: '운영 보드',
       priority: 'MEDIUM',
       dueDate: '2026-03-23T09:00:00Z',
     },
@@ -418,9 +419,76 @@ const taskMetaByProject: Record<string, ProjectTaskMeta[]> = {
       milestoneId: 'milestone-audit',
       assigneeId: 501,
       assigneeName: '정서윤',
-      domain: '로그',
+      domain: '변경 이력',
       priority: 'HIGH',
       dueDate: '2026-03-29T09:00:00Z',
+    },
+  ],
+};
+
+const auditLogsByProject: Record<string, AuditLogItem[]> = {
+  'spark-console': [
+    {
+      id: 'log-101',
+      projectId: 'spark-console',
+      occurredAt: '2026-03-17T01:10:00Z',
+      actorName: '김하늘',
+      actionLabel: '역할 정책 수정',
+      targetLabel: 'Project Admin',
+      area: '역할 정책',
+      summary: '검토 승인과 반려 권한 범위를 정리하고 역할 설명을 수정했습니다.',
+    },
+    {
+      id: 'log-102',
+      projectId: 'spark-console',
+      occurredAt: '2026-03-16T08:40:00Z',
+      actorName: '박정민',
+      actionLabel: '검토 승인',
+      targetLabel: '승인 큐 응답 시간 줄이기',
+      area: '검토 운영',
+      summary: '2차 검토 라운드를 승인하고 첨부 확인 메모를 남겼습니다.',
+    },
+    {
+      id: 'log-103',
+      projectId: 'spark-console',
+      occurredAt: '2026-03-16T03:20:00Z',
+      actorName: '이서진',
+      actionLabel: '멤버 초대 재발송',
+      targetLabel: '한유진',
+      area: '멤버십',
+      summary: '만료된 초대를 재발송하고 기본 역할을 Observer로 설정했습니다.',
+    },
+    {
+      id: 'log-104',
+      projectId: 'spark-console',
+      occurredAt: '2026-03-15T10:05:00Z',
+      actorName: '최민서',
+      actionLabel: '첨부 버전 교체',
+      targetLabel: '첨부 버전 관리 UX 개선',
+      area: '파일 관리',
+      summary: '검토 첨부 시안 파일을 최신 버전으로 교체했습니다.',
+    },
+  ],
+  'lighthouse-ops': [
+    {
+      id: 'log-201',
+      projectId: 'lighthouse-ops',
+      occurredAt: '2026-03-16T06:15:00Z',
+      actorName: '정서윤',
+      actionLabel: '운영 템플릿 수정',
+      targetLabel: '주간 운영 점검 템플릿 정비',
+      area: '운영 템플릿',
+      summary: '주간 점검 항목과 에스컬레이션 기준을 최신 운영 규칙에 맞췄습니다.',
+    },
+    {
+      id: 'log-202',
+      projectId: 'lighthouse-ops',
+      occurredAt: '2026-03-15T11:25:00Z',
+      actorName: '오현우',
+      actionLabel: '운영 큐 정렬',
+      targetLabel: '온콜 대응 큐 화면 정리',
+      area: '운영 보드',
+      summary: '긴급도 기준 정렬과 담당자 노출 순서를 조정했습니다.',
     },
   ],
 };
@@ -447,4 +515,8 @@ export async function getProjectMilestones(projectId: string) {
 
 export async function getProjectTaskMeta(projectId: string) {
   return taskMetaByProject[projectId] ?? [];
+}
+
+export async function getProjectAuditLogs(projectId: string) {
+  return auditLogsByProject[projectId] ?? [];
 }

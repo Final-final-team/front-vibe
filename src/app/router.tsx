@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import App from '../App';
+import AuditLogsPage from '../pages/AuditLogsPage';
 import MembersPage from '../pages/MembersPage';
 import MilestonesPage from '../pages/MilestonesPage';
 import NotFoundPage from '../pages/NotFoundPage';
@@ -19,6 +20,7 @@ export const router = createBrowserRouter([
     errorElement: <NotFoundPage />,
     children: [
       { index: true, element: <Navigate to="/tasks" replace /> },
+      { path: '/logs', element: <AuditLogsPage /> },
       { path: '/members', element: <MembersPage /> },
       { path: '/roles', element: <RolesPermissionsPage /> },
       { path: '/milestones', element: <MilestonesPage /> },

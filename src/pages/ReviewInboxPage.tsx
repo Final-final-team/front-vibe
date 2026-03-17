@@ -74,7 +74,7 @@ export default function ReviewInboxPage() {
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead>업무</TableHead>
-              <TableHead>도메인</TableHead>
+              <TableHead>업무 영역</TableHead>
               <TableHead>현재 상태</TableHead>
               <TableHead>최신 라운드</TableHead>
               <TableHead>진입</TableHead>
@@ -150,7 +150,7 @@ export default function ReviewInboxPage() {
                         }}
                       >
                         <Eye size={14} />
-                        검토
+                        상세 보기
                       </Link>
                     </Button>
                     {latestReview && (

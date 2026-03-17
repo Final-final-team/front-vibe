@@ -66,6 +66,7 @@ export default function ReviewDetailModal({ reviewId, open, onOpenChange }: Prop
           닫기
         </Button>
       }
+      className="w-[min(980px,calc(100vw-2.5rem))] max-w-[calc(100vw-2.5rem)] sm:max-w-[980px]"
       sideClassName="lg:max-w-[320px]"
     >
       {!review ? (

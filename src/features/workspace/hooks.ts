@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import {
   getPermissions,
+  getProjectAuditLogs,
   getProjectMembers,
   getProjectMilestones,
   getProjectRoles,
@@ -12,6 +13,7 @@ export const workspaceKeys = {
   projects: ['workspace', 'projects'] as const,
   members: (projectId: string) => ['workspace', projectId, 'members'] as const,
   permissions: ['workspace', 'permissions'] as const,
+  auditLogs: (projectId: string) => ['workspace', projectId, 'auditLogs'] as const,
   roles: (projectId: string) => ['workspace', projectId, 'roles'] as const,
   milestones: (projectId: string) => ['workspace', projectId, 'milestones'] as const,
   taskMeta: (projectId: string) => ['workspace', projectId, 'taskMeta'] as const,
@@ -36,6 +38,14 @@ export function usePermissions() {
   return useQuery({
     queryKey: workspaceKeys.permissions,
     queryFn: getPermissions,
+  });
+}
+
+export function useProjectAuditLogs(projectId: string | null) {
+  return useQuery({
+    queryKey: workspaceKeys.auditLogs(projectId ?? 'none'),
+    queryFn: () => getProjectAuditLogs(projectId ?? ''),
+    enabled: Boolean(projectId),
   });
 }
 

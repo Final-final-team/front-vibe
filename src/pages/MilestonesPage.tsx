@@ -119,7 +119,7 @@ export default function MilestonesPage() {
                     </div>
                   </div>
                   <div>
-                    <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">연결 도메인</div>
+                    <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">연결 업무 영역</div>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {activeDomains.map((domain) => (
                         <StatusPill key={domain} tone="teal">{domain}</StatusPill>

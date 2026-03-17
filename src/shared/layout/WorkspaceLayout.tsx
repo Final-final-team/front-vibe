@@ -2,6 +2,7 @@ import {
   CalendarClock,
   ChartColumn,
   ChevronRight,
+  History,
   Home,
   KanbanSquare,
   LayoutTemplate,
@@ -93,12 +94,13 @@ export default function WorkspaceLayout({ children }: Props) {
           <SidebarSeparator />
 
           <SidebarGroup>
-            <SidebarGroupLabel>도메인</SidebarGroupLabel>
+            <SidebarGroupLabel>메뉴</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {[
                   { to: '/tasks', label: '업무', icon: LayoutTemplate, count: currentProject?.openTaskCount },
                   { to: '/reviews', label: '검토', icon: CalendarClock, count: currentProject?.reviewQueueCount },
+                  { to: '/logs', label: '감사 로그', icon: History },
                   { to: '/members', label: '멤버', icon: Users, count: currentProject?.memberCount },
                   { to: '/roles', label: '역할 / 권한', icon: ShieldCheck },
                   { to: '/milestones', label: '마일스톤', icon: KanbanSquare, count: currentProject?.milestoneCount },
@@ -297,6 +299,19 @@ function getShellConfig(pathname: string) {
     };
   }
 
+  if (pathname.startsWith('/logs')) {
+    return {
+      domain: 'logs',
+      domainPath: '/logs',
+      title: '감사 로그',
+      subtitle: '운영자가 확인해야 하는 최근 변경 이력과 정책 반영 내역을 조회합니다.',
+      primaryLabel: '로그 보기',
+      primaryTo: '/logs',
+      contextLabel: 'logs',
+      filterLabels: ['작업', '작성자', '업무 영역'],
+    };
+  }
+
   if (pathname.startsWith('/roles')) {
     return {
       domain: 'roles',
@@ -367,7 +382,7 @@ function getShellConfig(pathname: string) {
       domain: 'reviews',
       domainPath: '/reviews',
       title: '검토 보관함',
-      subtitle: '프로젝트 전체 review 큐와 최근 라운드를 모아서 봅니다.',
+      subtitle: '프로젝트 전체 검토 큐와 최근 라운드를 모아서 봅니다.',
       primaryLabel: '검토 큐 보기',
       primaryTo: '/reviews',
       contextLabel: 'reviews',
@@ -380,7 +395,7 @@ function getShellConfig(pathname: string) {
       domain: 'reviews',
       domainPath: '/reviews',
       title: '검토 보드',
-      subtitle: '업무별 review 라운드를 탐색합니다.',
+      subtitle: '업무별 검토 라운드를 탐색합니다.',
       primaryLabel: '검토 상신',
       primaryTo: pathname.endsWith('/reviews') ? `${pathname}/new` : '/reviews',
       contextLabel: 'reviews',

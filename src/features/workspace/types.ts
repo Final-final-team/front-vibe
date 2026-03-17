@@ -61,3 +61,14 @@ export type ProjectTaskMeta = {
   priority: PriorityLevel;
   dueDate: string;
 };
+
+export type AuditLogItem = {
+  id: string;
+  projectId: string;
+  occurredAt: string;
+  actorName: string;
+  actionLabel: string;
+  targetLabel: string;
+  area: string;
+  summary: string;
+};
