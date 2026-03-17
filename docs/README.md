@@ -17,6 +17,8 @@
 - `../WHY/0008-single-project-shell-until-project-api.md`
 - `../WHY/0017-oauth-only-entry-with-single-project-assumption.md`
 - `../WHY/0018-temporary-project-onboarding-before-project-api.md`
+- `../WHY/0019-project-hub-as-main-page.md`
+- `../WHY/0020-project-hub-is-not-a-menu-item.md`
 
 Note:
 - Backend source of truth: [be-api-server](https://github.com/Final-final-team/be-api-server)

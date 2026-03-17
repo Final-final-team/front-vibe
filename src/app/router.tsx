@@ -8,6 +8,7 @@ import MembersPage from '../pages/MembersPage';
 import MilestonesPage from '../pages/MilestonesPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import ProjectOnboardingPage from '../pages/ProjectOnboardingPage';
+import ProjectsHomePage from '../pages/ProjectsHomePage';
 import ReviewDetailPage from '../pages/ReviewDetailPage';
 import ReviewEditorPage from '../pages/ReviewEditorPage';
 import ReviewInboxPage from '../pages/ReviewInboxPage';
@@ -29,6 +30,7 @@ export const router = createBrowserRouter([
     errorElement: <NotFoundPage />,
     children: [
       { index: true, element: <DefaultEntryRedirectPage /> },
+      { path: '/projects', element: <ProjectsHomePage /> },
       { path: '/tasks', element: <DefaultEntryRedirectPage /> },
       { path: '/reviews', element: <DefaultEntryRedirectPage /> },
       { path: '/onboarding/project', element: <ProjectOnboardingPage /> },

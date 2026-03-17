@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { LoaderCircle, ShieldAlert } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
+import { appConfig } from '../../shared/config/app-config';
 import { verifySession } from './api';
 
 type Props = {
@@ -15,7 +16,12 @@ export default function AuthGate({ children }: Props) {
     queryKey: authQueryKey,
     queryFn: verifySession,
     retry: false,
+    enabled: !appConfig.useMock,
   });
+
+  if (appConfig.useMock) {
+    return <>{children}</>;
+  }
 
   if (sessionQuery.isLoading) {
     return (

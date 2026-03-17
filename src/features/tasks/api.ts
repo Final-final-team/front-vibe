@@ -1,5 +1,6 @@
 import { appConfig } from '../../shared/config/app-config';
 import { backendRequest, toBackendApiError } from '../../shared/lib/http';
+import { getMockTasks } from '../review/mock';
 import type { TaskDetail, TaskPageResult, TaskStatus, TaskSummary } from './types';
 
 type BackendTaskSummary = {
@@ -46,6 +47,33 @@ export async function fetchProjectTasks(
   statuses?: TaskStatus[],
 ) {
   try {
+    if (appConfig.useMock) {
+      const items = getMockTasks()
+        .map<TaskSummary>((task) => ({
+          id: task.id,
+          projectId,
+          title: task.title,
+          status: task.latestReviewStatus === 'IN_PROGRESS' ? 'IN_PROGRESS' : task.latestReviewStatus,
+          priority: task.priority,
+          startDate: task.startDate,
+          dueDate: task.dueDate,
+          authorId: task.authorId,
+          createdAt: task.createdAt,
+          updatedAt: task.updatedAt,
+        }))
+        .filter((task) => !statuses?.length || statuses.includes(task.status));
+
+      return {
+        items,
+        page: 0,
+        size: items.length,
+        totalElements: items.length,
+        totalPages: 1,
+        hasNext: false,
+        hasPrevious: false,
+      } satisfies TaskPageResult<TaskSummary>;
+    }
+
     const searchParams = new URLSearchParams();
 
     statuses?.forEach((status) => searchParams.append('statuses', status));
@@ -65,6 +93,28 @@ export async function fetchProjectTasks(
 
 export async function fetchTaskDetail(projectId: number, taskId: number) {
   try {
+    if (appConfig.useMock) {
+      const task = getMockTasks().find((item) => item.id === taskId);
+
+      if (!task) {
+        throw new Error('Task was not found.');
+      }
+
+      return {
+        id: task.id,
+        projectId,
+        title: task.title,
+        status: task.latestReviewStatus === 'IN_PROGRESS' ? 'IN_PROGRESS' : task.latestReviewStatus,
+        priority: task.priority,
+        startDate: task.startDate,
+        dueDate: task.dueDate,
+        authorId: task.authorId,
+        createdAt: task.createdAt,
+        updatedAt: task.updatedAt,
+        description: task.summary,
+      } satisfies TaskDetail;
+    }
+
     const task = await backendRequest<BackendTaskDetail>(
       `/api/projects/${projectId}/tasks/${taskId}`,
     );

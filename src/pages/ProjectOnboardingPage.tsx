@@ -4,10 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { appConfig } from '../shared/config/app-config';
 import { completeProjectOnboarding } from '../shared/lib/project-onboarding';
 
-const defaultProjectPath = `/projects/${appConfig.defaultProjectId}/tasks`;
+const defaultProjectsPath = '/projects';
 
 export default function ProjectOnboardingPage() {
   const navigate = useNavigate();
@@ -46,7 +45,7 @@ export default function ProjectOnboardingPage() {
             onSubmit={(event) => {
               event.preventDefault();
               completeProjectOnboarding({ projectName, projectSummary });
-              navigate(defaultProjectPath, { replace: true });
+              navigate(defaultProjectsPath, { replace: true });
             }}
           >
             <Field label="프로젝트 이름">
@@ -78,7 +77,7 @@ export default function ProjectOnboardingPage() {
 
           <div className="mt-6 flex items-center gap-2 text-sm font-medium text-primary">
             <ArrowRight size={16} />
-            저장 후 `/projects/{appConfig.defaultProjectId}/tasks` 로 이동
+            저장 후 프로젝트 카드 허브로 이동
           </div>
         </section>
       </div>
