@@ -30,6 +30,7 @@ import {
   SidebarProvider,
   SidebarSeparator,
   SidebarTrigger,
+  useSidebar,
 } from '../../components/ui/sidebar';
 import { Input } from '../../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
@@ -50,14 +51,17 @@ export default function WorkspaceLayout({ children }: Props) {
     <SidebarProvider defaultOpen>
       <Sidebar variant="inset" collapsible="offcanvas" className="border-r border-border/60">
         <SidebarHeader className="px-3 py-4">
-          <div className="flex items-center gap-2 px-1">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-sidebar-border bg-background text-primary shadow-sm">
-              <Home size={18} />
+          <div className="flex items-center justify-between gap-2 px-1">
+            <div className="flex min-w-0 items-center gap-2">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-sidebar-border bg-background text-primary shadow-sm">
+                <Home size={18} />
+              </div>
+              <div className="min-w-0">
+                <div className="truncate text-sm font-semibold text-sidebar-foreground">front-vibe</div>
+                <div className="text-xs text-sidebar-foreground/70">협업 워크스페이스</div>
+              </div>
             </div>
-            <div className="min-w-0">
-              <div className="truncate text-sm font-semibold text-sidebar-foreground">front-vibe</div>
-              <div className="text-xs text-sidebar-foreground/70">협업 워크스페이스</div>
-            </div>
+            <SidebarTrigger className="h-8 w-8 rounded-md border border-sidebar-border/80 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground" />
           </div>
           <div className="relative mt-3">
             <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sidebar-foreground/55" />
@@ -175,9 +179,7 @@ export default function WorkspaceLayout({ children }: Props) {
             <Header
               title={shell.title}
               subtitle={shell.subtitle}
-              leadingAction={
-                <SidebarTrigger className="h-8 w-8 rounded-md border border-border/70 text-muted-foreground hover:bg-muted hover:text-foreground" />
-              }
+              leadingAction={<CollapsedSidebarTrigger />}
               projects={projects.map((project) => ({
                 id: project.id,
                 name: project.name,
@@ -242,6 +244,18 @@ export default function WorkspaceLayout({ children }: Props) {
         </div>
       </SidebarInset>
     </SidebarProvider>
+  );
+}
+
+function CollapsedSidebarTrigger() {
+  const { state } = useSidebar();
+
+  if (state !== 'collapsed') {
+    return null;
+  }
+
+  return (
+    <SidebarTrigger className="h-8 w-8 rounded-md border border-border/70 text-muted-foreground hover:bg-muted hover:text-foreground" />
   );
 }
 

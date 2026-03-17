@@ -51,7 +51,8 @@ export default function TaskListPage() {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 2,
+        delay: 170,
+        tolerance: 8,
       },
     }),
   );
@@ -224,7 +225,7 @@ export default function TaskListPage() {
         }
       }}>
         {selectedTask ? (
-          <DialogContent className="max-w-3xl rounded-lg p-0">
+          <DialogContent className="max-w-5xl rounded-[28px] border border-border/80 p-0 shadow-[0_28px_90px_rgba(15,23,42,0.18)]">
             <DialogHeader className="border-b border-border/70 px-5 py-4">
               <div className="flex flex-wrap items-center gap-2">
                 <StatusPill tone="teal">{selectedTask.domain}</StatusPill>
@@ -237,7 +238,7 @@ export default function TaskListPage() {
               </DialogDescription>
             </DialogHeader>
 
-            <div className="grid gap-6 px-5 py-5 lg:grid-cols-[minmax(0,1fr)_240px]">
+            <div className="grid gap-8 px-6 py-6 lg:grid-cols-[minmax(0,1fr)_280px]">
               <div className="space-y-4">
                 <div className="grid gap-3 border-b border-border/70 pb-4">
                   <MetaRow label="기한" value={formatDate(selectedTask.dueDate)} />
@@ -253,7 +254,7 @@ export default function TaskListPage() {
                 </div>
               </div>
 
-              <div className="space-y-3 border-l border-border/70 pl-5">
+              <div className="space-y-3 border-l border-border/70 pl-6">
                 <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground">바로가기</div>
                 <div className="flex flex-col gap-2">
                   <Button asChild className="h-9 rounded-md justify-between px-3">
@@ -270,7 +271,7 @@ export default function TaskListPage() {
                 </div>
               </div>
             </div>
-            <DialogFooter className="border-t border-border/70 px-5 py-3">
+            <DialogFooter className="border-t border-border/70 px-6 py-4">
               <Button type="button" variant="outline" className="rounded-md" onClick={() => setSelectedTaskId(null)}>
                 닫기
               </Button>
@@ -567,31 +568,22 @@ function SortableTaskRow({
     <tr
       ref={setNodeRef}
       data-slot="table-row"
+      {...attributes}
+      {...listeners}
+      onClick={onSelect}
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
+        touchAction: 'none',
       }}
       className={[
-        'border-b transition-colors hover:bg-muted/30',
+        'cursor-pointer select-none border-b transition-colors hover:bg-muted/30',
         selected ? 'bg-primary/7' : '',
         isDragging ? 'border-primary/20 bg-background shadow-[0_12px_28px_rgba(15,23,42,0.08)]' : '',
       ].join(' ')}
     >
-      <TableCell className="relative py-4">
-        <button
-          {...attributes}
-          {...listeners}
-          onClick={onSelect}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault();
-              onSelect();
-            }
-          }}
-          className="absolute inset-0 z-0 cursor-grab active:cursor-grabbing"
-          style={{ touchAction: 'none' }}
-        />
-        <div className="relative z-10 flex items-start gap-3">
+      <TableCell className="py-4">
+        <div className="flex items-start gap-3">
           <span className="mt-0.5 text-muted-foreground/60">
             <GripVertical size={16} />
           </span>
@@ -612,7 +604,7 @@ function SortableTaskRow({
       </TableCell>
       <TableCell>{formatDate(task.dueDate)}</TableCell>
       <TableCell>
-        <div className="relative z-10 flex items-center gap-3">
+        <div className="flex items-center gap-3">
           <Link
             to={`/tasks/${task.id}/reviews`}
             className="text-sm font-semibold text-primary hover:text-primary/80"
