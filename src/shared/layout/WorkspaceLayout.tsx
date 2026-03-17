@@ -109,6 +109,8 @@ export default function WorkspaceLayout({ children }: Props) {
                     {[
                       { to: `${projectBasePath}/tasks`, domainKey: 'tasks', label: '업무', icon: LayoutTemplate, count: currentProject?.openTaskCount },
                       { to: `${projectBasePath}/reviews`, domainKey: 'reviews', label: '검토', icon: CalendarClock, count: currentProject?.reviewQueueCount },
+                      { to: `${projectBasePath}/members`, domainKey: 'members', label: '멤버', icon: Home },
+                      { to: `${projectBasePath}/roles`, domainKey: 'roles', label: '권한', icon: ChevronRight },
                     ].map((item) => (
                       <SidebarMenuItem key={item.to}>
                         <SidebarMenuButton asChild isActive={shell.domainPath === item.domainKey} tooltip={item.label}>
