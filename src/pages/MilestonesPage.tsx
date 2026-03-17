@@ -38,6 +38,8 @@ type MilestoneDraft = {
   health: ProjectMilestone['health'];
 };
 
+type MilestoneViewFilter = 'ALL' | 'AT_RISK' | 'IN_REVIEW' | 'COMPLETE';
+
 export default function MilestonesPage() {
   const { currentProject } = useWorkspace();
   const { data: remoteMilestones = [] } = useProjectMilestones(currentProject?.id ?? null);
@@ -46,6 +48,8 @@ export default function MilestonesPage() {
   const [createdMilestones, setCreatedMilestones] = useState<ProjectMilestone[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [detailMilestoneId, setDetailMilestoneId] = useState<string | null>(null);
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [viewFilter, setViewFilter] = useState<MilestoneViewFilter>('ALL');
   const [draft, setDraft] = useState<MilestoneDraft>({
     name: '',
     summary: '',
@@ -88,6 +92,25 @@ export default function MilestonesPage() {
     [milestones, taskItems],
   );
 
+  const filteredMilestoneCards = useMemo(() => {
+    const keyword = searchKeyword.trim().toLowerCase();
+
+    return milestoneCards.filter(({ milestone, reviewCount, riskCount }) => {
+      const matchesKeyword =
+        keyword.length === 0 ||
+        milestone.name.toLowerCase().includes(keyword) ||
+        milestone.summary.toLowerCase().includes(keyword);
+
+      if (!matchesKeyword) return false;
+
+      if (viewFilter === 'AT_RISK') return milestone.health === 'AT_RISK' || riskCount > 0;
+      if (viewFilter === 'IN_REVIEW') return reviewCount > 0;
+      if (viewFilter === 'COMPLETE') return milestone.health === 'COMPLETE';
+
+      return true;
+    });
+  }, [milestoneCards, searchKeyword, viewFilter]);
+
   const detailMilestone = useMemo(
     () => milestones.find((item) => item.id === detailMilestoneId) ?? null,
     [milestones, detailMilestoneId],
@@ -120,10 +143,10 @@ export default function MilestonesPage() {
   return (
     <div className="space-y-7">
       <section className="pt-6">
-        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold tracking-tight text-foreground">마일스톤 목록</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">메인 화면에서는 마일스톤 이름, 연결 위험, 진행률만 보고 상세는 모달에서 확인합니다.</p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">검색/필터로 현재 대응이 필요한 마일스톤만 빠르게 추려 확인할 수 있습니다.</p>
           </div>
           <Button type="button" className="rounded-xl px-4" onClick={() => setCreateOpen(true)}>
             <Plus size={15} />
@@ -131,52 +154,95 @@ export default function MilestonesPage() {
           </Button>
         </div>
 
-        <div className="grid gap-4 xl:grid-cols-2">
-          {milestoneCards.map(({ milestone, linkedTasks, progress, reviewCount, riskCount }) => (
-            <button
-              key={milestone.id}
-              type="button"
-              onClick={() => setDetailMilestoneId(milestone.id)}
-              className="border-b border-border/70 px-1 py-5 text-left transition hover:bg-muted/10"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-lg font-semibold tracking-tight text-foreground">{milestone.name}</h3>
-                    <StatusPill tone={healthToneMap[milestone.health]}>{healthLabelMap[milestone.health]}</StatusPill>
+        <div className="mb-4 grid gap-3 border-b border-border/70 pb-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <Input
+            value={searchKeyword}
+            onChange={(event) => setSearchKeyword(event.target.value)}
+            placeholder="마일스톤명/요약으로 검색"
+            className="h-10 rounded-xl"
+          />
+          <div className="flex flex-wrap gap-2">
+            {([
+              { value: 'ALL', label: '전체' },
+              { value: 'AT_RISK', label: '위험' },
+              { value: 'IN_REVIEW', label: '검토 대기' },
+              { value: 'COMPLETE', label: '완료' },
+            ] as const).map((filter) => (
+              <button
+                key={filter.value}
+                type="button"
+                onClick={() => setViewFilter(filter.value)}
+                className={[
+                  'rounded-xl border px-3 py-2 text-sm font-medium transition',
+                  viewFilter === filter.value
+                    ? 'border-primary/30 bg-primary/5 text-primary'
+                    : 'border-border/70 text-muted-foreground hover:border-border',
+                ].join(' ')}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {filteredMilestoneCards.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border/70 px-4 py-10 text-center text-sm text-muted-foreground">
+            검색/필터 조건에 맞는 마일스톤이 없습니다.
+          </div>
+        ) : (
+          <div className="grid gap-4 xl:grid-cols-2">
+            {filteredMilestoneCards.map(({ milestone, linkedTasks, progress, reviewCount, riskCount, nextDueTask }) => (
+              <button
+                key={milestone.id}
+                type="button"
+                onClick={() => setDetailMilestoneId(milestone.id)}
+                className="border-b border-border/70 px-1 py-5 text-left transition hover:bg-muted/10"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-lg font-semibold tracking-tight text-foreground">{milestone.name}</h3>
+                      <StatusPill tone={healthToneMap[milestone.health]}>{healthLabelMap[milestone.health]}</StatusPill>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-xl px-4"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setDetailMilestoneId(milestone.id);
+                    }}
+                  >
+                    상세 보기
+                  </Button>
+                </div>
+
+                <div className="mt-4 grid gap-3 md:grid-cols-3">
+                  <InlineInfo label="진행률" value={`${progress}%`} />
+                  <InlineInfo label="연결 위험" value={`${riskCount}건`} />
+                  <InlineInfo label="연결 업무" value={`${linkedTasks.length}건`} />
+                </div>
+
+                {nextDueTask && (
+                  <div className="mt-4 rounded-xl border border-border/70 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+                    다음 액션: <span className="font-medium text-foreground">{nextDueTask.title}</span>
+                  </div>
+                )}
+
+                <div className="mt-4">
+                  <div className="mb-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                    <span>연결 업무 진행률</span>
+                    <span>{reviewCount}건 검토 대기</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-muted/60">
+                    <div className="h-2 rounded-full bg-primary transition-all" style={{ width: `${progress}%` }} />
                   </div>
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="rounded-xl px-4"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setDetailMilestoneId(milestone.id);
-                  }}
-                >
-                  상세 보기
-                </Button>
-              </div>
-
-              <div className="mt-4 grid gap-3 md:grid-cols-3">
-                <InlineInfo label="진행률" value={`${progress}%`} />
-                <InlineInfo label="연결 위험" value={`${riskCount}건`} />
-                <InlineInfo label="연결 업무" value={`${linkedTasks.length}건`} />
-              </div>
-
-              <div className="mt-4">
-                <div className="mb-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
-                  <span>연결 업무 진행률</span>
-                  <span>{reviewCount}건 검토 대기</span>
-                </div>
-                <div className="h-2 rounded-full bg-muted/60">
-                  <div className="h-2 rounded-full bg-primary transition-all" style={{ width: `${progress}%` }} />
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
+              </button>
+            ))}
+          </div>
+        )}
       </section>
 
       <AppModal
@@ -455,5 +521,9 @@ function getProgress(tasks: TaskViewItem[]) {
 
 function isAtRisk(task: TaskViewItem) {
   if (task.status === 'COMPLETED') return false;
-  return new Date(task.dueDate).getTime() < Date.parse('2026-03-16T00:00:00Z');
+  const dueTime = new Date(task.dueDate).getTime();
+  if (Number.isNaN(dueTime)) return false;
+
+  const threeDaysInMs = 3 * 24 * 60 * 60 * 1000;
+  return dueTime < Date.now() + threeDaysInMs;
 }
