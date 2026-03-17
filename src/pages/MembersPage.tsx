@@ -131,13 +131,7 @@ export default function MembersPage() {
                     {member.roleIds.map((roleId) => {
                       const role = roles.find((item) => item.id === roleId);
                       return (
-                        <span
-                          key={roleId}
-                          className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold text-white"
-                          style={{ backgroundColor: role?.color ?? '#6b7280' }}
-                        >
-                          {role?.name ?? roleId}
-                        </span>
+                        <RoleToken key={roleId} label={role?.name ?? roleId} color={role?.color} />
                       );
                     })}
                   </div>
@@ -197,13 +191,7 @@ export default function MembersPage() {
                       {member.roleIds.map((roleId) => {
                         const role = roles.find((item) => item.id === roleId);
                         return (
-                          <span
-                            key={roleId}
-                            className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold text-white"
-                            style={{ backgroundColor: role?.color ?? '#6b7280' }}
-                          >
-                            {role?.name ?? roleId}
-                          </span>
+                          <RoleToken key={roleId} label={role?.name ?? roleId} color={role?.color} />
                         );
                       })}
                     </div>
@@ -260,13 +248,7 @@ export default function MembersPage() {
                 <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">현재 연결 역할</div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {profileRoles.map((role) => (
-                    <span
-                      key={role.id}
-                      className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold text-white"
-                      style={{ backgroundColor: role.color }}
-                    >
-                      {role.name}
-                    </span>
+                    <RoleToken key={role.id} label={role.name} color={role.color} />
                   ))}
                 </div>
               </div>
@@ -418,13 +400,7 @@ export default function MembersPage() {
                     const role = roles.find((item) => item.id === roleId);
 
                     return (
-                      <span
-                        key={roleId}
-                        className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold text-white"
-                        style={{ backgroundColor: role?.color ?? '#6b7280' }}
-                      >
-                        {role?.name ?? roleId}
-                      </span>
+                      <RoleToken key={roleId} label={role?.name ?? roleId} color={role?.color} />
                     );
                   })}
                 </div>
@@ -474,5 +450,20 @@ export default function MembersPage() {
         ) : null}
       </AppModal>
     </div>
+  );
+}
+
+function RoleToken({ label, color }: { label: string; color?: string }) {
+  return (
+    <span
+      className="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium"
+      style={{
+        borderColor: color ?? '#d1d5db',
+        color: color ?? '#475569',
+        backgroundColor: `${color ?? '#f8fafc'}12`,
+      }}
+    >
+      {label}
+    </span>
   );
 }

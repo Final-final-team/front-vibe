@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, Flag, ListTodo, TimerReset } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { AlertTriangle, Flag, ListTodo, Plus, TimerReset } from 'lucide-react';
+import { Input } from '../components/ui/input';
 import { useTasks } from '../features/review/hooks';
 import {
   buildTaskViewItems,
@@ -30,13 +32,29 @@ const healthLabelMap = {
   COMPLETE: '완료',
 } as const;
 
+type MilestoneDraft = {
+  name: string;
+  summary: string;
+  dueDate: string;
+  health: ProjectMilestone['health'];
+};
+
 export default function MilestonesPage() {
   const { currentProject } = useWorkspace();
-  const { data: milestones = [] } = useProjectMilestones(currentProject?.id ?? null);
+  const { data: remoteMilestones = [] } = useProjectMilestones(currentProject?.id ?? null);
   const { data: taskMeta = [] } = useProjectTaskMeta(currentProject?.id ?? null);
   const { data: tasks = [] } = useTasks();
+  const [createdMilestones, setCreatedMilestones] = useState<ProjectMilestone[]>([]);
+  const [createOpen, setCreateOpen] = useState(false);
   const [detailMilestoneId, setDetailMilestoneId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<MilestoneDraft>({
+    name: '',
+    summary: '',
+    dueDate: '2026-03-31T18:00:00Z',
+    health: 'ON_TRACK',
+  });
 
+  const milestones = useMemo(() => [...createdMilestones, ...remoteMilestones], [createdMilestones, remoteMilestones]);
   const taskItems = useMemo(
     () =>
       buildTaskViewItems({
@@ -45,11 +63,6 @@ export default function MilestonesPage() {
         milestones,
       }),
     [milestones, taskMeta, tasks],
-  );
-
-  const detailMilestone = useMemo(
-    () => milestones.find((item) => item.id === detailMilestoneId) ?? null,
-    [milestones, detailMilestoneId],
   );
 
   const milestoneCards = useMemo(
@@ -71,17 +84,43 @@ export default function MilestonesPage() {
           riskCount,
           nextDueTask,
           lastUpdatedTask,
-          activeDomains: [...new Set(linkedTasks.map((task) => task.domain))],
         };
       }),
     [milestones, taskItems],
   );
 
+  const detailMilestone = useMemo(
+    () => milestones.find((item) => item.id === detailMilestoneId) ?? null,
+    [milestones, detailMilestoneId],
+  );
+  const detailBundle = milestoneCards.find((item) => item.milestone.id === detailMilestone?.id) ?? null;
   const totalTasks = taskItems.length;
   const completedTasks = taskItems.filter((task) => task.status === 'COMPLETED').length;
   const atRiskTasks = taskItems.filter((task) => isAtRisk(task)).length;
 
-  const detailBundle = milestoneCards.find((item) => item.milestone.id === detailMilestone?.id) ?? null;
+  function createMilestone() {
+    const trimmedName = draft.name.trim();
+    const trimmedSummary = draft.summary.trim();
+    if (!trimmedName || !trimmedSummary) return;
+
+    const nextMilestone: ProjectMilestone = {
+      id: `custom-milestone-${Date.now()}`,
+      name: trimmedName,
+      summary: trimmedSummary,
+      dueDate: draft.dueDate,
+      health: draft.health,
+      taskIds: [],
+    };
+
+    setCreatedMilestones((current) => [nextMilestone, ...current]);
+    setCreateOpen(false);
+    setDraft({
+      name: '',
+      summary: '',
+      dueDate: '2026-03-31T18:00:00Z',
+      health: 'ON_TRACK',
+    });
+  }
 
   return (
     <div className="space-y-7">
@@ -95,40 +134,48 @@ export default function MilestonesPage() {
       <section className="border-t border-border/70 pt-8">
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h2 className="text-lg font-semibold tracking-tight text-foreground">마일스톤 카탈로그</h2>
+            <h2 className="text-lg font-semibold tracking-tight text-foreground">마일스톤 목록</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              메인 화면에는 마일스톤별 핵심 흐름만 빠르게 읽히게 두고, 연결 업무와 위험 세부는 상세 보기 모달에서 확인합니다.
+              메인 화면에서는 어떤 마일스톤이 진행 중인지, 위험과 진행률이 어떤지까지만 빠르게 보고 상세는 모달에서 확인합니다.
             </p>
           </div>
+          <Button type="button" className="rounded-xl px-4" onClick={() => setCreateOpen(true)}>
+            <Plus size={15} />
+            새 마일스톤 추가
+          </Button>
         </div>
 
         <div className="grid gap-4 xl:grid-cols-2">
-          {milestoneCards.map(({ milestone, linkedTasks, progress, reviewCount, riskCount, nextDueTask, lastUpdatedTask, activeDomains }) => (
-            <div key={milestone.id} className="rounded-[28px] border border-border/70 bg-background px-6 py-6">
+          {milestoneCards.map(({ milestone, linkedTasks, progress, reviewCount, riskCount, nextDueTask }) => (
+            <div key={milestone.id} className="border-b border-border/70 px-1 py-5">
               <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-xl font-semibold tracking-tight text-foreground">{milestone.name}</h3>
+                    <h3 className="text-lg font-semibold tracking-tight text-foreground">{milestone.name}</h3>
                     <StatusPill tone={healthToneMap[milestone.health]}>{healthLabelMap[milestone.health]}</StatusPill>
-                    <StatusPill tone="slate">{linkedTasks.length}개 연결 업무</StatusPill>
                   </div>
-                  <p className="mt-3 text-sm leading-6 text-muted-foreground">{milestone.summary}</p>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{milestone.summary}</p>
                 </div>
                 <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => setDetailMilestoneId(milestone.id)}>
                   상세 보기
                 </Button>
               </div>
 
-              <div className="mt-5 grid gap-3 md:grid-cols-4">
+              <div className="mt-4 grid gap-3 md:grid-cols-4">
                 <InlineInfo label="진행률" value={`${progress}%`} />
+                <InlineInfo label="연결 위험" value={`${riskCount}건`} />
                 <InlineInfo label="검토 대기" value={`${reviewCount}건`} />
-                <InlineInfo label="위험" value={`${riskCount}건`} />
                 <InlineInfo label="다음 마감" value={nextDueTask ? formatDate(nextDueTask.dueDate) : '없음'} />
               </div>
 
-              <div className="mt-5 flex flex-wrap gap-2">
-                {activeDomains.length > 0 ? activeDomains.map((domain) => <StatusPill key={domain} tone="teal">{domain}</StatusPill>) : <StatusPill tone="slate">연결 영역 없음</StatusPill>}
-                {lastUpdatedTask ? <StatusPill tone="purple">최근 갱신 {formatDate(lastUpdatedTask.updatedAt)}</StatusPill> : null}
+              <div className="mt-4">
+                <div className="mb-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                  <span>연결 업무 진행률</span>
+                  <span>{linkedTasks.length}개 업무</span>
+                </div>
+                <div className="h-2 rounded-full bg-muted/60">
+                  <div className="h-2 rounded-full bg-primary transition-all" style={{ width: `${progress}%` }} />
+                </div>
               </div>
             </div>
           ))}
@@ -136,11 +183,84 @@ export default function MilestonesPage() {
       </section>
 
       <AppModal
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        title="새 마일스톤 추가"
+        description="마일스톤 이름, 요약, 목표 마감일을 먼저 만들고 연결 업무는 이후 상세에서 채웁니다."
+        badges={
+          <>
+            <StatusPill tone="blue">마일스톤 생성</StatusPill>
+            <StatusPill tone="slate">연결 업무 0개</StatusPill>
+          </>
+        }
+        size="sm"
+        className="sm:max-w-[640px]"
+        footer={
+          <div className="flex w-full items-center justify-end gap-3">
+            <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => setCreateOpen(false)}>
+              취소
+            </Button>
+            <Button type="button" className="rounded-xl px-4" onClick={createMilestone}>
+              마일스톤 생성
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-5">
+          <FormRow label="마일스톤 이름">
+            <Input
+              value={draft.name}
+              onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
+              placeholder="예: 역할 정책 정비 1차"
+            />
+          </FormRow>
+          <FormRow label="집중 요약">
+            <Input
+              value={draft.summary}
+              onChange={(event) => setDraft((current) => ({ ...current, summary: event.target.value }))}
+              placeholder="이 마일스톤에서 가장 먼저 봐야 할 흐름을 적습니다."
+            />
+          </FormRow>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <FormRow label="목표 마감일">
+              <Input
+                type="date"
+                value={draft.dueDate.slice(0, 10)}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    dueDate: `${event.target.value}T18:00:00Z`,
+                  }))
+                }
+              />
+            </FormRow>
+            <FormRow label="상태">
+              <div className="flex flex-wrap gap-2">
+                {(['ON_TRACK', 'AT_RISK', 'COMPLETE'] as const).map((health) => (
+                  <button
+                    key={health}
+                    type="button"
+                    onClick={() => setDraft((current) => ({ ...current, health }))}
+                    className={[
+                      'rounded-xl border px-3 py-2 text-sm font-medium transition',
+                      draft.health === health
+                        ? 'border-primary/30 bg-primary/5 text-primary'
+                        : 'border-border/70 text-muted-foreground hover:border-border',
+                    ].join(' ')}
+                  >
+                    {healthLabelMap[health]}
+                  </button>
+                ))}
+              </div>
+            </FormRow>
+          </div>
+        </div>
+      </AppModal>
+
+      <AppModal
         open={Boolean(detailMilestone)}
         onOpenChange={(open) => {
-          if (!open) {
-            setDetailMilestoneId(null);
-          }
+          if (!open) setDetailMilestoneId(null);
         }}
         title={detailMilestone?.name ?? ''}
         description={detailMilestone?.summary}
@@ -170,11 +290,7 @@ export default function MilestonesPage() {
             </section>
 
             <section className="grid gap-4 border-b border-border/70 pb-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-              <MetaBlock
-                label="집중 요약"
-                value={buildMilestoneFocusSummary(detailMilestone, detailBundle.linkedTasks, detailBundle.reviewCount)}
-                multiline
-              />
+              <MetaBlock label="집중 요약" value={buildMilestoneFocusSummary(detailMilestone, detailBundle.linkedTasks, detailBundle.reviewCount)} multiline />
               <div className="space-y-4">
                 <MetaBlock
                   label="다음 액션"
@@ -200,7 +316,10 @@ export default function MilestonesPage() {
             <section className="grid gap-4 border-b border-border/70 pb-5 md:grid-cols-3">
               <MetaCompact label="최근 변경" value={detailBundle.lastUpdatedTask ? formatDate(detailBundle.lastUpdatedTask.updatedAt) : '변경 없음'} />
               <MetaCompact label="다음 마감" value={detailBundle.nextDueTask ? formatDate(detailBundle.nextDueTask.dueDate) : '없음'} />
-              <MetaCompact label="업무 영역" value={detailBundle.activeDomains.join(' · ') || '없음'} />
+              <MetaCompact
+                label="업무 영역"
+                value={[...new Set(detailBundle.linkedTasks.map((task) => task.domain))].join(' · ') || '없음'}
+              />
             </section>
 
             <section>
@@ -287,7 +406,12 @@ function MetaBlock({ label, value, multiline = false }: { label: string; value: 
   return (
     <div>
       <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">{label}</div>
-      <div className={['mt-3 rounded-2xl border border-border/70 bg-muted/10 px-4 py-4 text-sm leading-6 text-foreground', multiline ? 'whitespace-pre-wrap break-keep' : ''].join(' ')}>
+      <div
+        className={[
+          'mt-3 rounded-2xl border border-border/70 bg-muted/10 px-4 py-4 text-sm leading-6 text-foreground',
+          multiline ? 'whitespace-pre-wrap break-keep' : '',
+        ].join(' ')}
+      >
         {value}
       </div>
     </div>
@@ -308,6 +432,15 @@ function InfoLine({ label, value }: { label: string; value: string }) {
     <div className="flex items-center justify-between gap-3 border-b border-border/60 pb-2">
       <span>{label}</span>
       <span className="font-medium text-foreground">{value}</span>
+    </div>
+  );
+}
+
+function FormRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div>
+      <div className="mb-2 text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">{label}</div>
+      {children}
     </div>
   );
 }

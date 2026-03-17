@@ -1,53 +1,69 @@
 import { useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, LockKeyhole, Shield, UserCog } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { ChevronDown, ChevronRight, LockKeyhole, Plus, Shield, UserCog } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
 import { usePermissions, useProjectRoles } from '../features/workspace/hooks';
 import { useWorkspace } from '../features/workspace/use-workspace';
 import MetricCard from '../shared/ui/MetricCard';
 import AppModal from '../shared/ui/AppModal';
 import StatusPill from '../shared/ui/StatusPill';
+import type { ProjectRole } from '../features/workspace/types';
 
 type RolePermissionOverrides = Record<string, string[]>;
+type RoleDraft = {
+  name: string;
+  description: string;
+  color: string;
+};
+
+const ROLE_COLOR_PALETTE = ['#2563eb', '#7c3aed', '#0f766e', '#d97706', '#db2777'];
 
 export default function RolesPermissionsPage() {
   const { currentProject } = useWorkspace();
-  const { data: roles = [] } = useProjectRoles(currentProject?.id ?? null);
+  const { data: remoteRoles = [] } = useProjectRoles(currentProject?.id ?? null);
   const { data: permissions = [] } = usePermissions();
+  const [createdRoles, setCreatedRoles] = useState<ProjectRole[]>([]);
+  const [createRoleOpen, setCreateRoleOpen] = useState(false);
   const [detailRoleId, setDetailRoleId] = useState<string | null>(null);
   const [permissionRoleId, setPermissionRoleId] = useState<string | null>(null);
+  const [catalogOpen, setCatalogOpen] = useState(false);
   const [showPolicyStatements, setShowPolicyStatements] = useState(false);
   const [permissionOverrides, setPermissionOverrides] = useState<RolePermissionOverrides>({});
   const [draftPermissionKeys, setDraftPermissionKeys] = useState<string[]>([]);
+  const [roleDraft, setRoleDraft] = useState<RoleDraft>({
+    name: '',
+    description: '',
+    color: ROLE_COLOR_PALETTE[0],
+  });
 
-  const visiblePermissions = useMemo(() => permissions, [permissions]);
+  const roles = useMemo(() => [...remoteRoles, ...createdRoles], [createdRoles, remoteRoles]);
   const roleById = useMemo(() => new Map(roles.map((role) => [role.id, role])), [roles]);
+  const categories = useMemo(() => [...new Set(permissions.map((permission) => permission.category))], [permissions]);
   const detailRole = roleById.get(detailRoleId ?? '') ?? null;
   const permissionRole = roleById.get(permissionRoleId ?? '') ?? null;
   const detailKeys = detailRole ? getEffectivePermissionKeys(detailRole.id, detailRole.permissionKeys, permissionOverrides) : [];
-  const categories = useMemo(() => [...new Set(visiblePermissions.map((permission) => permission.category))], [visiblePermissions]);
+  const detailPermissionDefinitions = permissions.filter((permission) => detailKeys.includes(permission.key));
   const groupedCatalog = categories.map((category) => ({
     category,
-    items: visiblePermissions.filter((permission) => permission.category === category),
+    items: permissions.filter((permission) => permission.category === category),
   }));
-  const detailPermissionDefinitions = visiblePermissions.filter((permission) => detailKeys.includes(permission.key));
 
   function openPermissionModal(roleId: string) {
     const role = roleById.get(roleId);
-    if (!role) {
-      return;
-    }
+    if (!role) return;
     setDraftPermissionKeys(getEffectivePermissionKeys(role.id, role.permissionKeys, permissionOverrides));
     setPermissionRoleId(role.id);
   }
 
   function togglePermission(permissionKey: string) {
-    setDraftPermissionKeys((current) => (current.includes(permissionKey) ? current.filter((item) => item !== permissionKey) : [...current, permissionKey]));
+    setDraftPermissionKeys((current) =>
+      current.includes(permissionKey) ? current.filter((item) => item !== permissionKey) : [...current, permissionKey],
+    );
   }
 
   function saveRolePermissions() {
-    if (!permissionRole) {
-      return;
-    }
+    if (!permissionRole) return;
     setPermissionOverrides((current) => ({
       ...current,
       [permissionRole.id]: draftPermissionKeys,
@@ -55,73 +71,172 @@ export default function RolesPermissionsPage() {
     setPermissionRoleId(null);
   }
 
+  function createRole() {
+    const trimmedName = roleDraft.name.trim();
+    const trimmedDescription = roleDraft.description.trim();
+    if (!trimmedName || !trimmedDescription) return;
+
+    const roleId = `custom-${Date.now()}`;
+    const nextRole: ProjectRole = {
+      id: roleId,
+      name: trimmedName,
+      description: trimmedDescription,
+      color: roleDraft.color,
+      memberIds: [],
+      permissionKeys: [],
+    };
+
+    setCreatedRoles((current) => [nextRole, ...current]);
+    setCreateRoleOpen(false);
+    setRoleDraft({
+      name: '',
+      description: '',
+      color: ROLE_COLOR_PALETTE[0],
+    });
+  }
+
   return (
     <div className="space-y-7">
-      <section className="grid gap-4 xl:grid-cols-3">
-        <MetricCard label="역할 카탈로그" value={`${roles.length}개`} hint="프로젝트 운영자가 설계하는 역할 집합" icon={<Shield size={18} />} />
-        <MetricCard label="부여 가능한 권한" value={`${visiblePermissions.length}개`} hint="역할에 추가하거나 제거할 수 있는 권한" icon={<LockKeyhole size={18} />} />
-        <MetricCard label="권한 카테고리" value={`${categories.length}개`} hint="멤버십, 역할 정책, 일정, 검토 운영" icon={<UserCog size={18} />} />
+      <section className="grid gap-4 xl:grid-cols-4">
+        <MetricCard label="역할 카탈로그" value={`${roles.length}개`} hint="프로젝트 운영 역할" icon={<Shield size={18} />} />
+        <MetricCard label="전체 권한" value={`${permissions.length}개`} hint="현재 정의된 권한 수" icon={<LockKeyhole size={18} />} />
+        <MetricCard label="카테고리" value={`${categories.length}개`} hint="권한 묶음 범주" icon={<UserCog size={18} />} />
+        <MetricCard label="현재 프로젝트" value={currentProject?.code ?? '-'} hint="역할이 적용되는 스코프" icon={<Shield size={18} />} />
       </section>
 
       <section className="border-t border-border/70 pt-8">
-          <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-semibold tracking-tight text-foreground">역할 카탈로그</h2>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                역할 / 권한 화면은 역할 정책을 설계하는 곳입니다. 사람에게 역할을 연결하는 조작은 멤버 화면에서만 진행합니다.
-              </p>
-            </div>
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight text-foreground">역할 카탈로그</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              역할 / 권한 화면은 역할 정책을 설계하는 곳입니다. 사람에게 역할을 연결하는 조작은 멤버 화면에서만 진행합니다.
+            </p>
           </div>
-
-        <div className="border-t border-border/60 pt-4">
-          <div className="grid gap-3 xl:grid-cols-2">
-            {roles.map((role) => {
-              const effectiveKeys = getEffectivePermissionKeys(role.id, role.permissionKeys, permissionOverrides);
-              const categoryCount = categories.filter((category) =>
-                visiblePermissions.some((permission) => permission.category === category && effectiveKeys.includes(permission.key)),
-              ).length;
-              return (
-                <div
-                  key={role.id}
-                  className={[
-                    'rounded-[28px] border border-border/70 bg-background px-5 py-5 text-left transition hover:border-primary/15 hover:bg-muted/[0.18]',
-                  ].join(' ')}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">ROLE</div>
-                      <div className="mt-2 text-lg font-semibold text-foreground">{role.name}</div>
-                      <p className="mt-2 text-sm leading-6 text-muted-foreground">{role.description}</p>
-                    </div>
-                    <StatusPill tone="slate">{effectiveKeys.length}개 권한</StatusPill>
-                  </div>
-                  <div className="mt-4 grid grid-cols-2 gap-2">
-                    <RoleCountCard label="권한" value={`${effectiveKeys.length}개`} />
-                    <RoleCountCard label="카테고리" value={`${categoryCount}개`} />
-                  </div>
-                  <div className="mt-4 flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="h-8 rounded-lg px-3 text-sm font-medium text-primary"
-                      onClick={() => {
-                        setDetailRoleId(role.id);
-                        setShowPolicyStatements(false);
-                      }}
-                    >
-                      상세 보기
-                      <ChevronRight size={14} />
-                    </Button>
-                    <Button type="button" variant="ghost" className="h-8 rounded-lg px-3 text-sm font-medium text-primary" onClick={() => openPermissionModal(role.id)}>
-                      권한 관리
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="flex flex-wrap items-center gap-2">
+            <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => setCatalogOpen(true)}>
+              전체 권한 보기
+            </Button>
+            <Button type="button" className="rounded-xl px-4" onClick={() => setCreateRoleOpen(true)}>
+              <Plus size={15} />
+              새 역할 추가
+            </Button>
           </div>
         </div>
+
+        <div className="grid gap-3 xl:grid-cols-2">
+          {roles.map((role) => {
+            const effectiveKeys = getEffectivePermissionKeys(role.id, role.permissionKeys, permissionOverrides);
+            const categoryCount = categories.filter((category) =>
+              permissions.some((permission) => permission.category === category && effectiveKeys.includes(permission.key)),
+            ).length;
+
+            return (
+              <div key={role.id} className="border-b border-border/70 px-1 py-5">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className="inline-flex h-2.5 w-2.5 rounded-full"
+                        style={{ backgroundColor: role.color }}
+                      />
+                      <h3 className="text-lg font-semibold text-foreground">{role.name}</h3>
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{role.description}</p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <StatusPill tone="slate">{effectiveKeys.length}개 권한</StatusPill>
+                    <StatusPill tone="blue">{categoryCount}개 카테고리</StatusPill>
+                  </div>
+                </div>
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="h-8 rounded-lg px-3 text-sm font-medium text-primary"
+                    onClick={() => {
+                      setDetailRoleId(role.id);
+                      setShowPolicyStatements(false);
+                    }}
+                  >
+                    상세 보기
+                    <ChevronRight size={14} />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="h-8 rounded-lg px-3 text-sm font-medium text-primary"
+                    onClick={() => openPermissionModal(role.id)}
+                  >
+                    권한 관리
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </section>
+
+      <AppModal
+        open={createRoleOpen}
+        onOpenChange={setCreateRoleOpen}
+        title="새 역할 추가"
+        description="새 역할은 이름, 설명, 기본 식별 색상만 먼저 만들고 세부 권한은 이후 권한 관리에서 연결합니다."
+        badges={
+          <>
+            <StatusPill tone="purple">역할 생성</StatusPill>
+            <StatusPill tone="slate">초기 권한 0개</StatusPill>
+          </>
+        }
+        size="sm"
+        className="sm:max-w-[620px]"
+        footer={
+          <div className="flex w-full items-center justify-end gap-3">
+            <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => setCreateRoleOpen(false)}>
+              취소
+            </Button>
+            <Button type="button" className="rounded-xl px-4" onClick={createRole}>
+              역할 생성
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-5">
+          <FormRow label="역할 이름">
+            <Input
+              value={roleDraft.name}
+              onChange={(event) => setRoleDraft((current) => ({ ...current, name: event.target.value }))}
+              placeholder="예: 운영 검토 관리자"
+            />
+          </FormRow>
+          <FormRow label="설명">
+            <Input
+              value={roleDraft.description}
+              onChange={(event) => setRoleDraft((current) => ({ ...current, description: event.target.value }))}
+              placeholder="이 역할이 담당하는 운영 책임을 짧게 설명합니다."
+            />
+          </FormRow>
+          <FormRow label="식별 색상">
+            <div className="flex flex-wrap gap-2">
+              {ROLE_COLOR_PALETTE.map((color) => {
+                const active = roleDraft.color === color;
+                return (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => setRoleDraft((current) => ({ ...current, color }))}
+                    className={[
+                      'h-9 w-9 rounded-full border-2 transition',
+                      active ? 'border-foreground shadow-sm' : 'border-transparent hover:border-border',
+                    ].join(' ')}
+                    style={{ backgroundColor: color }}
+                    aria-label={color}
+                  />
+                );
+              })}
+            </div>
+          </FormRow>
+        </div>
+      </AppModal>
 
       <AppModal
         open={Boolean(detailRole)}
@@ -142,7 +257,7 @@ export default function RolesPermissionsPage() {
           ) : null
         }
         size="md"
-        className="sm:max-w-[700px]"
+        className="sm:max-w-[680px]"
         footer={
           <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => setDetailRoleId(null)}>
             닫기
@@ -152,7 +267,7 @@ export default function RolesPermissionsPage() {
         {detailRole ? (
           <div className="space-y-6">
             <div className="grid gap-4 border-b border-border/70 pb-5">
-              <MetaRow label="리소스 스코프" value={`project/${currentProject?.code ?? 'default'}/*`} />
+              <MetaRow label="적용 범위" value={`project/${currentProject?.code ?? 'default'}/*`} />
               <MetaRow label="허용 권한 수" value={`${detailKeys.length}개`} />
             </div>
             <div>
@@ -170,7 +285,11 @@ export default function RolesPermissionsPage() {
               </div>
             </div>
             <div className="border-t border-border/70 pt-4">
-              <button type="button" className="flex items-center gap-2 text-sm font-medium text-primary" onClick={() => setShowPolicyStatements((current) => !current)}>
+              <button
+                type="button"
+                className="flex items-center gap-2 text-sm font-medium text-primary"
+                onClick={() => setShowPolicyStatements((current) => !current)}
+              >
                 정책 문장 {showPolicyStatements ? '접기' : '보기'}
                 {showPolicyStatements ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
               </button>
@@ -179,7 +298,9 @@ export default function RolesPermissionsPage() {
                   {detailKeys.map((permissionKey) => (
                     <div key={permissionKey} className="flex items-start gap-2 border-b border-border/60 pb-2 text-sm">
                       <StatusPill tone="slate">허용</StatusPill>
-                      <code className="min-w-0 break-all rounded-md bg-muted/35 px-2 py-1 text-[12px] text-foreground">{buildPolicyStatement(permissionKey)}</code>
+                      <code className="min-w-0 break-all rounded-md bg-muted/35 px-2 py-1 text-[12px] text-foreground">
+                        {buildPolicyStatement(permissionKey)}
+                      </code>
                     </div>
                   ))}
                 </div>
@@ -197,29 +318,26 @@ export default function RolesPermissionsPage() {
             setDraftPermissionKeys([]);
           }
         }}
-        title={permissionRole ? `${permissionRole.name} 권한 보기` : ''}
-        description="최종관리자는 현재 역할에 부여할 전체 권한을 허용 또는 미허용으로 조정합니다."
+        title={permissionRole ? `${permissionRole.name} 권한 관리` : ''}
+        description="현재 역할에 부여할 권한을 최종관리자 시점에서 허용 또는 미허용으로 조정합니다."
         badges={
           permissionRole ? (
             <>
               <StatusPill tone="purple">최종관리자 전용</StatusPill>
-              <StatusPill tone="blue">{draftPermissionKeys.length}개 선택</StatusPill>
+              <StatusPill tone="blue">{draftPermissionKeys.length}개 허용</StatusPill>
             </>
           ) : null
         }
         size="md"
-        className="sm:max-w-[760px]"
+        className="sm:max-w-[780px]"
         footer={
-          <div className="flex w-full items-center justify-between gap-3">
-            <div className="text-sm text-muted-foreground">정책 문장은 상세 보기 안에서만 확인합니다.</div>
-            <div className="flex items-center gap-3">
-              <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => setPermissionRoleId(null)}>
-                닫기
-              </Button>
-              <Button type="button" className="rounded-xl px-4" onClick={saveRolePermissions}>
-                권한 저장
-              </Button>
-            </div>
+          <div className="flex w-full items-center justify-end gap-3">
+            <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => setPermissionRoleId(null)}>
+              닫기
+            </Button>
+            <Button type="button" className="rounded-xl px-4" onClick={saveRolePermissions}>
+              권한 저장
+            </Button>
           </div>
         }
       >
@@ -229,7 +347,9 @@ export default function RolesPermissionsPage() {
               <section key={category} className="border-t border-border/60 pt-4 first:border-t-0 first:pt-0">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <h3 className="text-base font-semibold text-foreground">{category}</h3>
-                  <StatusPill tone="slate">{items.filter((item) => draftPermissionKeys.includes(item.key)).length}개 허용</StatusPill>
+                  <StatusPill tone="slate">
+                    {items.filter((item) => draftPermissionKeys.includes(item.key)).length}개 허용
+                  </StatusPill>
                 </div>
                 <div className="space-y-2">
                   {items.map((permission) => {
@@ -239,7 +359,10 @@ export default function RolesPermissionsPage() {
                         key={permission.key}
                         type="button"
                         onClick={() => togglePermission(permission.key)}
-                        className={['flex w-full items-start justify-between gap-4 rounded-2xl border px-4 py-4 text-left transition', active ? 'border-primary/30 bg-primary/5' : 'border-border/70 hover:border-border'].join(' ')}
+                        className={[
+                          'flex w-full items-start justify-between gap-4 rounded-2xl border px-4 py-4 text-left transition',
+                          active ? 'border-primary/30 bg-primary/5' : 'border-border/70 hover:border-border',
+                        ].join(' ')}
                       >
                         <div className="min-w-0">
                           <div className="font-medium text-foreground">{permission.name}</div>
@@ -256,6 +379,37 @@ export default function RolesPermissionsPage() {
         ) : null}
       </AppModal>
 
+      <AppModal
+        open={catalogOpen}
+        onOpenChange={setCatalogOpen}
+        title="전체 권한 보기"
+        description="현재 프로젝트에서 정의된 모든 권한과 설명을 한 줄씩 확인합니다."
+        badges={
+          <>
+            <StatusPill tone="slate">{permissions.length}개 권한</StatusPill>
+            <StatusPill tone="purple">권한 카탈로그</StatusPill>
+          </>
+        }
+        size="md"
+        className="sm:max-w-[760px]"
+        footer={
+          <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => setCatalogOpen(false)}>
+            닫기
+          </Button>
+        }
+      >
+        <div className="max-h-[58vh] space-y-3 overflow-y-auto pr-1">
+          {permissions.map((permission) => (
+            <div key={permission.key} className="border-b border-border/60 pb-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="font-medium text-foreground">{permission.name}</div>
+                <StatusPill tone="slate">{permission.category}</StatusPill>
+              </div>
+              <div className="mt-2 text-sm leading-6 text-muted-foreground">{permission.description}</div>
+            </div>
+          ))}
+        </div>
+      </AppModal>
     </div>
   );
 }
@@ -280,24 +434,11 @@ function MetaRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function RoleCountCard({
-  label,
-  value,
-  wide = false,
-}: {
-  label: string;
-  value: string;
-  wide?: boolean;
-}) {
+function FormRow({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div
-      className={[
-        'rounded-[20px] border border-border/70 bg-background px-4 py-3',
-        wide ? 'md:col-span-1 lg:col-span-1' : '',
-      ].join(' ')}
-    >
-      <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">{label}</div>
-      <div className="mt-2 break-all text-base font-semibold tracking-tight text-foreground">{value}</div>
+    <div>
+      <div className="mb-2 text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">{label}</div>
+      {children}
     </div>
   );
 }
