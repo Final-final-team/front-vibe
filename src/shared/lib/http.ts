@@ -1,5 +1,4 @@
 import { appConfig } from '../config/app-config';
-import { getAccessToken } from './session';
 
 type ApiEnvelope<T> = {
   data: T;
@@ -56,14 +55,9 @@ export function buildBackendHeaders({
   method?: string;
 }) {
   const resolved = new Headers(headers);
-  const token = getAccessToken();
 
   if (contentType && !resolved.has('Content-Type')) {
     resolved.set('Content-Type', 'application/json');
-  }
-
-  if (token && !resolved.has('Authorization')) {
-    resolved.set('Authorization', `Bearer ${token}`);
   }
 
   if (isMutationMethod(method)) {

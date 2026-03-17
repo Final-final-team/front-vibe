@@ -6,7 +6,6 @@ import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
 import { appConfig } from '../../shared/config/app-config';
-import { getAccessToken } from '../../shared/lib/session';
 import { fetchConsentStatuses, fetchRequiredConsentCheck, submitConsents } from './api';
 import type { ConsentStatus } from './types';
 
@@ -22,8 +21,7 @@ const consentKeys = {
 
 export default function ConsentGate({ children }: Props) {
   const queryClient = useQueryClient();
-  const token = getAccessToken();
-  const enabled = !appConfig.useMock && Boolean(token);
+  const enabled = !appConfig.useMock;
 
   const requiredCheckQuery = useQuery({
     queryKey: consentKeys.required,
@@ -75,10 +73,6 @@ export default function ConsentGate({ children }: Props) {
   const allRequiredChecked = requiredTerms.every((term) => agreements[term.code]);
 
   if (appConfig.useMock) {
-    return <>{children}</>;
-  }
-
-  if (!token) {
     return <>{children}</>;
   }
 

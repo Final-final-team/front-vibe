@@ -1,20 +1,24 @@
 import { LoaderCircle } from 'lucide-react';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { appConfig } from '../shared/config/app-config';
 
 const redirectTarget = `/projects/${appConfig.defaultProjectId}/tasks`;
 
 export default function AuthCallbackPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
+    void queryClient.invalidateQueries({ queryKey: ['auth', 'session'] });
+
     const timer = window.setTimeout(() => {
       navigate(redirectTarget, { replace: true });
     }, 400);
 
     return () => window.clearTimeout(timer);
-  }, [navigate]);
+  }, [navigate, queryClient]);
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#f7f8fb_0%,#fbfcfe_100%)] px-6 py-12">
