@@ -3,7 +3,6 @@ import { useTasks } from '../features/review/hooks';
 import { useProjectMilestones, useProjectTaskMeta } from '../features/workspace/hooks';
 import { useWorkspace } from '../features/workspace/use-workspace';
 import { formatDate } from '../shared/lib/format';
-import Card from '../shared/ui/Card';
 import MetricCard from '../shared/ui/MetricCard';
 import StatusPill from '../shared/ui/StatusPill';
 
@@ -53,7 +52,7 @@ export default function MilestonesPage() {
         />
       </section>
 
-      <div className="space-y-6">
+      <div className="space-y-8">
         {milestones.map((milestone) => {
           const linkedTasks = taskMeta
             .filter((task) => task.milestoneId === milestone.id)
@@ -69,19 +68,19 @@ export default function MilestonesPage() {
           const progress = Math.round((done / total) * 100);
 
           return (
-            <Card
-              key={milestone.id}
-              title={milestone.name}
-              description={milestone.summary}
-              action={
+            <section key={milestone.id} className="border-t border-border/70 pt-4">
+              <div className="mb-5 flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-base font-semibold tracking-tight text-foreground">{milestone.name}</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">{milestone.summary}</p>
+                </div>
                 <div className="flex items-center gap-2">
                   <StatusPill tone={healthToneMap[milestone.health]}>
                     {healthLabelMap[milestone.health]}
                   </StatusPill>
                   <StatusPill tone="slate">마감 {formatDate(milestone.dueDate)}</StatusPill>
                 </div>
-              }
-            >
+              </div>
               <div className="space-y-5">
                 <div>
                   <div className="flex items-center justify-between gap-4 text-sm text-gray-600">
@@ -102,7 +101,7 @@ export default function MilestonesPage() {
                   {linkedTasks.map(({ meta, task }) => (
                     <div
                       key={meta.taskId}
-                      className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-4"
+                      className="border-b border-border/60 px-0 py-4"
                     >
                       <div className="flex items-center justify-between gap-3">
                         <div className="font-semibold text-gray-900">{task?.title}</div>
@@ -132,7 +131,7 @@ export default function MilestonesPage() {
                   ))}
                 </div>
               </div>
-            </Card>
+            </section>
           );
         })}
       </div>

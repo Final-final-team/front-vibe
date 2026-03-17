@@ -5,7 +5,6 @@ import { useProjectMembers, useProjectRoles } from '../features/workspace/hooks'
 import { useWorkspace } from '../features/workspace/use-workspace';
 import { formatDate } from '../shared/lib/format';
 import Button from '../shared/ui/Button';
-import Card from '../shared/ui/Card';
 import Dialog from '../shared/ui/Dialog';
 import MetricCard from '../shared/ui/MetricCard';
 import StatusPill from '../shared/ui/StatusPill';
@@ -104,11 +103,14 @@ export default function MembersPage() {
         />
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_360px]">
-        <Card
-          title="프로젝트 멤버"
-          description="초대 상태와 프로젝트 내 역할 연결을 한 화면에서 확인합니다."
-        >
+      <div className="grid gap-10 xl:grid-cols-[minmax(0,1.35fr)_320px]">
+        <section className="border-t border-border/70 pt-4">
+          <div className="mb-4 flex items-end justify-between gap-4">
+            <div>
+              <h2 className="text-base font-semibold tracking-tight text-foreground">프로젝트 멤버</h2>
+              <p className="mt-1 text-sm text-muted-foreground">초대 상태와 프로젝트 내 역할 연결을 한 화면에서 확인합니다.</p>
+            </div>
+          </div>
           <div className="overflow-x-auto">
             <div className="min-w-[900px]">
               <div className="grid grid-cols-[2.1fr_1fr_1.2fr_1.5fr_1fr] border-b border-gray-200 pb-3 text-xs font-semibold uppercase tracking-[0.14em] text-gray-400">
@@ -156,34 +158,39 @@ export default function MembersPage() {
               </div>
             </div>
           </div>
-        </Card>
+        </section>
 
         <div className="space-y-6">
-          <Card
-            title="초대 플로우"
-            description="공개 회원가입 대신 초대 기반 참여 구조를 유지합니다."
-            action={
+          <section className="border-t border-border/70 pt-4">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-base font-semibold tracking-tight text-foreground">초대 플로우</h2>
+                <p className="mt-1 text-sm text-muted-foreground">공개 회원가입 대신 초대 기반 참여 구조를 유지합니다.</p>
+              </div>
               <div id="invite">
                 <Button variant="secondary" onClick={openInvite}>
                   멤버 초대
                 </Button>
               </div>
-            }
-          >
+            </div>
             <div className="space-y-3 text-sm leading-6 text-gray-600">
               <p>1. 운영자가 프로젝트 초대를 발송합니다.</p>
               <p>2. 수신자는 링크를 통해 프로젝트에 합류합니다.</p>
               <p>3. 합류 후 역할 연결이 완료되어야 실제 업무/검토 탭 접근이 열립니다.</p>
             </div>
-          </Card>
+          </section>
 
-          <Card title="온보딩 기준" description="지금 구조에서 가정하고 있는 멤버십 원칙입니다.">
+          <section className="border-t border-border/70 pt-4">
+            <div className="mb-4">
+              <h2 className="text-base font-semibold tracking-tight text-foreground">온보딩 기준</h2>
+              <p className="mt-1 text-sm text-muted-foreground">지금 구조에서 가정하고 있는 멤버십 원칙입니다.</p>
+            </div>
             <ul className="space-y-3 text-sm leading-6 text-gray-600">
               <li>초대 상태는 `대기/수락/만료/거절` 4단계로만 노출합니다.</li>
               <li>권한은 직접 부여하지 않고 반드시 프로젝트 역할을 통해 연결합니다.</li>
               <li>만료/거절 상태는 후속 조치 대상을 분리해서 보이게 유지합니다.</li>
             </ul>
-          </Card>
+          </section>
         </div>
       </div>
 

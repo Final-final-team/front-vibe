@@ -226,6 +226,7 @@ export default function TaskListPage() {
       }}>
         {selectedTask ? (
           <DialogContent className="w-[min(1120px,calc(100vw-3rem))] max-w-[calc(100vw-3rem)] overflow-hidden rounded-[28px] border border-border/80 p-0 shadow-[0_28px_90px_rgba(15,23,42,0.18)] sm:max-w-[1120px]">
+            <div className="m-3 rounded-[22px] border border-border/70 bg-background">
             <DialogHeader className="border-b border-border/70 px-5 py-4">
               <div className="flex flex-wrap items-center gap-2">
                 <StatusPill tone="teal">{selectedTask.domain}</StatusPill>
@@ -276,6 +277,7 @@ export default function TaskListPage() {
                 닫기
               </Button>
             </DialogFooter>
+            </div>
           </DialogContent>
         ) : null}
       </Dialog>

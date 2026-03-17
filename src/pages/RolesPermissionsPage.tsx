@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { LockKeyhole, Shield, UserCog } from 'lucide-react';
 import { useProjectMembers, usePermissions, useProjectRoles } from '../features/workspace/hooks';
 import { useWorkspace } from '../features/workspace/use-workspace';
-import Card from '../shared/ui/Card';
 import MetricCard from '../shared/ui/MetricCard';
 import StatusPill from '../shared/ui/StatusPill';
 
@@ -40,8 +39,12 @@ export default function RolesPermissionsPage() {
         />
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <Card title="역할 리스트" description="프로젝트 단위 RBAC 카탈로그">
+      <div className="grid gap-10 xl:grid-cols-[300px_minmax(0,1fr)]">
+        <section className="border-t border-border/70 pt-4">
+          <div className="mb-4">
+            <h2 className="text-base font-semibold tracking-tight text-foreground">역할 리스트</h2>
+            <p className="mt-1 text-sm text-muted-foreground">프로젝트 단위 RBAC 카탈로그</p>
+          </div>
           <div className="space-y-3">
             {roles.map((role) => (
               <button
@@ -49,10 +52,10 @@ export default function RolesPermissionsPage() {
                 type="button"
                 onClick={() => setSelectedRoleId(role.id)}
                 className={[
-                  'w-full rounded-2xl border px-4 py-4 text-left transition',
+                  'w-full border-b border-border/70 px-0 py-4 text-left transition',
                   selectedRole?.id === role.id
-                    ? 'border-blue-300 bg-blue-50 shadow-[0_8px_24px_rgba(37,99,235,0.08)]'
-                    : 'border-gray-200 bg-white hover:border-gray-300',
+                    ? 'border-primary/40 bg-primary/5'
+                    : 'hover:border-border',
                 ].join(' ')}
               >
                 <div className="flex items-center justify-between gap-3">
@@ -68,20 +71,23 @@ export default function RolesPermissionsPage() {
               </button>
             ))}
           </div>
-        </Card>
+        </section>
 
         <div className="space-y-6">
-          <Card
-            title={selectedRole?.name ?? '역할 상세'}
-            description={selectedRole?.description ?? '역할을 선택하면 상세 권한을 보여줍니다.'}
-            action={<StatusPill tone="purple">프로젝트 전용 역할</StatusPill>}
-          >
+          <section className="border-t border-border/70 pt-4">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-base font-semibold tracking-tight text-foreground">{selectedRole?.name ?? '역할 상세'}</h2>
+                <p className="mt-1 text-sm text-muted-foreground">{selectedRole?.description ?? '역할을 선택하면 상세 권한을 보여줍니다.'}</p>
+              </div>
+              <StatusPill tone="purple">프로젝트 전용 역할</StatusPill>
+            </div>
             <div className="grid gap-5 lg:grid-cols-2">
               {categories.map((category) => {
                 const items = permissions.filter((permission) => permission.category === category);
 
                 return (
-                  <div key={category} className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-4">
+                  <div key={category} className="border-t border-border/60 pt-4">
                     <div className="text-sm font-semibold text-gray-900">{category}</div>
                     <div className="mt-3 space-y-3">
                       {items.map((permission) => {
@@ -90,10 +96,10 @@ export default function RolesPermissionsPage() {
                           <div
                             key={permission.key}
                             className={[
-                              'rounded-2xl border px-3 py-3 text-sm transition',
+                              'border-b border-border/60 px-0 py-3 text-sm transition',
                               enabled
-                                ? 'border-blue-200 bg-white text-gray-700'
-                                : 'border-transparent bg-transparent text-gray-400',
+                                ? 'text-gray-700'
+                                : 'text-gray-400',
                             ].join(' ')}
                           >
                             <div className="flex items-center justify-between gap-3">
@@ -111,20 +117,24 @@ export default function RolesPermissionsPage() {
                 );
               })}
             </div>
-          </Card>
+          </section>
 
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <Card title="멤버 할당" description="현재 선택된 역할에 연결된 프로젝트 멤버">
+            <section className="border-t border-border/70 pt-4">
+              <div className="mb-4">
+                <h2 className="text-base font-semibold tracking-tight text-foreground">멤버 할당</h2>
+                <p className="mt-1 text-sm text-muted-foreground">현재 선택된 역할에 연결된 프로젝트 멤버</p>
+              </div>
               <div className="space-y-3">
                 {assignedMembers.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-sm text-gray-500">
+                  <div className="border-b border-dashed border-border/70 px-0 py-6 text-sm text-gray-500">
                     아직 이 역할에 연결된 멤버가 없습니다.
                   </div>
                 ) : (
                   assignedMembers.map((member) => (
                     <div
                       key={member.id}
-                      className="flex items-center justify-between gap-4 rounded-2xl border border-gray-100 px-4 py-3"
+                      className="flex items-center justify-between gap-4 border-b border-border/60 px-0 py-3"
                     >
                       <div>
                         <div className="font-semibold text-gray-900">{member.name}</div>
@@ -135,15 +145,19 @@ export default function RolesPermissionsPage() {
                   ))
                 )}
               </div>
-            </Card>
+            </section>
 
-            <Card title="정책 미확정" description="이벤트스토밍에서 아직 비어 있는 지점">
+            <section className="border-t border-border/70 pt-4">
+              <div className="mb-4">
+                <h2 className="text-base font-semibold tracking-tight text-foreground">정책 미확정</h2>
+                <p className="mt-1 text-sm text-muted-foreground">이벤트스토밍에서 아직 비어 있는 지점</p>
+              </div>
               <ul className="space-y-3 text-sm leading-6 text-gray-600">
                 <li>역할 삭제/해제 이벤트와 감사 로그 표현은 아직 확정되지 않았습니다.</li>
                 <li>전역 역할과 프로젝트 역할 혼합 모델은 범위에서 제외되어 있습니다.</li>
                 <li>권한 변경이 기존 승인 효력에 미치는 영향은 review 정책과 맞춰야 합니다.</li>
               </ul>
-            </Card>
+            </section>
           </div>
         </div>
       </div>
