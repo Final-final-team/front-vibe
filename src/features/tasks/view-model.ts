@@ -11,6 +11,8 @@ export type TaskViewItem = {
   priority: PriorityLevel;
   dueDate: string;
   startDate: string;
+  createdAt: string;
+  updatedAt: string;
   domain: string;
   milestoneId: string;
   milestoneName: string;
@@ -43,9 +45,11 @@ export function buildTaskViewItems({
         status: task.latestReviewStatus,
         assigneeId: meta.assigneeId,
         assigneeName: meta.assigneeName,
-        priority: meta.priority,
-        dueDate: meta.dueDate,
-        startDate: deriveStartDate(meta.dueDate, meta.priority),
+        priority: task.priority ?? meta.priority,
+        dueDate: task.dueDate || meta.dueDate,
+        startDate: task.startDate || deriveStartDate(task.dueDate || meta.dueDate, task.priority ?? meta.priority),
+        createdAt: task.createdAt,
+        updatedAt: task.updatedAt,
         domain: meta.domain,
         milestoneId: meta.milestoneId,
         milestoneName: milestone.name,
@@ -87,9 +91,48 @@ export function getStatusTone(status: TaskStatus) {
   }
 }
 
+export function getPriorityLabel(priority: PriorityLevel) {
+  switch (priority) {
+    case 'HIGHEST':
+      return '매우 높음';
+    case 'HIGH':
+      return '높음';
+    case 'MEDIUM':
+      return '보통';
+    case 'LOW':
+      return '낮음';
+    default:
+      return '매우 낮음';
+  }
+}
+
+export function getPriorityTone(priority: PriorityLevel) {
+  switch (priority) {
+    case 'HIGHEST':
+      return 'rose' as const;
+    case 'HIGH':
+      return 'amber' as const;
+    case 'MEDIUM':
+      return 'blue' as const;
+    case 'LOW':
+      return 'teal' as const;
+    default:
+      return 'slate' as const;
+  }
+}
+
 function deriveStartDate(dueDate: string, priority: PriorityLevel) {
   const date = new Date(dueDate);
-  const offsetDays = priority === 'HIGH' ? 5 : priority === 'MEDIUM' ? 3 : 2;
+  const offsetDays =
+    priority === 'HIGHEST'
+      ? 7
+      : priority === 'HIGH'
+        ? 5
+        : priority === 'MEDIUM'
+          ? 3
+          : priority === 'LOW'
+            ? 2
+            : 1;
   date.setDate(date.getDate() - offsetDays);
   return date.toISOString();
 }

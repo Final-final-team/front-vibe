@@ -1,3 +1,5 @@
+import type { PriorityLevel } from '../workspace/types';
+
 export type TaskStatus = 'IN_PROGRESS' | 'IN_REVIEW' | 'COMPLETED';
 export type ReviewStatus = 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
 
@@ -106,7 +108,12 @@ export type ReviewTask = {
   id: number;
   title: string;
   summary: string;
-  ownerId: number;
+  authorId: number;
+  priority: PriorityLevel;
+  startDate: string;
+  dueDate: string;
+  createdAt: string;
+  updatedAt: string;
   latestReviewStatus: TaskStatus;
 };
 

@@ -4,8 +4,12 @@
 
 이 문서는 백엔드 `review` 도메인 기능을 프론트 화면으로 1:1 매핑하기 위한 화면설계 기준서다.
 
-- 백엔드 기준 경로: `/mnt/c/Users/alswl/Desktop/fianl`
-- API 명세 기준: `/mnt/c/Users/alswl/Desktop/fianl/DOCS/review/review-action-api-spec.md`
+- 백엔드 기준 경로: `/mnt/c/Users/user/Desktop/final-back`
+- API/DTO 기준:
+  - `/mnt/c/Users/user/Desktop/final-back/src/main/java/com/example/workmanagement/domain/review/controller/ReviewController.java`
+  - `/mnt/c/Users/user/Desktop/final-back/src/main/java/com/example/workmanagement/domain/review/service/result/ReviewSummaryResult.java`
+  - `/mnt/c/Users/user/Desktop/final-back/src/main/java/com/example/workmanagement/domain/review/service/result/ReviewDetailResult.java`
+  - `/mnt/c/Users/user/Desktop/final-back/src/main/java/com/example/workmanagement/domain/review/service/result/ReviewHistoryResult.java`
 - 프론트 스택 기준: `Vite + React 19 + TypeScript + Tailwind`
 - 디자인 원칙:
   - 기존 `front-vibe`의 레이아웃, 컬러, 타이포그래피, 여백, 폼 스타일을 최대한 유지한다.

@@ -26,7 +26,7 @@ import StatusPill from '../shared/ui/StatusPill';
 import { fetchTaskReviews } from '../features/review/api';
 import ReviewDetailModal from '../features/review/components/ReviewDetailModal';
 import { reviewKeys, useTaskReviews, useTasks } from '../features/review/hooks';
-import { buildTaskViewItems, getStatusLabel, getStatusTone, groupTasksByStatus, type TaskViewItem } from '../features/tasks/view-model';
+import { buildTaskViewItems, getPriorityLabel, getPriorityTone, getStatusLabel, getStatusTone, groupTasksByStatus, type TaskViewItem } from '../features/tasks/view-model';
 import { useProjectMilestones, useProjectTaskMeta } from '../features/workspace/hooks';
 import { useWorkspace } from '../features/workspace/use-workspace';
 import { formatDate } from '../shared/lib/format';
@@ -289,7 +289,7 @@ export default function TaskListPage() {
                             <TableHead>우선순위</TableHead>
                             <TableHead>상태</TableHead>
                             <TableHead>기한</TableHead>
-                            <TableHead>진입</TableHead>
+                            <TableHead>액션</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -369,7 +369,7 @@ export default function TaskListPage() {
                             <TableHead>우선순위</TableHead>
                             <TableHead>상태</TableHead>
                             <TableHead>기한</TableHead>
-                            <TableHead>진입</TableHead>
+                            <TableHead>액션</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -530,6 +530,7 @@ export default function TaskListPage() {
               <MetaRow label="시작" value={formatDate(selectedTask.startDate)} />
               <MetaRow label="우선순위" value={getPriorityLabel(selectedTask.priority)} />
               <MetaRow label="현재 상태" value={getStatusLabel(selectedTask.status)} />
+              <MetaRow label="최근 갱신" value={formatDate(selectedTask.updatedAt)} />
               <MetaRow label="업무 영역" value={selectedTask.domain} />
               <MetaRow label="마일스톤" value={selectedTask.milestoneName} />
               <MetaRow label="담당자" value={selectedTask.assigneeName} />
@@ -991,8 +992,8 @@ function SortableTaskRow({
       {showMilestone ? <TableCell>{task.milestoneName}</TableCell> : null}
       <TableCell>{task.assigneeName}</TableCell>
       <TableCell>
-        <StatusPill tone={task.priority === 'HIGH' ? 'rose' : task.priority === 'MEDIUM' ? 'amber' : 'teal'}>
-          {task.priority}
+        <StatusPill tone={getPriorityTone(task.priority)}>
+          {getPriorityLabel(task.priority)}
         </StatusPill>
       </TableCell>
       <TableCell>
@@ -1011,7 +1012,7 @@ function SortableTaskRow({
               onOpenReview();
             }}
           >
-            검토
+            검토 보기
           </Link>
           <Link
             to={`/tasks/${task.id}/reviews/new`}
@@ -1153,17 +1154,6 @@ function getViewLabel(view: TaskView) {
       return '간트';
     default:
       return '테이블';
-  }
-}
-
-function getPriorityLabel(priority: TaskViewItem['priority']) {
-  switch (priority) {
-    case 'HIGH':
-      return '높음';
-    case 'MEDIUM':
-      return '보통';
-    default:
-      return '낮음';
   }
 }
 

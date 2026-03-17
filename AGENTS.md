@@ -1,21 +1,22 @@
-# Workspace Instructions
+# 워크스페이스 작업 지침
 
-## Role
-- This workspace is the frontend workspace for `https://github.com/Final-final-team/front-vibe.git`.
-- Frontend changes should be made here.
+## 역할
+- 이 워크스페이스는 `https://github.com/Final-final-team/front-vibe.git` 프론트엔드 작업용이다.
+- 프론트엔드 변경은 이 저장소에서 수행한다.
 
-## Backend Reference
-- Use `/mnt/c/Users/alswl/Desktop/fianl` as the default backend reference workspace.
-- Before changing frontend behavior that depends on APIs, DTOs, auth, response shapes, validation rules, or business logic, inspect the backend code in `/mnt/c/Users/alswl/Desktop/fianl`.
-- Keep frontend behavior aligned with the backend implementation unless the user explicitly requests otherwise.
+## 백엔드 기준 경로
+- 기본 백엔드 참조 워크스페이스는 `/mnt/c/Users/user/Desktop/final-back` 이다.
+- API, DTO, 인증, 응답 형식, 검증 규칙, 비즈니스 로직에 영향이 있는 프론트 변경 전에는 반드시 `/mnt/c/Users/user/Desktop/final-back` 코드를 먼저 확인한다.
+- 사용자가 별도로 요청하지 않는 한 프론트 동작은 백엔드 구현과 맞춘다.
 
-## Working Rule
-- For future tasks in this workspace, assume the frontend code is adjusted with the backend code in `/mnt/c/Users/alswl/Desktop/fianl` as the source of truth for integration details.
+## 작업 원칙
+- 이 워크스페이스의 프론트 구현은 `/mnt/c/Users/user/Desktop/final-back` 를 연동 기준 source of truth 로 간주한다.
+- 문서 안에 절대 경로를 남길 때도 현재 실제 경로를 사용한다.
 
-## Decision Support Rule
-- Assume the primary developer in this workspace is a backend developer and may not be comfortable making frontend technical choices alone.
-- When a frontend technical decision is needed, do not silently choose by default if the decision is meaningfully ambiguous.
-- Present the decision one by one, explain the available options, and describe the pros, cons, and recommendation in plain language before proceeding.
-- Ask for confirmation on meaningful frontend architecture or implementation choices such as rendering model, framework conventions, state management, routing structure, data fetching strategy, styling approach, form handling, and component abstraction boundaries.
-- Record the reasoning, recommendation, tradeoffs, and final choice for those decisions in Markdown files under a `WHY/` folder inside this workspace.
-- Treat the `WHY/` folder as the running decision log for frontend architecture and implementation rationale.
+## 의사결정 지원 원칙
+- 이 워크스페이스의 주 개발자는 백엔드 개발자일 수 있으며, 프론트엔드 기술 선택에 익숙하지 않을 수 있다고 가정한다.
+- 프론트엔드 기술 결정이 의미 있게 갈릴 수 있으면 조용히 임의 선택하지 않는다.
+- 한 번에 하나씩 선택지를 설명하고, 각 선택지의 장점/단점/권고안을 쉬운 한국어로 먼저 정리한 뒤 진행한다.
+- 렌더링 모델, 프레임워크 관례, 상태관리, 라우팅 구조, 데이터 패칭 전략, 스타일링 방식, 폼 처리, 컴포넌트 경계처럼 중요한 결정은 확인을 받은 뒤 진행한다.
+- 이런 결정의 배경, 권고안, 트레이드오프, 최종 선택은 반드시 `WHY/` 폴더 아래 Markdown 문서로 기록한다.
+- `WHY/` 폴더는 프론트엔드 아키텍처 및 구현 판단의 누적 결정 로그로 취급한다.

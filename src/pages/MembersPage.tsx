@@ -96,6 +96,20 @@ export default function MembersPage() {
               멤버 초대
             </Button>
           </div>
+          <div className="mb-5 grid gap-3 border-b border-border/60 pb-4 text-sm text-muted-foreground md:grid-cols-3">
+            <div className="border-t border-border/60 pt-3">
+              <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">운영 원칙</div>
+              <div className="mt-2 font-medium text-foreground">사람이 아니라 역할에 권한을 부여합니다.</div>
+            </div>
+            <div className="border-t border-border/60 pt-3">
+              <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">즉시 확인 필요</div>
+              <div className="mt-2 font-medium text-foreground">{pendingCount}명</div>
+            </div>
+            <div className="border-t border-border/60 pt-3">
+              <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">최근 활동 멤버</div>
+              <div className="mt-2 font-medium text-foreground">{activeCount}명</div>
+            </div>
+          </div>
           <div className="space-y-3 md:hidden">
             {members.map((member) => (
               <div key={member.id} className="border-b border-border/70 pb-4">
@@ -158,16 +172,20 @@ export default function MembersPage() {
               </div>
               <div className="divide-y divide-gray-100">
                 {members.map((member) => (
-                  <button
+                  <div
                     key={member.id}
-                    type="button"
-                    onClick={() => setProfileMemberId(member.id)}
-                    className="grid w-full grid-cols-[2fr_0.9fr_1.1fr_1.7fr_1fr_0.9fr] gap-4 py-4 text-left text-sm transition hover:bg-muted/10"
+                    className="grid grid-cols-[2fr_0.9fr_1.1fr_1.7fr_1fr_0.9fr] gap-4 py-4 text-left text-sm transition hover:bg-muted/10"
                   >
                     <div>
                       <div className="font-semibold text-gray-900">{member.name}</div>
                       <div className="mt-1 text-gray-500">{member.email}</div>
-                      <div className="mt-2 text-xs font-medium text-primary/80">행 클릭 시 프로필 보기</div>
+                      <button
+                        type="button"
+                        className="mt-2 text-xs font-medium text-primary/80 hover:text-primary"
+                        onClick={() => setProfileMemberId(member.id)}
+                      >
+                        프로필 보기
+                      </button>
                     </div>
                     <div className="flex items-center">
                       <StatusPill tone={inviteToneMap[member.inviteStatus]}>
@@ -196,8 +214,7 @@ export default function MembersPage() {
                       <Button
                         variant="ghost"
                         className="h-9 rounded-xl px-3 text-sm font-medium"
-                        onClick={(event) => {
-                          event.stopPropagation();
+                        onClick={() => {
                           setAssignmentMemberId(member.id);
                           setDraftRoleIds(member.roleIds);
                         }}
@@ -205,7 +222,7 @@ export default function MembersPage() {
                         역할 부여
                       </Button>
                     </div>
-                  </button>
+                  </div>
                 ))}
               </div>
             </div>

@@ -1,6 +1,6 @@
 export type InviteStatus = 'ACTIVE' | 'INVITED' | 'EXPIRED' | 'DECLINED';
 export type MilestoneHealth = 'ON_TRACK' | 'AT_RISK' | 'COMPLETE';
-export type PriorityLevel = 'HIGH' | 'MEDIUM' | 'LOW';
+export type PriorityLevel = 'HIGHEST' | 'HIGH' | 'MEDIUM' | 'LOW' | 'LOWEST';
 
 export type WorkspaceProject = {
   id: string;

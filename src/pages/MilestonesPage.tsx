@@ -1,7 +1,15 @@
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Flag, ListTodo, TimerReset } from 'lucide-react';
+import { AlertTriangle, Flag, ListTodo, TimerReset } from 'lucide-react';
 import { useTasks } from '../features/review/hooks';
+import {
+  buildTaskViewItems,
+  getPriorityLabel,
+  getPriorityTone,
+  getStatusLabel,
+  getStatusTone,
+  type TaskViewItem,
+} from '../features/tasks/view-model';
 import { useProjectMilestones, useProjectTaskMeta } from '../features/workspace/hooks';
 import { useWorkspace } from '../features/workspace/use-workspace';
 import { formatDate } from '../shared/lib/format';
@@ -26,10 +34,15 @@ export default function MilestonesPage() {
   const { data: tasks = [] } = useTasks();
   const [selectedMilestoneId, setSelectedMilestoneId] = useState<string | null>(null);
 
-  const totalTasks = taskMeta.length;
-  const completedTasks = tasks.filter((task) =>
-    taskMeta.some((meta) => meta.taskId === task.id) && task.latestReviewStatus === 'COMPLETED',
-  ).length;
+  const taskItems = useMemo(
+    () =>
+      buildTaskViewItems({
+        tasks,
+        taskMeta,
+        milestones,
+      }),
+    [milestones, taskMeta, tasks],
+  );
 
   const selectedMilestone = useMemo(
     () => milestones.find((item) => item.id === selectedMilestoneId) ?? milestones[0] ?? null,
@@ -40,31 +53,24 @@ export default function MilestonesPage() {
     if (!selectedMilestone) {
       return [];
     }
-    return taskMeta
+
+    return taskItems
       .filter((task) => task.milestoneId === selectedMilestone.id)
-      .map((meta) => ({
-        meta,
-        task: tasks.find((item) => item.id === meta.taskId),
-      }))
-      .filter((item) => item.task);
-  }, [selectedMilestone, taskMeta, tasks]);
+      .sort((left, right) => new Date(left.dueDate).getTime() - new Date(right.dueDate).getTime());
+  }, [selectedMilestone, taskItems]);
 
-  const total = linkedTasks.length || 1;
-  const done = linkedTasks.filter((item) => item.task?.latestReviewStatus === 'COMPLETED').length;
-  const review = linkedTasks.filter((item) => item.task?.latestReviewStatus === 'IN_REVIEW').length;
-  const progress = Math.round((done / total) * 100);
-  const activeDomains = [...new Set(linkedTasks.map(({ meta }) => meta.domain))];
-  const nextDueTask = [...linkedTasks].sort((a, b) => new Date(a.meta.dueDate).getTime() - new Date(b.meta.dueDate).getTime())[0];
-  const lastUpdatedAt = linkedTasks
-    .map(({ meta }) => new Date(meta.dueDate).getTime())
-    .sort((a, b) => b - a)[0];
-
-  const riskText =
-    selectedMilestone?.health === 'AT_RISK'
-      ? '마감 전 검토 대기 업무가 남아 있어 조정이 필요합니다.'
-      : selectedMilestone?.health === 'COMPLETE'
-        ? '연결 업무 기준으로 완료 상태입니다.'
-        : '현재 리듬은 안정적이며 연결 업무가 계획대로 진행 중입니다.';
+  const totalTasks = taskItems.length;
+  const completedTasks = taskItems.filter((task) => task.status === 'COMPLETED').length;
+  const atRiskTasks = taskItems.filter((task) => isAtRisk(task)).length;
+  const progress = getProgress(linkedTasks);
+  const doneCount = linkedTasks.filter((task) => task.status === 'COMPLETED').length;
+  const reviewCount = linkedTasks.filter((task) => task.status === 'IN_REVIEW').length;
+  const riskCount = linkedTasks.filter((task) => isAtRisk(task)).length;
+  const activeDomains = [...new Set(linkedTasks.map((task) => task.domain))];
+  const nextDueTask = linkedTasks.find((task) => task.status !== 'COMPLETED') ?? linkedTasks[0] ?? null;
+  const lastUpdatedTask = [...linkedTasks].sort(
+    (left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
+  )[0] ?? null;
 
   const milestoneStage =
     selectedMilestone?.health === 'COMPLETE'
@@ -75,27 +81,40 @@ export default function MilestonesPage() {
           ? '진행 중'
           : '착수 단계';
 
+  const riskText =
+    selectedMilestone?.health === 'AT_RISK'
+      ? `${riskCount || reviewCount}건의 선행 확인이 남아 있어 이번 주 조정이 필요합니다.`
+      : selectedMilestone?.health === 'COMPLETE'
+        ? '연결 업무 기준으로 마일스톤이 닫힌 상태입니다.'
+        : '현재는 일정과 검토 흐름이 안정적으로 유지되고 있습니다.';
+
   return (
-    <div className="space-y-6">
-      <section className="flex flex-wrap items-end justify-between gap-3 border-b border-border/70 pb-6 pt-4">
+    <div className="space-y-7">
+      <section className="flex flex-wrap items-end justify-between gap-4 border-b border-border/70 pb-7 pt-4">
         <div className="flex flex-wrap items-center gap-6">
           <InlineStat label="마일스톤" value={`${milestones.length}개`} icon={<Flag size={15} />} />
           <InlineStat label="연결 업무" value={`${totalTasks}개`} icon={<ListTodo size={15} />} />
           <InlineStat label="완료 업무" value={`${completedTasks}개`} icon={<TimerReset size={15} />} />
+          <InlineStat label="위험 업무" value={`${atRiskTasks}개`} icon={<AlertTriangle size={15} />} />
         </div>
-        <div className="text-xs text-muted-foreground">현재 마일스톤 1개를 집중해서 보고 다음 체크포인트를 정리합니다.</div>
+        <div className="max-w-xl text-right text-xs leading-5 text-muted-foreground">
+          마일스톤은 제목보다 <span className="font-semibold text-foreground">현재 단계 · 위험 · 다음 액션</span> 이 먼저 읽히도록 정리합니다.
+        </div>
       </section>
 
-      <section className="grid gap-8 xl:grid-cols-[300px_minmax(0,1fr)]">
+      <section className="grid gap-8 xl:grid-cols-[320px_minmax(0,1fr)]">
         <aside className="border-t border-border/70 pt-7">
           <div className="mb-4">
             <h2 className="text-base font-semibold tracking-tight text-foreground">마일스톤 목록</h2>
-            <p className="mt-1 text-sm text-muted-foreground">현재 진행 상황을 확인할 마일스톤을 선택합니다.</p>
+            <p className="mt-1 text-sm text-muted-foreground">현재 프로젝트에서 우선 볼 마일스톤을 선택합니다.</p>
           </div>
           <div className="space-y-2">
             {milestones.map((milestone) => {
-              const linkedCount = taskMeta.filter((task) => task.milestoneId === milestone.id).length;
+              const milestoneTasks = taskItems.filter((task) => task.milestoneId === milestone.id);
               const active = selectedMilestone?.id === milestone.id;
+              const milestoneProgress = getProgress(milestoneTasks);
+              const milestoneRiskCount = milestoneTasks.filter((task) => isAtRisk(task)).length;
+
               return (
                 <button
                   key={milestone.id}
@@ -109,12 +128,16 @@ export default function MilestonesPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="font-semibold text-foreground">{milestone.name}</div>
-                      <div className="mt-1 text-sm text-muted-foreground">{milestone.summary}</div>
+                      <div className="mt-1 text-sm leading-6 text-muted-foreground">{milestone.summary}</div>
                     </div>
                     <StatusPill tone={healthToneMap[milestone.health]}>{healthLabelMap[milestone.health]}</StatusPill>
                   </div>
-                  <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>{linkedCount}건</span>
+                  <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <span>{milestoneTasks.length}건</span>
+                    <span>·</span>
+                    <span>{milestoneProgress}%</span>
+                    <span>·</span>
+                    <span>위험 {milestoneRiskCount}건</span>
                     <span>·</span>
                     <span>마감 {formatDate(milestone.dueDate)}</span>
                   </div>
@@ -132,132 +155,101 @@ export default function MilestonesPage() {
                   <h2 className="text-2xl font-semibold tracking-tight text-foreground">{selectedMilestone.name}</h2>
                   <StatusPill tone="slate">{progress}%</StatusPill>
                   <StatusPill tone={healthToneMap[selectedMilestone.health]}>{healthLabelMap[selectedMilestone.health]}</StatusPill>
+                  <StatusPill tone="purple">{linkedTasks.length}개 업무</StatusPill>
                 </div>
                 <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">{selectedMilestone.summary}</p>
               </div>
-              <div className="flex items-center gap-2 self-start">
+              <div className="flex flex-wrap items-center gap-2 self-start">
                 <StatusPill tone="slate">마감 {formatDate(selectedMilestone.dueDate)}</StatusPill>
+                {lastUpdatedTask ? <StatusPill tone="teal">최근 갱신 {formatDate(lastUpdatedTask.updatedAt)}</StatusPill> : null}
               </div>
             </div>
 
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_320px]">
-              <div className="border-y border-border/60 py-5">
-                <div className="grid gap-5 lg:grid-cols-3">
-                  <Panel title="현재 단계" value={milestoneStage} description={`${review}개 검토 대기 업무`} />
-                  <Panel
-                    title="위험 메모"
-                    value={riskText}
-                    description="연결 업무와 검토 상태를 기준으로 산출한 요약"
-                  />
-                  <Panel
-                    title="다음 액션"
-                    value={nextDueTask ? nextDueTask.task?.title ?? '연결 업무 없음' : '연결 업무 없음'}
-                    description={nextDueTask ? `마감 ${formatDate(nextDueTask.meta.dueDate)}` : '후속 업무를 연결하면 여기서 확인할 수 있습니다.'}
-                  />
-                </div>
+              <div className="grid gap-4 border-y border-border/60 py-5 md:grid-cols-3">
+                <FocusCard
+                  title="현재 단계"
+                  value={milestoneStage}
+                  description={`${doneCount}건 완료 · ${reviewCount}건 검토중`}
+                />
+                <FocusCard
+                  title="위험 메모"
+                  value={riskText}
+                  description={riskCount > 0 ? `마감 초과 ${riskCount}건` : '즉시 에스컬레이션할 위험 업무는 없습니다.'}
+                />
+                <FocusCard
+                  title="다음 액션"
+                  value={nextDueTask?.title ?? '연결 업무 없음'}
+                  description={
+                    nextDueTask
+                      ? `${getPriorityLabel(nextDueTask.priority)} · 마감 ${formatDate(nextDueTask.dueDate)}`
+                      : '후속 업무를 연결하면 다음 행동을 여기서 확인할 수 있습니다.'
+                  }
+                />
               </div>
-              <div className="border-y border-border/60 py-5">
-                <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">진행 개요</div>
-                <div className="mt-4 space-y-4">
-                  <div className="flex items-center justify-between gap-4 text-sm text-muted-foreground">
-                    <span>연결 업무 진행률</span>
-                    <span className="font-medium text-foreground">{progress}%</span>
-                  </div>
-                  <div className="h-3 overflow-hidden rounded-full bg-gray-100">
-                    <div className="h-full rounded-full bg-blue-600" style={{ width: `${progress}%` }} />
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <StatusPill tone="green">{done}개 완료</StatusPill>
-                    <StatusPill tone="amber">{review}개 검토중</StatusPill>
-                    <StatusPill tone="slate">{linkedTasks.length - done - review}개 진행중</StatusPill>
-                  </div>
-                  <div className="border-t border-border/60 pt-4 text-sm text-muted-foreground">
-                    <div className="flex items-center justify-between gap-4 border-b border-border/50 pb-2">
-                      <span>최근 변경</span>
-                      <span className="font-medium text-foreground">
-                        {lastUpdatedAt ? formatDate(new Date(lastUpdatedAt).toISOString()) : '변경 없음'}
-                      </span>
+
+              <div className="space-y-4 border-y border-border/60 py-5">
+                <div>
+                  <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">진행 개요</div>
+                  <div className="mt-4 space-y-4">
+                    <div className="flex items-center justify-between gap-4 text-sm text-muted-foreground">
+                      <span>연결 업무 진행률</span>
+                      <span className="font-medium text-foreground">{progress}%</span>
                     </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {activeDomains.map((domain) => (
-                        <StatusPill key={domain} tone="teal">{domain}</StatusPill>
-                      ))}
+                    <div className="h-2.5 overflow-hidden rounded-full bg-muted">
+                      <div className="h-full rounded-full bg-primary" style={{ width: `${progress}%` }} />
                     </div>
+                    <div className="flex flex-wrap gap-2">
+                      <StatusPill tone="green">{doneCount}개 완료</StatusPill>
+                      <StatusPill tone="amber">{reviewCount}개 검토중</StatusPill>
+                      <StatusPill tone="rose">{riskCount}개 위험</StatusPill>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-border/60 pt-4">
+                  <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">범위 요약</div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {activeDomains.length > 0 ? (
+                      activeDomains.map((domain) => (
+                        <StatusPill key={domain} tone="teal">
+                          {domain}
+                        </StatusPill>
+                      ))
+                    ) : (
+                      <span className="text-sm text-muted-foreground">아직 연결된 업무 영역이 없습니다.</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="border-t border-border/60 pt-4">
+                  <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">운영 메모</div>
+                  <div className="mt-3 space-y-2 text-sm text-muted-foreground">
+                    <InfoRow label="최근 변경" value={lastUpdatedTask ? formatDate(lastUpdatedTask.updatedAt) : '변경 없음'} />
+                    <InfoRow label="다음 마감" value={nextDueTask ? formatDate(nextDueTask.dueDate) : '없음'} />
+                    <InfoRow label="프로젝트 코드" value={currentProject?.code ?? '-'} />
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="border-b border-border/60 py-5">
-              <div className="flex items-center justify-between gap-4 text-sm text-muted-foreground">
-                <span>연결 업무</span>
-                <span className="font-medium text-foreground">{linkedTasks.length}건</span>
-              </div>
-            </div>
-
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
-              <div className="space-y-2">
+            <div>
               <div className="flex items-center justify-between gap-4 border-b border-border/60 pb-3">
                 <h3 className="text-base font-semibold text-foreground">연결 업무</h3>
                 <span className="text-sm text-muted-foreground">{linkedTasks.length}건</span>
               </div>
-              <div className="divide-y divide-border/60">
-                {linkedTasks.map(({ meta, task }) => (
-                  <div key={meta.taskId} className="grid gap-4 py-4 lg:grid-cols-[minmax(0,1fr)_auto]">
-                    <div className="min-w-0">
-                      <div className="font-semibold text-foreground">{task?.title}</div>
-                      <div className="mt-2 text-sm leading-6 text-muted-foreground">{task?.summary}</div>
-                    </div>
-                    <div className="flex flex-wrap items-start justify-end gap-2">
-                      <StatusPill tone="teal">{meta.domain}</StatusPill>
-                      <StatusPill tone="purple">{meta.assigneeName}</StatusPill>
-                      <StatusPill
-                        tone={
-                          task?.latestReviewStatus === 'COMPLETED'
-                            ? 'green'
-                            : task?.latestReviewStatus === 'IN_REVIEW'
-                              ? 'amber'
-                              : 'slate'
-                        }
-                      >
-                        {task?.latestReviewStatus === 'COMPLETED'
-                          ? '완료'
-                          : task?.latestReviewStatus === 'IN_REVIEW'
-                            ? '검토중'
-                            : '진행중'}
-                      </StatusPill>
-                      <StatusPill tone="slate">마감 {formatDate(meta.dueDate)}</StatusPill>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              </div>
-              <div className="space-y-4 border-t border-border/60 pt-4 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
-                <div>
-                  <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">진행 단계</div>
-                  <div className="mt-3 space-y-2">
-                    {['착수', '진행', '검토', '완료'].map((step, index) => {
-                      const activeIndex =
-                        milestoneStage === '마감 완료' ? 3 : milestoneStage === '마감 직전' ? 2 : milestoneStage === '진행 중' ? 1 : 0;
-                      const active = index <= activeIndex;
-                      return (
-                        <div key={step} className="flex items-center justify-between gap-3 border-b border-border/50 pb-2 text-sm">
-                          <span className={active ? 'font-medium text-foreground' : 'text-muted-foreground'}>{step}</span>
-                          <StatusPill tone={active ? 'blue' : 'slate'}>{active ? '진행 반영' : '대기'}</StatusPill>
-                        </div>
-                      );
-                    })}
-                  </div>
+
+              {linkedTasks.length > 0 ? (
+                <div className="divide-y divide-border/60">
+                  {linkedTasks.map((task) => (
+                    <MilestoneTaskRow key={task.id} task={task} />
+                  ))}
                 </div>
-                <div>
-                  <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">연결 검토</div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <StatusPill tone="amber">{review}건 검토중</StatusPill>
-                    <StatusPill tone="green">{done}건 완료</StatusPill>
-                    <StatusPill tone="slate">{linkedTasks.length - done - review}건 진행중</StatusPill>
-                  </div>
+              ) : (
+                <div className="border-b border-border/60 py-8 text-sm text-muted-foreground">
+                  아직 연결된 업무가 없습니다. task 도메인 연동이 들어오면 이 영역에 우선순위와 일정이 함께 보이게 됩니다.
                 </div>
-              </div>
+              )}
             </div>
           </div>
         ) : null}
@@ -266,7 +258,33 @@ export default function MilestonesPage() {
   );
 }
 
-function Panel({
+function MilestoneTaskRow({ task }: { task: TaskViewItem }) {
+  return (
+    <div className="grid gap-4 py-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="font-semibold text-foreground">{task.title}</div>
+          <StatusPill tone={getStatusTone(task.status)}>{getStatusLabel(task.status)}</StatusPill>
+          <StatusPill tone={getPriorityTone(task.priority)}>{getPriorityLabel(task.priority)}</StatusPill>
+        </div>
+        <div className="mt-2 text-sm leading-6 text-muted-foreground">{task.summary}</div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <StatusPill tone="teal">{task.domain}</StatusPill>
+          <StatusPill tone="purple">{task.assigneeName}</StatusPill>
+        </div>
+      </div>
+
+      <div className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-2 lg:grid-cols-1">
+        <InfoRow label="시작" value={formatDate(task.startDate)} />
+        <InfoRow label="마감" value={formatDate(task.dueDate)} />
+        <InfoRow label="최근 갱신" value={formatDate(task.updatedAt)} />
+        <InfoRow label="진행률" value={`${task.progress}%`} />
+      </div>
+    </div>
+  );
+}
+
+function FocusCard({
   title,
   value,
   description,
@@ -302,4 +320,26 @@ function InlineStat({
       </div>
     </div>
   );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-4 border-b border-border/50 pb-2">
+      <span>{label}</span>
+      <span className="font-medium text-foreground">{value}</span>
+    </div>
+  );
+}
+
+function getProgress(items: TaskViewItem[]) {
+  if (items.length === 0) {
+    return 0;
+  }
+
+  const doneCount = items.filter((task) => task.status === 'COMPLETED').length;
+  return Math.round((doneCount / items.length) * 100);
+}
+
+function isAtRisk(task: TaskViewItem) {
+  return task.status !== 'COMPLETED' && new Date(task.dueDate).getTime() < Date.now();
 }

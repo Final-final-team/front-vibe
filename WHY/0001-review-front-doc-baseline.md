@@ -11,7 +11,7 @@
 
 - 현재 로컬 프론트 워크스페이스는 비어 있었다.
 - 사용자는 기존 프론트 디자인을 유지하길 원한다.
-- 백엔드 구현은 `/mnt/c/Users/alswl/Desktop/fianl`에 존재하며, `review` 도메인 API와 상태 전이가 이미 구체적으로 정의되어 있다.
+- 백엔드 구현은 `/mnt/c/Users/user/Desktop/final-back`에 존재하며, `review` 도메인 API와 상태 전이가 이미 구체적으로 정의되어 있다.
 - 이 환경에서는 `https://github.com/Final-final-team/front-vibe.git` 접근에 GitHub 인증이 없어 원격 저장소를 바로 clone할 수 없었다.
 
 ## 검토한 선택지

@@ -348,7 +348,7 @@ const taskMetaByProject: Record<string, ProjectTaskMeta[]> = {
       assigneeId: 101,
       assigneeName: '김하늘',
       domain: '검토 운영',
-      priority: 'HIGH',
+      priority: 'HIGHEST',
       dueDate: '2026-03-14T09:00:00Z',
     },
     {
@@ -388,7 +388,7 @@ const taskMetaByProject: Record<string, ProjectTaskMeta[]> = {
       assigneeId: 101,
       assigneeName: '김하늘',
       domain: '역할 정책',
-      priority: 'LOW',
+      priority: 'LOWEST',
       dueDate: '2026-03-22T09:00:00Z',
     },
   ],
