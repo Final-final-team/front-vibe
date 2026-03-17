@@ -21,10 +21,7 @@ export default function RolesPermissionsPage() {
   const [permissionOverrides, setPermissionOverrides] = useState<RolePermissionOverrides>({});
   const [draftPermissionKeys, setDraftPermissionKeys] = useState<string[]>([]);
 
-  const visiblePermissions = useMemo(
-    () => permissions.filter((permission) => permission.key !== 'AUDIT_LOG_VIEW'),
-    [permissions],
-  );
+  const visiblePermissions = useMemo(() => permissions, [permissions]);
   const roleById = useMemo(() => new Map(roles.map((role) => [role.id, role])), [roles]);
   const selectedRole = roleById.get(selectedRoleId ?? '') ?? roles[0] ?? null;
   const detailRole = roleById.get(detailRoleId ?? '') ?? null;
@@ -94,7 +91,7 @@ export default function RolesPermissionsPage() {
         />
       </section>
 
-      <section className="border-t border-border/70 pt-6">
+      <section className="border-t border-border/70 pt-8">
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold tracking-tight text-foreground">역할 카탈로그</h2>
@@ -163,7 +160,7 @@ export default function RolesPermissionsPage() {
           <div className="space-y-6">
             {selectedRole ? (
               <>
-                <div className="border-t border-border/70 pt-6">
+                <div className="border-t border-border/70 pt-8">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                       <h3 className="text-xl font-semibold tracking-tight text-foreground">{selectedRole.name}</h3>
@@ -176,9 +173,9 @@ export default function RolesPermissionsPage() {
                   </div>
                 </div>
 
-                <div className="grid gap-8 border-t border-border/60 pt-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+                <div className="grid gap-8 border-t border-border/60 pt-8 lg:grid-cols-[minmax(0,1fr)_320px]">
                   <div>
-                    <div className="mb-3 text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">허용 권한 요약</div>
+                    <div className="mb-4 text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">허용 권한 요약</div>
                     <div className="flex flex-wrap gap-2">
                       {categories.map((category) => {
                         const count = selectedPermissionDefinitions.filter((permission) => permission.category === category).length;
@@ -236,7 +233,7 @@ export default function RolesPermissionsPage() {
             </>
           ) : null
         }
-        size="md"
+        size="sm"
         footer={
           <div className="flex w-full items-center justify-between gap-3">
             <Button
@@ -255,14 +252,14 @@ export default function RolesPermissionsPage() {
         }
       >
         {detailRole ? (
-          <div className="space-y-5">
-            <div className="grid gap-4 border-b border-border/70 pb-4 lg:grid-cols-2">
+          <div className="space-y-6">
+            <div className="grid gap-4 border-b border-border/70 pb-5">
               <MetaRow label="리소스 스코프" value={`project/${currentProject?.code ?? 'default'}/*`} />
               <MetaRow label="허용 권한 수" value={`${detailKeys.length}개`} />
             </div>
             <div>
               <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">허용 권한</div>
-              <div className="mt-3 grid gap-3 md:grid-cols-2">
+              <div className="mt-4 space-y-3">
                 {detailPermissionDefinitions.map((permission) => (
                   <div key={permission.key} className="border-b border-border/60 pb-3">
                     <div className="flex items-center justify-between gap-3">
@@ -401,7 +398,7 @@ function getEffectivePermissionKeys(
   fallbackPermissionKeys: string[],
   overrides: RolePermissionOverrides,
 ) {
-  return (overrides[roleId] ?? fallbackPermissionKeys).filter((permissionKey) => permissionKey !== 'AUDIT_LOG_VIEW');
+  return overrides[roleId] ?? fallbackPermissionKeys;
 }
 
 function buildPolicyStatement(permissionKey: string) {

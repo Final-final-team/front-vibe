@@ -41,10 +41,12 @@ export default function ReviewDetailModal({ reviewId, open, onOpenChange }: Prop
               <div className="mt-3 space-y-3 text-sm text-muted-foreground">
                 <MetaLine label="상신 시각" value={formatDate(review.submittedAt)} />
                 <MetaLine label="처리 시각" value={formatDate(review.decidedAt)} />
+                <MetaLine label="취소 시각" value={formatDate(review.cancelledAt)} />
                 <MetaLine label="잠금 버전" value={`v${review.lockVersion}`} />
                 <MetaLine label="참조자" value={`${review.references.length}명`} />
                 <MetaLine label="추가 검토자" value={`${review.additionalReviewers.length}명`} />
                 <MetaLine label="첨부" value={`${review.attachments.length}개`} />
+                <MetaLine label="코멘트" value={`${review.comments.length}개`} />
               </div>
             </div>
             <div>
@@ -66,7 +68,7 @@ export default function ReviewDetailModal({ reviewId, open, onOpenChange }: Prop
           닫기
         </Button>
       }
-      size="lg"
+      size="xl"
       sideClassName="lg:max-w-[320px]"
     >
       {!review ? (
@@ -74,17 +76,31 @@ export default function ReviewDetailModal({ reviewId, open, onOpenChange }: Prop
           검토 상세를 불러오는 중입니다.
         </div>
       ) : (
-        <div className="space-y-5">
-          <section className="grid gap-4 border-b border-border/70 pb-5 lg:grid-cols-2">
-            <MetaBlock label="검토 본문" value={review.content} multiline />
-            <MetaBlock
-              label="반려 사유"
-              value={review.rejectionReason ?? '반려 사유 없음'}
-              multiline
-            />
+        <div className="space-y-6">
+          <section className="grid gap-4 border-b border-border/70 pb-5 md:grid-cols-4">
+            <SummaryTile label="현재 상태" value={getReviewStatusLabel(review.status)} />
+            <SummaryTile label="라운드" value={`${review.roundNo}차`} />
+            <SummaryTile label="잠금 버전" value={`v${review.lockVersion}`} />
+            <SummaryTile label="연결 업무" value={task?.title ?? `업무 #${review.taskId}`} />
           </section>
 
-          <section className="grid gap-4 border-b border-border/70 pb-5 lg:grid-cols-3">
+          <section className="grid gap-4 border-b border-border/70 pb-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+            <MetaBlock label="검토 본문" value={review.content} multiline />
+            <div className="space-y-4">
+              <MetaBlock
+                label="반려 / 취소 메모"
+                value={review.rejectionReason ?? '반려 또는 취소 메모 없음'}
+                multiline
+              />
+              <MetaBlock
+                label="업무 요약"
+                value={task?.summary ?? '연결된 업무 요약이 아직 없습니다.'}
+                multiline
+              />
+            </div>
+          </section>
+
+          <section className="grid gap-4 border-b border-border/70 pb-5 md:grid-cols-3">
             <MetaBlock label="상신자" value={`#${review.submittedBy}`} />
             <MetaBlock label="결정자" value={review.decidedBy ? `#${review.decidedBy}` : '-'} />
             <MetaBlock label="취소자" value={review.cancelledBy ? `#${review.cancelledBy}` : '-'} />
@@ -104,17 +120,22 @@ export default function ReviewDetailModal({ reviewId, open, onOpenChange }: Prop
               label="첨부"
               value={
                 review.attachments.length > 0
-                  ? review.attachments.map((attachment) => attachment.originalName).join('\n')
+                  ? review.attachments
+                      .map(
+                        (attachment) =>
+                          `${attachment.originalName} · ${(attachment.sizeBytes / 1024).toFixed(0)}KB`,
+                      )
+                      .join('\n')
                   : '첨부 없음'
               }
               multiline
             />
             <MetaBlock
-              label="코멘트"
+              label="최근 코멘트"
               value={
                 review.comments.length > 0
                   ? review.comments
-                      .slice(0, 3)
+                      .slice(0, 4)
                       .map((comment) => `#${comment.authorId} · ${comment.content}`)
                       .join('\n')
                   : '코멘트 없음'
@@ -125,6 +146,15 @@ export default function ReviewDetailModal({ reviewId, open, onOpenChange }: Prop
         </div>
       )}
     </AppModal>
+  );
+}
+
+function SummaryTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-border/70 bg-muted/10 px-4 py-4">
+      <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">{label}</div>
+      <div className="mt-2 text-sm font-semibold leading-6 text-foreground">{value}</div>
+    </div>
   );
 }
 

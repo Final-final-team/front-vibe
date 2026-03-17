@@ -165,7 +165,7 @@ export default function TaskListPage() {
 
   return (
     <div className="space-y-5">
-      <section className="flex flex-wrap items-end justify-between gap-3 border-b border-border/70 pb-4 pt-2">
+      <section className="flex flex-wrap items-end justify-between gap-3 border-b border-border/70 pb-6 pt-4">
         <div className="flex flex-wrap items-center gap-5">
           <InlineStat label="마일스톤" value={`${milestones.length}개`} icon={<Rows3 size={15} />} />
           <InlineStat label="검토중" value={`${reviewCount}건`} icon={<SendHorizontal size={15} />} />
@@ -179,8 +179,8 @@ export default function TaskListPage() {
         </div>
       </section>
 
-      <section className="min-w-0 border-t border-border/70 bg-background pt-2">
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-4">
+      <section className="min-w-0 border-t border-border/70 bg-background pt-4">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-5">
             <div className="flex flex-wrap items-center gap-2">
               <ScopeButton active={taskScope === 'milestone'} onClick={() => setTaskScope('milestone')}>
                 마일스톤별 보기
@@ -540,15 +540,15 @@ function KanbanView({
   ];
 
   return (
-    <div className="grid gap-5 xl:grid-cols-3">
+    <div className="grid gap-6 xl:grid-cols-3">
       {columns.map((column) => (
         <section key={column.key} className="min-w-0">
-          <div className="flex min-h-11 items-center justify-between border-b border-border/70 pb-2">
+          <div className="flex min-h-12 items-center justify-between border-b border-border/70 pb-3">
             <div className="flex items-center gap-2">
               <h2 className="text-base font-semibold leading-none text-foreground">{column.title}</h2>
               <span
                 className={[
-                  'inline-flex h-8 min-w-8 items-center justify-center rounded-md border px-2.5 text-base font-semibold leading-none align-middle',
+                  'inline-flex h-8 min-w-9 items-center justify-center rounded-md border px-2.5 text-sm font-semibold leading-none align-middle',
                   column.tone === 'green'
                     ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
                     : column.tone === 'amber'
@@ -560,7 +560,7 @@ function KanbanView({
               </span>
             </div>
           </div>
-          <div className="space-y-2.5 pt-3">
+          <div className="space-y-3 pt-4">
             {column.items.map((task) => (
               <button
                 key={task.id}
@@ -607,6 +607,7 @@ function CalendarView({
 }) {
   const targetMonth = new Date(cursor);
   targetMonth.setDate(1);
+  const today = new Date();
   const startDay = targetMonth.getDay();
   const daysInMonth = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0).getDate();
   const cells = Array.from({ length: 42 }, (_, index) => index - startDay + 1);
@@ -618,8 +619,8 @@ function CalendarView({
   }, {});
 
   return (
-    <div className="border-t border-border/70 pt-3">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-3">
+    <div className="border-t border-border/70 pt-5">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-4">
         <div>
           <h2 className="text-base font-semibold text-foreground">
             {targetMonth.getFullYear()}년 {targetMonth.getMonth() + 1}월
@@ -627,6 +628,17 @@ function CalendarView({
           <p className="mt-1 text-xs text-muted-foreground">월 이동과 연도 이동으로 일정 범위를 탐색할 수 있습니다.</p>
         </div>
         <div className="flex items-center gap-1.5">
+          <Button
+            type="button"
+            variant="outline"
+            className="rounded-md px-3 text-xs"
+            onClick={() => {
+              onMoveYear(today.getFullYear() - targetMonth.getFullYear());
+              onMoveMonth(today.getMonth() - targetMonth.getMonth());
+            }}
+          >
+            오늘
+          </Button>
           <Button type="button" variant="outline" size="icon-sm" className="rounded-md" onClick={() => onMoveYear(-1)}>
             <ChevronsLeft size={14} />
           </Button>
@@ -641,7 +653,7 @@ function CalendarView({
           </Button>
         </div>
       </div>
-      <div className="grid grid-cols-7 gap-1.5">
+      <div className="grid grid-cols-7 gap-2">
         {['일', '월', '화', '수', '목', '금', '토'].map((day) => (
           <div key={day} className="px-1.5 pb-1.5 text-[11px] font-semibold text-muted-foreground">
             {day}
@@ -770,6 +782,7 @@ function GanttView({
   selectedTaskId: number | null;
   onSelect: (taskId: number) => void;
 }) {
+  const today = new Date();
   const start = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
   const end = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0);
   const totalDays = end.getDate();
@@ -781,8 +794,8 @@ function GanttView({
   const visibleItems = items.filter((item) => new Date(item.dueDate) >= start && new Date(item.startDate) <= end);
 
   return (
-    <div className="border-t border-border/70 pt-3">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-3">
+    <div className="border-t border-border/70 pt-5">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-4">
         <div>
           <h2 className="text-base font-semibold text-foreground">
             {cursor.getFullYear()}년 {cursor.getMonth() + 1}월 타임라인
@@ -790,6 +803,17 @@ function GanttView({
           <p className="mt-1 text-xs text-muted-foreground">월과 연도를 이동하며 간트 범위를 탐색할 수 있습니다.</p>
         </div>
         <div className="flex items-center gap-1.5">
+          <Button
+            type="button"
+            variant="outline"
+            className="rounded-md px-3 text-xs"
+            onClick={() => {
+              onMoveYear(today.getFullYear() - cursor.getFullYear());
+              onMoveMonth(today.getMonth() - cursor.getMonth());
+            }}
+          >
+            오늘
+          </Button>
           <Button type="button" variant="outline" size="icon-sm" className="rounded-md" onClick={() => onMoveYear(-1)}>
             <ChevronsLeft size={14} />
           </Button>

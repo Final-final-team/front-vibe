@@ -4,7 +4,6 @@ import type { ReactNode } from 'react';
 import { ChevronRight, FileSearch, MessageSquareWarning, SendHorizontal } from 'lucide-react';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { fetchTaskReviews } from '../features/review/api';
 import ReviewDetailModal from '../features/review/components/ReviewDetailModal';
 import { reviewKeys, useTasks } from '../features/review/hooks';
@@ -41,10 +40,14 @@ export default function ReviewInboxPage() {
   const waitingQueue = inboxRows.filter((row) => row.task?.latestReviewStatus === 'IN_REVIEW');
   const approved = inboxRows.filter((row) => row.latestReview?.status === 'APPROVED');
   const empty = inboxRows.filter((row) => !row.latestReview);
-  const reviewRows = inboxRows.filter(
-    (row): row is typeof row & { latestReview: NonNullable<typeof row.latestReview> } => Boolean(row.latestReview),
-  );
-  const visibleRows = inboxRows;
+  const reviewRows = inboxRows
+    .filter((row): row is typeof row & { latestReview: NonNullable<typeof row.latestReview> } => Boolean(row.latestReview))
+    .sort((a, b) => {
+      const aTime = a.latestReview.submittedAt ? new Date(a.latestReview.submittedAt).getTime() : 0;
+      const bTime = b.latestReview.submittedAt ? new Date(b.latestReview.submittedAt).getTime() : 0;
+      return bTime - aTime;
+    });
+  const readyRows = inboxRows.filter((row) => !row.latestReview);
   const emptyTask = inboxRows.find((row) => row.meta.taskId === emptyTaskId)?.task ?? null;
 
   return (
@@ -62,8 +65,8 @@ export default function ReviewInboxPage() {
         </div>
       </section>
 
-      <section className="border-t border-border/70 bg-background pt-2">
-        <div className="flex items-end justify-between gap-3 border-b border-border/70 pb-5 pt-4">
+      <section className="border-t border-border/70 bg-background pt-4">
+        <div className="flex items-end justify-between gap-3 border-b border-border/70 pb-6 pt-5">
           <div>
             <h2 className="text-base font-semibold tracking-tight text-foreground">검토 보관함</h2>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -78,114 +81,110 @@ export default function ReviewInboxPage() {
           </div>
         </div>
 
-        <Table className="mt-4 border-t border-border/70">
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead>업무</TableHead>
-              <TableHead>업무 영역</TableHead>
-              <TableHead>현재 상태</TableHead>
-              <TableHead>최신 라운드</TableHead>
-              <TableHead>상신 시각</TableHead>
-              <TableHead>처리 시각</TableHead>
-              <TableHead className="text-right">상세</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {visibleRows.length > 0 ? visibleRows.map(({ meta, task, latestReview }) => (
-              <TableRow key={meta.taskId} className="transition hover:bg-muted/20">
-                <TableCell className="py-4">
-                  <div className="min-w-0">
-                    <div className="font-semibold text-foreground">{task?.title ?? `업무 #${meta.taskId}`}</div>
-                    <div className="mt-1 line-clamp-2 text-sm leading-6 text-muted-foreground">
-                      {task?.summary ?? '검토 대상 업무 정보가 아직 연결되지 않았습니다.'}
+        <div className="space-y-8 pt-5">
+          <section className="space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-sm font-semibold text-foreground">현재 검토 라운드</h3>
+              <StatusPill tone="amber">{reviewRows.length}건</StatusPill>
+            </div>
+            <div className="divide-y divide-border/70 border-y border-border/70">
+              {reviewRows.length > 0 ? (
+                reviewRows.map(({ meta, task, latestReview }) => (
+                  <div key={meta.taskId} className="grid gap-4 px-1 py-4 lg:grid-cols-[minmax(0,1fr)_auto]">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="font-semibold text-foreground">{task?.title ?? `업무 #${meta.taskId}`}</div>
+                        <StatusPill tone="teal">{meta.domain}</StatusPill>
+                        <StatusPill
+                          tone={
+                            latestReview.status === 'APPROVED'
+                              ? 'green'
+                              : latestReview.status === 'REJECTED'
+                                ? 'rose'
+                                : latestReview.status === 'CANCELLED'
+                                  ? 'slate'
+                                  : 'amber'
+                          }
+                        >
+                          {latestReview.roundNo}차 · {getReviewStatusLabel(latestReview.status)}
+                        </StatusPill>
+                      </div>
+                      <div className="mt-2 text-sm leading-6 text-muted-foreground">
+                        {task?.summary ?? '검토 대상 업무 정보가 아직 연결되지 않았습니다.'}
+                      </div>
+                      <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                        <span>업무 상태 {getTaskStatusLabel(task?.latestReviewStatus)}</span>
+                        <span>상신 {formatCompactDate(latestReview.submittedAt)}</span>
+                        <span>처리 {formatCompactDate(latestReview.decidedAt)}</span>
+                        <span>잠금 버전 v{latestReview.lockVersion}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-end">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-9 rounded-lg px-3"
+                        onClick={() => setSelectedReviewId(latestReview.reviewId)}
+                      >
+                        상세 보기
+                        <ChevronRight size={14} />
+                      </Button>
                     </div>
                   </div>
-                </TableCell>
-                <TableCell>
-                  <StatusPill tone="teal">{meta.domain}</StatusPill>
-                </TableCell>
-                <TableCell>
-                  <StatusPill
-                    tone={
-                      task?.latestReviewStatus === 'COMPLETED'
-                        ? 'green'
-                        : task?.latestReviewStatus === 'IN_REVIEW'
-                          ? 'amber'
-                          : 'slate'
-                    }
-                  >
-                    {task?.latestReviewStatus === 'COMPLETED'
-                      ? '완료'
-                      : task?.latestReviewStatus === 'IN_REVIEW'
-                        ? '검토중'
-                        : '진행중'}
-                  </StatusPill>
-                </TableCell>
-                <TableCell>
-                  {latestReview ? (
-                    <StatusPill
-                      tone={
-                        latestReview.status === 'APPROVED'
-                          ? 'green'
-                          : latestReview.status === 'REJECTED'
-                            ? 'rose'
-                            : latestReview.status === 'CANCELLED'
-                              ? 'slate'
-                              : 'amber'
-                      }
-                    >
-                      {latestReview.roundNo}차 · {getReviewStatusLabel(latestReview.status)}
-                    </StatusPill>
-                  ) : (
-                    <StatusPill tone="slate">미상신</StatusPill>
-                  )}
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  {latestReview?.submittedAt
-                    ? new Date(latestReview.submittedAt).toLocaleDateString('ko-KR', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })
-                    : '미상신'}
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  {latestReview?.decidedAt
-                    ? new Date(latestReview.decidedAt).toLocaleDateString('ko-KR', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })
-                    : '-'}
-                </TableCell>
-                <TableCell className="text-right">
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-1 text-xs font-medium text-primary"
-                    onClick={() => {
-                      if (latestReview) {
-                        setSelectedReviewId(latestReview.reviewId);
-                        return;
-                      }
-                      setEmptyTaskId(meta.taskId);
-                    }}
-                  >
-                    상세 보기
-                    <ChevronRight size={14} />
-                  </button>
-                </TableCell>
-              </TableRow>
-            )) : (
-              <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
-                  아직 연결된 검토 대상이 없습니다.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+                ))
+              ) : (
+                <div className="py-10 text-center text-sm text-muted-foreground">
+                  아직 생성된 검토 라운드가 없습니다.
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section className="space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-sm font-semibold text-foreground">검토 준비 업무</h3>
+              <StatusPill tone="slate">{readyRows.length}건</StatusPill>
+            </div>
+            <div className="divide-y divide-border/70 border-y border-border/70">
+              {readyRows.length > 0 ? (
+                readyRows.map(({ meta, task }) => (
+                  <div key={meta.taskId} className="grid gap-4 px-1 py-4 lg:grid-cols-[minmax(0,1fr)_auto]">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="font-semibold text-foreground">{task?.title ?? `업무 #${meta.taskId}`}</div>
+                        <StatusPill tone="teal">{meta.domain}</StatusPill>
+                        <StatusPill tone="slate">미상신</StatusPill>
+                      </div>
+                      <div className="mt-2 text-sm leading-6 text-muted-foreground">
+                        {task?.summary ?? '첫 검토 라운드를 만들기 전 준비가 필요한 업무입니다.'}
+                      </div>
+                      <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                        <span>업무 상태 {getTaskStatusLabel(task?.latestReviewStatus)}</span>
+                        <span>담당자 {meta.assigneeName}</span>
+                        <span>업무 영역 {meta.domain}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-end">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-9 rounded-lg px-3"
+                        onClick={() => setEmptyTaskId(meta.taskId)}
+                      >
+                        상세 보기
+                        <ChevronRight size={14} />
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="py-10 text-center text-sm text-muted-foreground">
+                  모든 업무가 검토 라운드를 가지고 있습니다.
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
       </section>
 
       <AppModal
@@ -271,6 +270,30 @@ function InlineStat({
       </div>
     </div>
   );
+}
+
+function formatCompactDate(value: string | null) {
+  if (!value) {
+    return '-';
+  }
+
+  return new Date(value).toLocaleDateString('ko-KR', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function getTaskStatusLabel(status: 'IN_PROGRESS' | 'IN_REVIEW' | 'COMPLETED' | undefined) {
+  switch (status) {
+    case 'COMPLETED':
+      return '완료';
+    case 'IN_REVIEW':
+      return '검토중';
+    default:
+      return '진행중';
+  }
 }
 
 function getReviewStatusLabel(status: 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'CANCELLED') {
