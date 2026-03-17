@@ -164,8 +164,8 @@ export default function TaskListPage() {
   }
 
   return (
-    <div className="space-y-5">
-      <section className="flex flex-wrap items-end justify-between gap-3 border-b border-border/70 pb-6 pt-4">
+    <div className="space-y-6">
+      <section className="flex flex-wrap items-end justify-between gap-3 border-b border-border/70 pb-7 pt-5">
         <div className="flex flex-wrap items-center gap-5">
           <InlineStat label="마일스톤" value={`${milestones.length}개`} icon={<Rows3 size={15} />} />
           <InlineStat label="검토중" value={`${reviewCount}건`} icon={<SendHorizontal size={15} />} />
@@ -179,8 +179,8 @@ export default function TaskListPage() {
         </div>
       </section>
 
-      <section className="min-w-0 border-t border-border/70 bg-background pt-4">
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-5">
+      <section className="min-w-0 border-t border-border/70 bg-background pt-6">
+          <div className="mb-7 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-6">
             <div className="flex flex-wrap items-center gap-2">
               <ScopeButton active={taskScope === 'milestone'} onClick={() => setTaskScope('milestone')}>
                 마일스톤별 보기
@@ -286,7 +286,7 @@ export default function TaskListPage() {
                 })
                   : (
                     <section className="py-2">
-                      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                         <div>
                           <h2 className="text-base font-semibold tracking-tight text-foreground">
                             {taskScope === 'mine' ? '내 업무' : '시간순 업무'}
@@ -540,15 +540,15 @@ function KanbanView({
   ];
 
   return (
-    <div className="grid gap-6 xl:grid-cols-3">
+    <div className="grid gap-7 xl:grid-cols-3">
       {columns.map((column) => (
         <section key={column.key} className="min-w-0">
-          <div className="flex min-h-12 items-center justify-between border-b border-border/70 pb-3">
+          <div className="flex min-h-14 items-center justify-between border-b border-border/70 pb-4">
             <div className="flex items-center gap-2">
               <h2 className="text-base font-semibold leading-none text-foreground">{column.title}</h2>
               <span
                 className={[
-                  'inline-flex h-8 min-w-9 items-center justify-center rounded-md border px-2.5 text-sm font-semibold leading-none align-middle',
+                  'inline-flex h-8 min-w-10 items-center justify-center rounded-md border px-2.5 text-sm font-semibold leading-none',
                   column.tone === 'green'
                     ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
                     : column.tone === 'amber'
@@ -560,7 +560,7 @@ function KanbanView({
               </span>
             </div>
           </div>
-          <div className="space-y-3 pt-4">
+          <div className="space-y-4 pt-4">
             {column.items.map((task) => (
               <button
                 key={task.id}
@@ -619,8 +619,8 @@ function CalendarView({
   }, {});
 
   return (
-    <div className="border-t border-border/70 pt-5">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-4">
+    <div className="border-t border-border/70 pt-6">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-5">
         <div>
           <h2 className="text-base font-semibold text-foreground">
             {targetMonth.getFullYear()}년 {targetMonth.getMonth() + 1}월
@@ -653,7 +653,7 @@ function CalendarView({
           </Button>
         </div>
       </div>
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-1.5">
         {['일', '월', '화', '수', '목', '금', '토'].map((day) => (
           <div key={day} className="px-1.5 pb-1.5 text-[11px] font-semibold text-muted-foreground">
             {day}
@@ -665,7 +665,7 @@ function CalendarView({
             <div
               key={`${day}-${index}`}
                   className={[
-                'min-h-[104px] border-t border-border/70 bg-background p-1.5',
+                'min-h-[96px] border-t border-border/70 bg-background p-1.5',
                 day <= 0 || day > daysInMonth ? 'bg-muted/25' : '',
               ].join(' ')}
             >
@@ -794,8 +794,8 @@ function GanttView({
   const visibleItems = items.filter((item) => new Date(item.dueDate) >= start && new Date(item.startDate) <= end);
 
   return (
-    <div className="border-t border-border/70 pt-5">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-4">
+    <div className="border-t border-border/70 pt-6">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-5">
         <div>
           <h2 className="text-base font-semibold text-foreground">
             {cursor.getFullYear()}년 {cursor.getMonth() + 1}월 타임라인
@@ -828,55 +828,51 @@ function GanttView({
           </Button>
         </div>
       </div>
-      <div className="overflow-x-auto">
-        <div className="min-w-[860px]">
-          <div
-            className="grid gap-2 border-b border-border/70 pb-3"
-            style={{ gridTemplateColumns: `200px repeat(${days.length}, minmax(32px, 1fr))` }}
-          >
-            <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">업무</div>
-            {days.map((day) => (
-              <div key={day.toISOString()} className="text-center text-[11px] font-semibold text-muted-foreground">
-                {day.getDate()}
+      <div
+        className="grid gap-x-1 border-b border-border/70 pb-3"
+        style={{ gridTemplateColumns: `minmax(160px,2.3fr) repeat(${days.length}, minmax(0,1fr))` }}
+      >
+        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">업무</div>
+        {days.map((day) => (
+          <div key={day.toISOString()} className="text-center text-[10px] font-semibold text-muted-foreground">
+            {day.getDate()}
+          </div>
+        ))}
+      </div>
+
+      <div className="space-y-2 pt-4">
+        {visibleItems.map((task) => {
+          const clippedStart = new Date(Math.max(new Date(task.startDate).getTime(), start.getTime()));
+          const clippedEnd = new Date(Math.min(new Date(task.dueDate).getTime(), end.getTime()));
+          const offset = Math.max(0, Math.round((clippedStart.getTime() - start.getTime()) / 86_400_000));
+          const span = Math.max(1, Math.round((clippedEnd.getTime() - clippedStart.getTime()) / 86_400_000) + 1);
+
+          return (
+            <button
+              key={task.id}
+              type="button"
+              onClick={() => onSelect(task.id)}
+              className={[
+                'grid w-full items-center gap-x-1 px-2 py-2.5 text-left transition hover:bg-muted/35',
+                selectedTaskId === task.id ? 'bg-primary/5' : '',
+              ].join(' ')}
+              style={{ gridTemplateColumns: `minmax(160px,2.3fr) repeat(${days.length}, minmax(0,1fr))` }}
+            >
+              <div className="min-w-0 pr-2">
+                <div className="truncate font-semibold text-foreground">{task.title}</div>
+                <div className="mt-1 truncate text-[11px] text-muted-foreground">{task.assigneeName}</div>
               </div>
-            ))}
-          </div>
-
-          <div className="space-y-2 pt-4">
-            {visibleItems.map((task) => {
-              const clippedStart = new Date(Math.max(new Date(task.startDate).getTime(), start.getTime()));
-              const clippedEnd = new Date(Math.min(new Date(task.dueDate).getTime(), end.getTime()));
-              const offset = Math.max(0, Math.round((clippedStart.getTime() - start.getTime()) / 86_400_000));
-              const span = Math.max(1, Math.round((clippedEnd.getTime() - clippedStart.getTime()) / 86_400_000) + 1);
-
-              return (
-                <button
-                  key={task.id}
-                  type="button"
-                  onClick={() => onSelect(task.id)}
-                  className={[
-                    'grid w-full items-center gap-2 px-2.5 py-2.5 text-left transition hover:bg-muted/35',
-                    selectedTaskId === task.id ? 'bg-primary/5' : '',
-                  ].join(' ')}
-                  style={{ gridTemplateColumns: `200px repeat(${days.length}, minmax(32px, 1fr))` }}
-                >
-                  <div>
-                    <div className="font-semibold text-foreground">{task.title}</div>
-                    <div className="mt-1 text-xs text-muted-foreground">{task.assigneeName}</div>
+              {days.map((_, index) => {
+                const active = index >= offset && index < offset + span;
+                return (
+                  <div key={`${task.id}-${index}`} className="h-6 rounded-sm bg-muted/35">
+                    {active ? <div className="h-full rounded-sm bg-primary/85" /> : null}
                   </div>
-                  {days.map((_, index) => {
-                    const active = index >= offset && index < offset + span;
-                    return (
-                      <div key={`${task.id}-${index}`} className="h-7 bg-muted/35">
-                        {active ? <div className="h-full bg-primary/85" /> : null}
-                      </div>
-                    );
-                  })}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+                );
+              })}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -996,7 +992,7 @@ function ScopeButton({
       type="button"
       onClick={onClick}
       className={[
-        'rounded-full border px-3 py-1.5 text-sm transition',
+        'rounded-full border px-2.5 py-1 text-xs font-medium transition',
         active
           ? 'border-primary/30 bg-primary/8 text-foreground'
           : 'border-border/70 text-muted-foreground hover:border-border hover:text-foreground',

@@ -124,7 +124,7 @@ export default function RolesPermissionsPage() {
                       <div className="text-lg font-semibold text-foreground">{role.name}</div>
                       <p className="mt-2 text-sm leading-6 text-muted-foreground">{role.description}</p>
                     </div>
-                    <StatusPill tone="slate">{effectiveKeys.length}개 권한</StatusPill>
+                    <span className="pt-0.5 text-xs font-medium text-muted-foreground">{effectiveKeys.length}개 권한</span>
                   </div>
                   <div className="mt-4 flex items-center gap-2">
                     <Button
@@ -233,22 +233,12 @@ export default function RolesPermissionsPage() {
             </>
           ) : null
         }
-        size="sm"
+        size="md"
+        className="sm:max-w-[760px]"
         footer={
-          <div className="flex w-full items-center justify-between gap-3">
-            <Button
-              type="button"
-              variant="ghost"
-              className="rounded-xl px-3"
-              onClick={() => setShowPolicyStatements((current) => !current)}
-            >
-              정책 문장 {showPolicyStatements ? '접기' : '보기'}
-              {showPolicyStatements ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-            </Button>
-            <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => setDetailRoleId(null)}>
-              닫기
-            </Button>
-          </div>
+          <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => setDetailRoleId(null)}>
+            닫기
+          </Button>
         }
       >
         {detailRole ? (
@@ -271,12 +261,19 @@ export default function RolesPermissionsPage() {
                 ))}
               </div>
             </div>
-            {showPolicyStatements ? (
-              <div className="border-t border-border/70 pt-4">
-                <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">정책 문장</div>
-                <div className="mt-3 space-y-2">
+            <div className="border-t border-border/70 pt-4">
+              <button
+                type="button"
+                className="flex items-center gap-2 text-sm font-medium text-primary"
+                onClick={() => setShowPolicyStatements((current) => !current)}
+              >
+                정책 문장 {showPolicyStatements ? '접기' : '보기'}
+                {showPolicyStatements ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              </button>
+              {showPolicyStatements ? (
+                <div className="mt-4 space-y-2">
                   {detailKeys.map((permissionKey) => (
-                    <div key={permissionKey} className="flex items-center gap-2 border-b border-border/60 pb-2 text-sm">
+                    <div key={permissionKey} className="flex items-start gap-2 border-b border-border/60 pb-2 text-sm">
                       <StatusPill tone="slate">허용</StatusPill>
                       <code className="min-w-0 break-all rounded-md bg-muted/35 px-2 py-1 text-[12px] text-foreground">
                         {buildPolicyStatement(permissionKey)}
@@ -284,8 +281,8 @@ export default function RolesPermissionsPage() {
                     </div>
                   ))}
                 </div>
-              </div>
-            ) : null}
+              ) : null}
+            </div>
           </div>
         ) : null}
       </AppModal>
@@ -308,7 +305,8 @@ export default function RolesPermissionsPage() {
             </>
           ) : null
         }
-        size="lg"
+        size="md"
+        className="sm:max-w-[880px]"
         footer={
           <div className="flex w-full items-center justify-between gap-3">
             <div className="text-sm text-muted-foreground">정책 문장은 상세 보기 안에서만 확인합니다.</div>
@@ -333,7 +331,7 @@ export default function RolesPermissionsPage() {
                     {items.filter((item) => draftPermissionKeys.includes(item.key)).length}개 허용
                   </StatusPill>
                 </div>
-                <div className="grid gap-3 md:grid-cols-2">
+                <div className="space-y-2">
                   {items.map((permission) => {
                     const active = draftPermissionKeys.includes(permission.key);
                     return (
@@ -342,15 +340,15 @@ export default function RolesPermissionsPage() {
                         type="button"
                         onClick={() => togglePermission(permission.key)}
                         className={[
-                          'rounded-2xl border px-4 py-4 text-left transition',
+                          'flex w-full items-start justify-between gap-4 rounded-2xl border px-4 py-4 text-left transition',
                           active ? 'border-primary/30 bg-primary/5' : 'border-border/70 hover:border-border',
                         ].join(' ')}
                       >
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="font-medium text-foreground">{permission.name}</span>
-                          <StatusPill tone={active ? 'blue' : 'slate'}>{active ? '허용' : '미허용'}</StatusPill>
+                        <div className="min-w-0">
+                          <div className="font-medium text-foreground">{permission.name}</div>
+                          <p className="mt-2 text-sm leading-6 text-muted-foreground">{permission.description}</p>
                         </div>
-                        <p className="mt-2 text-sm leading-6 text-muted-foreground">{permission.description}</p>
+                        <StatusPill tone={active ? 'blue' : 'slate'}>{active ? '허용' : '미허용'}</StatusPill>
                       </button>
                     );
                   })}
@@ -366,18 +364,19 @@ export default function RolesPermissionsPage() {
         onOpenChange={setCatalogOpen}
         title="전체 권한 보기"
         description="현재 시스템에 정의된 권한 카탈로그를 카테고리별로 확인합니다."
-        size="lg"
+        size="md"
+        className="sm:max-w-[840px]"
         footer={
           <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => setCatalogOpen(false)}>
             닫기
           </Button>
         }
       >
-        <div className="space-y-6">
+        <div className="max-h-[62vh] space-y-6 overflow-y-auto pr-1">
           {groupedCatalog.map(({ category, items }) => (
             <section key={category} className="border-t border-border/60 pt-4 first:border-t-0 first:pt-0">
               <h3 className="text-base font-semibold text-foreground">{category}</h3>
-              <div className="mt-3 grid gap-3 md:grid-cols-2">
+              <div className="mt-3 space-y-3">
                 {items.map((permission) => (
                   <div key={permission.key} className="border-b border-border/60 pb-3">
                     <div className="font-medium text-foreground">{permission.name}</div>
