@@ -3,6 +3,7 @@
 - `review-screen-design.md`: review 기능의 화면설계 페이지
 - `review-component-design.md`: review 기능의 컴포넌트 설계 페이지
 - `vercel-ops-security-guide.md`: Vercel 운영 및 보안 가이드
+- `codex-frontend-ui-quality-guide.md`: Codex 프론트엔드 UI/UX 품질 가이드
 
 ## WHY Index
 
