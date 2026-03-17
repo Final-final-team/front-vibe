@@ -28,7 +28,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-  SidebarRail,
   SidebarSeparator,
   SidebarTrigger,
 } from '../../components/ui/sidebar';
@@ -49,10 +48,9 @@ export default function WorkspaceLayout({ children }: Props) {
 
   return (
     <SidebarProvider defaultOpen>
-      <Sidebar variant="inset" collapsible="icon" className="border-r border-border/60">
+      <Sidebar variant="inset" collapsible="offcanvas" className="border-r border-border/60">
         <SidebarHeader className="px-3 py-4">
           <div className="flex items-center gap-2 px-1">
-            <SidebarTrigger className="h-8 w-8 rounded-md text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground" />
             <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-sidebar-border bg-background text-primary shadow-sm">
               <Home size={18} />
             </div>
@@ -61,7 +59,7 @@ export default function WorkspaceLayout({ children }: Props) {
               <div className="text-xs text-sidebar-foreground/70">협업 워크스페이스</div>
             </div>
           </div>
-          <div className="relative mt-3 group-data-[collapsible=icon]:hidden">
+          <div className="relative mt-3">
             <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sidebar-foreground/55" />
             <Input
               placeholder="업무, 검토, 멤버 검색"
@@ -73,7 +71,7 @@ export default function WorkspaceLayout({ children }: Props) {
         <SidebarContent>
           <SidebarGroup>
             <SidebarGroupLabel>프로젝트</SidebarGroupLabel>
-            <SidebarGroupContent className="px-2 group-data-[collapsible=icon]:hidden">
+            <SidebarGroupContent className="px-2">
               <Select value={selectedProjectId ?? currentProject?.id ?? ''} onValueChange={setSelectedProjectId}>
                 <SelectTrigger className="h-9 rounded-lg border-sidebar-border bg-sidebar text-sidebar-foreground shadow-none">
                   <SelectValue placeholder="프로젝트 선택" />
@@ -160,7 +158,7 @@ export default function WorkspaceLayout({ children }: Props) {
 
         <SidebarFooter className="px-3 pb-4">
           {currentProject && (
-            <div className="border-t border-sidebar-border px-1 pt-3 text-xs text-sidebar-foreground/80 group-data-[collapsible=icon]:hidden">
+            <div className="border-t border-sidebar-border px-1 pt-3 text-xs text-sidebar-foreground/80">
               <div className="font-semibold text-sidebar-foreground">{currentProject.ownerName}</div>
               <div className="mt-1">업데이트 {formatDate(currentProject.updatedAt)}</div>
               <div className="mt-3 h-1.5 overflow-hidden bg-sidebar/70">
@@ -169,7 +167,6 @@ export default function WorkspaceLayout({ children }: Props) {
             </div>
           )}
         </SidebarFooter>
-        <SidebarRail />
       </Sidebar>
 
       <SidebarInset className="bg-[linear-gradient(180deg,#f7f8fb_0%,#fbfcfe_100%)]">
@@ -178,6 +175,9 @@ export default function WorkspaceLayout({ children }: Props) {
             <Header
               title={shell.title}
               subtitle={shell.subtitle}
+              leadingAction={
+                <SidebarTrigger className="h-8 w-8 rounded-md border border-border/70 text-muted-foreground hover:bg-muted hover:text-foreground" />
+              }
               projects={projects.map((project) => ({
                 id: project.id,
                 name: project.name,

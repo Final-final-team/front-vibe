@@ -19,6 +19,14 @@ import { ArrowRight, ChartColumn, GripVertical, Rows3, SendHorizontal, Users2 } 
 import { Link, useSearchParams } from 'react-router-dom';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import StatusPill from '../shared/ui/StatusPill';
 import { useTasks } from '../features/review/hooks';
@@ -65,7 +73,7 @@ export default function TaskListPage() {
     }, {});
   }, [taskItems, milestones]);
 
-  const selectedTask = taskItems.find((task) => task.id === selectedTaskId) ?? taskItems[0];
+  const selectedTask = taskItems.find((task) => task.id === selectedTaskId) ?? null;
   const groupedByStatus = groupTasksByStatus(taskItems);
   const reviewCount = groupedByStatus.IN_REVIEW.length;
   const completedCount = groupedByStatus.COMPLETED.length;
@@ -126,8 +134,7 @@ export default function TaskListPage() {
         </div>
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
-        <section className="min-w-0 border-t border-border/70 bg-background">
+      <section className="min-w-0 border-t border-border/70 bg-background">
           {currentView === 'table' ? (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <div className="divide-y divide-border/70">
@@ -209,59 +216,68 @@ export default function TaskListPage() {
           ) : (
             <GanttView items={taskItems} selectedTaskId={selectedTask?.id ?? null} onSelect={setSelectedTaskId} />
           )}
-        </section>
+      </section>
 
-        <aside className="xl:self-start">
-          <div className="border-l border-border/70 pl-5">
-            {selectedTask ? (
+      <Dialog open={Boolean(selectedTask)} onOpenChange={(open) => {
+        if (!open) {
+          setSelectedTaskId(null);
+        }
+      }}>
+        {selectedTask ? (
+          <DialogContent className="max-w-3xl rounded-lg p-0">
+            <DialogHeader className="border-b border-border/70 px-5 py-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusPill tone="teal">{selectedTask.domain}</StatusPill>
+                <StatusPill tone="purple">{selectedTask.assigneeName}</StatusPill>
+                <StatusPill tone="slate">{selectedTask.milestoneName}</StatusPill>
+              </div>
+              <DialogTitle className="mt-3 text-[26px] font-semibold tracking-tight">{selectedTask.title}</DialogTitle>
+              <DialogDescription className="mt-2 text-sm leading-6">
+                {selectedTask.summary}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid gap-6 px-5 py-5 lg:grid-cols-[minmax(0,1fr)_240px]">
               <div className="space-y-4">
-                <div className="space-y-3 border-b border-border/70 pb-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <StatusPill tone="teal">{selectedTask.domain}</StatusPill>
-                    <StatusPill tone="purple">{selectedTask.assigneeName}</StatusPill>
-                    <StatusPill tone="slate">{selectedTask.milestoneName}</StatusPill>
-                  </div>
-                  <div>
-                    <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground">
-                      선택된 업무
-                    </div>
-                    <div className="mt-1.5 text-[24px] font-semibold tracking-tight text-foreground">{selectedTask.title}</div>
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{selectedTask.summary}</p>
-                  </div>
-                </div>
-
                 <div className="grid gap-3 border-b border-border/70 pb-4">
                   <MetaRow label="기한" value={formatDate(selectedTask.dueDate)} />
                   <MetaRow label="시작" value={formatDate(selectedTask.startDate)} />
                   <MetaRow label="우선순위" value={getPriorityLabel(selectedTask.priority)} />
                   <MetaRow label="현재 상태" value={getStatusLabel(selectedTask.status)} />
                 </div>
-
-                <div className="space-y-3">
-                  <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground">
-                    바로가기
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button asChild className="h-9 rounded-md px-3">
-                      <Link to={`/tasks/${selectedTask.id}/reviews`}>
-                        검토 목록
-                        <ArrowRight size={16} />
-                      </Link>
-                    </Button>
-                    <Button asChild variant="outline" className="h-9 rounded-md px-3">
-                      <Link to={`/tasks/${selectedTask.id}/reviews/new`}>
-                        새 검토 상신
-                      </Link>
-                    </Button>
-                  </div>
+                <div className="space-y-2">
+                  <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground">업무 메모</div>
+                  <p className="text-sm leading-6 text-muted-foreground">
+                    선택한 업무의 상태와 검토 진입 액션을 여기서 확인합니다. 우측 전체 폭을 침범하지 않도록 상세는 모달로 분리합니다.
+                  </p>
                 </div>
               </div>
-            ) : (
-              <div className="py-10 text-sm text-muted-foreground">업무를 선택하면 상세가 표시됩니다.</div>
-            )}
-          </div>
-        </aside>
-      </div>
+
+              <div className="space-y-3 border-l border-border/70 pl-5">
+                <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground">바로가기</div>
+                <div className="flex flex-col gap-2">
+                  <Button asChild className="h-9 rounded-md justify-between px-3">
+                    <Link to={`/tasks/${selectedTask.id}/reviews`}>
+                      검토 목록
+                      <ArrowRight size={16} />
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" className="h-9 rounded-md px-3">
+                    <Link to={`/tasks/${selectedTask.id}/reviews/new`}>
+                      새 검토 상신
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <DialogFooter className="border-t border-border/70 px-5 py-3">
+              <Button type="button" variant="outline" className="rounded-md" onClick={() => setSelectedTaskId(null)}>
+                닫기
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        ) : null}
+      </Dialog>
     </div>
   );
 }

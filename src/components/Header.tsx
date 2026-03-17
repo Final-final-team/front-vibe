@@ -1,5 +1,5 @@
 import { Bell, ChevronDown, Sparkles } from 'lucide-react';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Button } from './ui/button';
 import {
   Dialog,
@@ -18,6 +18,7 @@ type Props = {
   onProjectChange?: (projectId: string) => void;
   stats?: Array<{ label: string; value: string }>;
   compactMeta?: boolean;
+  leadingAction?: ReactNode;
 };
 
 export default function Header({
@@ -28,6 +29,7 @@ export default function Header({
   onProjectChange,
   stats = [],
   compactMeta = false,
+  leadingAction,
 }: Props) {
   const [noticeOpen, setNoticeOpen] = useState(false);
 
@@ -36,6 +38,7 @@ export default function Header({
     <header className="border-b border-border/70 bg-background/94 px-5 py-2.5 backdrop-blur">
       <div className="flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
         <div className="min-w-0 flex items-center gap-3">
+          {leadingAction}
           <div className="flex h-7 w-7 items-center justify-center text-primary">
             <Sparkles size={14} />
           </div>
