@@ -48,7 +48,7 @@ export default function WorkspaceLayout({ children }: Props) {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const shell = getShellConfig(location.pathname);
-  const { projects, currentProject, selectedProjectId, setSelectedProjectId } = useWorkspace();
+  const { projects, currentProject, currentProjectDetail, selectedProjectId, setSelectedProjectId } = useWorkspace();
   const taskView = searchParams.get('view') ?? 'table';
   const isProjectHub = shell.domainPath === 'projects';
   const showTaskViewExpansion = shell.domainPath === 'tasks';
@@ -183,6 +183,16 @@ export default function WorkspaceLayout({ children }: Props) {
           {!isProjectHub && currentProject && (
             <div className="border-t border-sidebar-border px-1 pt-3 text-xs text-sidebar-foreground/80">
               <div className="font-semibold text-sidebar-foreground">{currentProject.ownerName}</div>
+              {currentProjectDetail ? (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  <span className="rounded-full border border-sidebar-border bg-sidebar px-2 py-1 text-[10px] font-semibold text-sidebar-foreground/75">
+                    {getMembershipLabel(currentProjectDetail.membershipStatus)}
+                  </span>
+                  <span className="rounded-full border border-sidebar-border bg-sidebar px-2 py-1 text-[10px] font-semibold text-sidebar-foreground/75">
+                    {getProjectStatusLabel(currentProjectDetail.status)}
+                  </span>
+                </div>
+              ) : null}
               <div className="mt-1">업데이트 {formatDate(currentProject.updatedAt)}</div>
               <div className="mt-2.5 h-1.5 overflow-hidden bg-sidebar/70">
                 <div className="h-full bg-primary" style={{ width: `${currentProject.progress}%` }} />
@@ -223,7 +233,7 @@ export default function WorkspaceLayout({ children }: Props) {
 
             {shell.domainPath === 'tasks' ? (
               <>
-                <div className="hidden items-center gap-1 overflow-x-auto px-4 pb-1 hide-scrollbar md:flex">
+                <div className="hidden items-center gap-2 overflow-x-auto px-4 pb-3 pt-2 hide-scrollbar md:flex">
                 <ViewSwitchButton
                   icon={<LayoutTemplate size={16} />}
                   active={taskView === 'table'}
@@ -261,7 +271,7 @@ export default function WorkspaceLayout({ children }: Props) {
                 </ViewSwitchButton>
                 </div>
 
-                <div className="flex items-center justify-between gap-2 px-4 pb-1.5 md:hidden">
+                <div className="flex items-center justify-between gap-2 px-4 pb-3 pt-2 md:hidden">
                   <div className="flex min-w-0 items-center gap-1 overflow-x-auto hide-scrollbar">
                     <ViewSwitchButton
                       icon={<LayoutTemplate size={15} />}
@@ -337,11 +347,11 @@ function ViewSwitchButton({
       type="button"
       onClick={onClick}
       className={[
-        'inline-flex items-center gap-2 border-b-2 px-2.5 py-1.5 font-medium transition-colors',
-        mobile ? 'shrink-0 text-sm' : 'text-[15px]',
+        'inline-flex items-center gap-2 rounded-full border px-3 py-2 font-medium transition-all',
+        mobile ? 'shrink-0 text-xs' : 'text-[13px]',
         active
-          ? 'border-primary text-foreground'
-          : 'border-transparent bg-transparent text-muted-foreground hover:border-border hover:text-foreground',
+          ? 'border-primary/25 bg-primary text-primary-foreground shadow-[0_8px_24px_rgba(37,99,235,0.18)]'
+          : 'border-border/70 bg-background/70 text-muted-foreground hover:border-primary/20 hover:text-foreground',
       ].join(' ')}
     >
       {icon}
@@ -379,7 +389,7 @@ function getShellConfig(pathname: string) {
       domain: 'members',
       domainPath: 'members',
       title: '멤버',
-      subtitle: '현재 백엔드에 멤버 관리 API가 없어 메인 플로우에서 제외된 화면입니다.',
+      subtitle: '프로젝트 구성원 현황, 초대 준비, 역할 할당 상태를 한 화면에서 확인합니다.',
       primaryLabel: '업무로 이동',
       primaryTo: `/projects/${appConfig.defaultProjectId}/tasks`,
       contextLabel: 'members',
@@ -392,7 +402,7 @@ function getShellConfig(pathname: string) {
       domain: 'logs',
       domainPath: 'logs',
       title: '감사 로그',
-      subtitle: '현재 백엔드에 감사 로그 API가 없어 메인 플로우에서 제외된 화면입니다.',
+      subtitle: '프로젝트 레벨 감사 로그 API 연결 전까지는 연동 준비 상태를 안내합니다.',
       primaryLabel: '검토로 이동',
       primaryTo: `/projects/${appConfig.defaultProjectId}/reviews`,
       contextLabel: 'logs',
@@ -405,7 +415,7 @@ function getShellConfig(pathname: string) {
       domain: 'roles',
       domainPath: 'roles',
       title: '역할 / 권한',
-      subtitle: '현재 백엔드에 역할/권한 관리 API가 없어 메인 플로우에서 제외된 화면입니다.',
+      subtitle: '역할 카탈로그와 권한 정책을 관리자 시점에서 검토합니다.',
       primaryLabel: '업무로 이동',
       primaryTo: `/projects/${appConfig.defaultProjectId}/tasks`,
       contextLabel: 'rbac',
@@ -418,7 +428,7 @@ function getShellConfig(pathname: string) {
       domain: 'milestones',
       domainPath: 'milestones',
       title: '마일스톤',
-      subtitle: '현재 백엔드에 마일스톤 API가 없어 메인 플로우에서 제외된 화면입니다.',
+      subtitle: '마일스톤 API 연결 전까지는 연동 범위와 후속 작업을 안내합니다.',
       primaryLabel: '업무로 이동',
       primaryTo: `/projects/${appConfig.defaultProjectId}/tasks`,
       contextLabel: 'milestones',
@@ -501,4 +511,32 @@ function getShellConfig(pathname: string) {
     contextLabel: 'tasks',
     filterLabels: ['상태', '우선순위', '검토 상태'],
   };
+}
+
+function getMembershipLabel(status: string) {
+  switch (status) {
+    case 'ACTIVE':
+      return '참여중';
+    case 'INVITED':
+      return '초대 대기';
+    case 'DECLINED':
+      return '참여 거절';
+    case 'EXPIRED':
+      return '초대 만료';
+    default:
+      return status;
+  }
+}
+
+function getProjectStatusLabel(status: string) {
+  switch (status) {
+    case 'ACTIVE':
+      return '활성 프로젝트';
+    case 'ARCHIVED':
+      return '보관 프로젝트';
+    case 'DELETED':
+      return '삭제 프로젝트';
+    default:
+      return status;
+  }
 }

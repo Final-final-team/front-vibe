@@ -32,6 +32,8 @@ import { formatDate } from '../shared/lib/format';
 import Button from '../shared/ui/Button';
 import Card from '../shared/ui/Card';
 import Dialog from '../shared/ui/Dialog';
+import PageHero from '../shared/ui/PageHero';
+import StatusPill from '../shared/ui/StatusPill';
 
 export default function ReviewDetailPage() {
   const navigate = useNavigate();
@@ -120,38 +122,30 @@ export default function ReviewDetailPage() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-3xl border border-gray-200 bg-white px-6 py-5">
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-          <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">
-              검토 상세
-            </div>
-            <div className="mt-3 flex flex-wrap items-center gap-3">
-              <h2 className="text-2xl font-semibold text-gray-900">
-                {task?.title ?? `검토 #${review.reviewId}`}
-              </h2>
-              <ReviewStatusBadge status={review.status} />
-              <span className="rounded-full border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-600">
-                {review.roundNo}차
-              </span>
-            </div>
-            <div className="mt-3 text-sm text-gray-500">
-              검토 ID #{review.reviewId} · 업무 ID #{review.taskId} · 잠금 버전 v{review.lockVersion}
-            </div>
+      <PageHero
+        eyebrow={<StatusPill tone="blue">검토 상세</StatusPill>}
+        title={
+          <div className="flex flex-wrap items-center gap-3">
+            <span>{task?.title ?? `검토 #${review.reviewId}`}</span>
+            <ReviewStatusBadge status={review.status} />
+            <StatusPill tone="slate">{review.roundNo}차</StatusPill>
           </div>
-          <div className="flex flex-wrap gap-3">
+        }
+        description={`검토 ID #${review.reviewId} · 업무 ID #${review.taskId} · 잠금 버전 v${review.lockVersion}`}
+        actions={
+          <>
             <Link
               to={`/projects/${task?.projectId ?? appConfig.defaultProjectId}/tasks/${review.taskId}/reviews`}
-              className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-blue-200 hover:text-blue-700"
+              className="rounded-2xl border border-border/70 bg-background px-4 py-2.5 text-sm font-semibold text-foreground transition hover:border-primary/20 hover:text-primary"
             >
               라운드 목록
             </Link>
             <Button variant="secondary" onClick={() => navigate(`/projects/${task?.projectId ?? appConfig.defaultProjectId}/tasks/${review.taskId}/reviews/new`)}>
               새 검토
             </Button>
-          </div>
-        </div>
-        <div className="mt-6">
+          </>
+        }
+        stats={
           <ReviewActionBar
             projectId={task?.projectId ?? appConfig.defaultProjectId}
             taskId={review.taskId}
@@ -166,8 +160,8 @@ export default function ReviewDetailPage() {
             onReject={() => setRejectOpen(true)}
             onCancel={() => setCancelOpen(true)}
           />
-        </div>
-      </section>
+        }
+      />
 
       {pageError && (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
@@ -178,7 +172,7 @@ export default function ReviewDetailPage() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.9fr)]">
         <div className="space-y-6">
           <Card title="본문" description="검토 요청 또는 수정된 내용을 보여줍니다.">
-            <p className="whitespace-pre-wrap text-sm leading-7 text-gray-700">{review.content}</p>
+            <p className="whitespace-pre-wrap text-sm leading-7 text-foreground/80">{review.content}</p>
             {review.rejectionReason && (
               <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4 text-sm text-rose-700">
                 <div className="flex items-center gap-2 font-semibold">
@@ -286,7 +280,7 @@ export default function ReviewDetailPage() {
           <ReviewHistoryTimeline items={historiesQuery.data?.items ?? []} />
 
           <Card title="상태 규칙 요약" description="현재 상태에 따라 허용되는 액션을 정리합니다.">
-            <div className="space-y-3 text-sm text-gray-600">
+            <div className="space-y-3 text-sm text-muted-foreground">
               <Rule
                 icon={<Clock3 size={15} />}
                 title="SUBMITTED"

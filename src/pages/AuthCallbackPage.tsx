@@ -2,7 +2,8 @@ import { LoaderCircle } from 'lucide-react';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { hasCompletedProjectOnboarding } from '../shared/lib/project-onboarding';
+import { fetchProjectBootstrap } from '../features/workspace/api';
+import { workspaceKeys } from '../features/workspace/hooks';
 
 const defaultProjectsTarget = '/projects';
 const onboardingTarget = '/onboarding/project';
@@ -14,11 +15,14 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     void queryClient.invalidateQueries({ queryKey: ['auth', 'session'] });
 
-    const timer = window.setTimeout(() => {
-      navigate(hasCompletedProjectOnboarding() ? defaultProjectsTarget : onboardingTarget, { replace: true });
-    }, 400);
-
-    return () => window.clearTimeout(timer);
+    void queryClient.fetchQuery({
+      queryKey: workspaceKeys.bootstrap,
+      queryFn: fetchProjectBootstrap,
+    }).then((bootstrap) => {
+      navigate(bootstrap.hasProject ? defaultProjectsTarget : onboardingTarget, { replace: true });
+    }).catch(() => {
+      navigate(defaultProjectsTarget, { replace: true });
+    });
   }, [navigate, queryClient]);
 
   return (
@@ -29,7 +33,7 @@ export default function AuthCallbackPage() {
         </div>
         <h1 className="mt-5 text-2xl font-semibold tracking-tight text-foreground">로그인 결과를 반영하는 중입니다</h1>
         <p className="mt-3 text-sm leading-7 text-muted-foreground">
-          인증 쿠키를 확인한 뒤 프로젝트 허브로 이동합니다.
+          인증 쿠키와 프로젝트 bootstrap 상태를 확인한 뒤 다음 화면으로 이동합니다.
         </p>
       </div>
     </div>

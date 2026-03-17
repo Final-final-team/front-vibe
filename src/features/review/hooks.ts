@@ -20,7 +20,10 @@ import {
   uploadAttachment,
 } from './api';
 import { useProjectTasks } from '../tasks/hooks';
-import type { ReviewCancelInput, ReviewCreateInput, ReviewUpdateInput } from './types';
+import { appConfig } from '../../shared/config/app-config';
+import { getMockTasks } from './mock';
+import type { ReviewCancelInput, ReviewCreateInput, ReviewTask, ReviewUpdateInput } from './types';
+import { getMockProjectIdForTask } from '../tasks/mock-project';
 
 export const reviewKeys = {
   tasks: ['tasks'] as const,
@@ -31,12 +34,58 @@ export const reviewKeys = {
     ['reviews', reviewId, 'attachments', attachmentId, 'download'] as const,
 };
 
-export function useTasks() {
-  const query = useProjectTasks();
+type ReviewTaskListItem = ReviewTask & {
+  projectId: number;
+  status: 'PENDING' | 'IN_PROGRESS' | 'IN_REVIEW' | 'COMPLETED';
+};
+
+function mapTaskStatus(
+  status: 'PENDING' | 'IN_PROGRESS' | 'IN_REVIEW' | 'COMPLETED',
+): ReviewTask['latestReviewStatus'] {
+  if (status === 'COMPLETED') {
+    return 'COMPLETED';
+  }
+
+  if (status === 'IN_REVIEW') {
+    return 'IN_REVIEW';
+  }
+
+  if (status === 'PENDING') {
+    return 'PENDING';
+  }
+
+  return 'IN_PROGRESS';
+}
+
+export function useTasks(projectId = appConfig.defaultProjectId) {
+  const query = useProjectTasks(projectId);
 
   return {
     ...query,
-    data: query.data?.items ?? [],
+    data: (
+      appConfig.useMock
+        ? getMockTasks()
+            .filter((task) => getMockProjectIdForTask(task.id) === projectId)
+            .map<ReviewTaskListItem>((task) => ({
+              ...task,
+              projectId,
+              status: task.latestReviewStatus,
+            }))
+        : (query.data?.items ?? []).map((task) => ({
+            id: task.id,
+            projectId: task.projectId,
+            title: task.title,
+            summary: `${task.title} 업무 상세는 task detail API 연결 전까지 목록 데이터로 대체합니다.`,
+            authorId: task.authorId,
+            priority: task.priority,
+            startDate: task.startDate ?? task.createdAt,
+            dueDate: task.dueDate ?? task.updatedAt,
+            createdAt: task.createdAt,
+            updatedAt: task.updatedAt,
+            latestReviewStatus: mapTaskStatus(task.status),
+            status: task.status,
+          }))
+    ) as ReviewTaskListItem[],
   };
 }
 

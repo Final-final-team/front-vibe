@@ -4,6 +4,7 @@
 - `review-component-design.md`: review 기능의 컴포넌트 설계 페이지
 - `vercel-ops-security-guide.md`: Vercel 운영 및 보안 가이드
 - `codex-frontend-ui-quality-guide.md`: Codex 프론트엔드 UI/UX 품질 가이드
+- `task-command-next-pass.md`: 다음 단계 업무 커맨드 UX 연결 메모
 
 ## WHY Index
 
@@ -19,6 +20,9 @@
 - `../WHY/0018-temporary-project-onboarding-before-project-api.md`
 - `../WHY/0019-project-hub-as-main-page.md`
 - `../WHY/0020-project-hub-is-not-a-menu-item.md`
+- `../WHY/0021-ui-consistency-pass-without-api-contract-change.md`
+- `../WHY/0022-task-create-assignment-follows-backend-separate-assign-api.md`
+- `../WHY/0023-project-detail-becomes-current-user-context.md`
 
 Note:
 - Backend source of truth: [be-api-server](https://github.com/Final-final-team/be-api-server)

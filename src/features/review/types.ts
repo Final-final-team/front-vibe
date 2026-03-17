@@ -1,6 +1,6 @@
 import type { PriorityLevel } from '../workspace/types';
 
-export type TaskStatus = 'IN_PROGRESS' | 'IN_REVIEW' | 'COMPLETED';
+export type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'IN_REVIEW' | 'COMPLETED';
 export type ReviewStatus = 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
 
 export type ReviewSummary = {

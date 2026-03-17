@@ -1,7 +1,9 @@
 import { appConfig } from '../../shared/config/app-config';
 import { backendRequest, toBackendApiError } from '../../shared/lib/http';
-import { getMockTasks } from '../review/mock';
-import type { TaskDetail, TaskPageResult, TaskStatus, TaskSummary } from './types';
+import { getCurrentActor } from '../../shared/lib/session';
+import { assignMockTask, createMockTask, getMockTasks } from '../review/mock';
+import { getMockProjectIdForTask } from './mock-project';
+import type { TaskAssignInput, TaskCreateInput, TaskDetail, TaskPageResult, TaskStatus, TaskSummary } from './types';
 
 type BackendTaskSummary = {
   taskId: number;
@@ -49,6 +51,7 @@ export async function fetchProjectTasks(
   try {
     if (appConfig.useMock) {
       const items = getMockTasks()
+        .filter((task) => getMockProjectIdForTask(task.id) === projectId)
         .map<TaskSummary>((task) => ({
           id: task.id,
           projectId,
@@ -94,7 +97,9 @@ export async function fetchProjectTasks(
 export async function fetchTaskDetail(projectId: number, taskId: number) {
   try {
     if (appConfig.useMock) {
-      const task = getMockTasks().find((item) => item.id === taskId);
+      const task = getMockTasks().find(
+        (item) => item.id === taskId && getMockProjectIdForTask(item.id) === projectId,
+      );
 
       if (!task) {
         throw new Error('Task was not found.');
@@ -119,6 +124,103 @@ export async function fetchTaskDetail(projectId: number, taskId: number) {
       `/api/projects/${projectId}/tasks/${taskId}`,
     );
     return mapTaskDetail(task);
+  } catch (error) {
+    throw toBackendApiError(error);
+  }
+}
+
+export async function createTask(projectId: number, input: TaskCreateInput) {
+  try {
+    if (appConfig.useMock) {
+      const actor = getCurrentActor();
+      const task = await createMockTask({ projectId, authorId: actor.actorId, ...input });
+      return {
+        id: task.id,
+        projectId,
+        title: task.title,
+        status: 'IN_PROGRESS' as const,
+        priority: task.priority,
+        startDate: task.startDate,
+        dueDate: task.dueDate,
+        authorId: task.authorId,
+        createdAt: task.createdAt,
+        updatedAt: task.updatedAt,
+        description: task.summary,
+      } satisfies TaskDetail;
+    }
+
+    const created = await backendRequest<BackendTaskDetail>(`/api/projects/${projectId}/tasks`, {
+      method: 'POST',
+      body: JSON.stringify({
+        title: input.title,
+        description: input.description,
+        startDate: input.startDate ? input.startDate.slice(0, 10) : null,
+        dueDate: input.dueDate ? input.dueDate.slice(0, 10) : null,
+        priority: input.priority,
+      }),
+    });
+
+    return mapTaskDetail(created);
+  } catch (error) {
+    throw toBackendApiError(error);
+  }
+}
+
+export async function assignTask(projectId: number, taskId: number, input: TaskAssignInput) {
+  try {
+    if (appConfig.useMock) {
+      const task = await assignMockTask(taskId, input.userId);
+      return {
+        id: task.id,
+        projectId,
+        title: task.title,
+        status: task.latestReviewStatus === 'IN_PROGRESS' ? 'IN_PROGRESS' : task.latestReviewStatus,
+        priority: task.priority,
+        startDate: task.startDate,
+        dueDate: task.dueDate,
+        authorId: task.authorId,
+        createdAt: task.createdAt,
+        updatedAt: task.updatedAt,
+        description: task.summary,
+      } satisfies TaskDetail;
+    }
+
+    const updated = await backendRequest<BackendTaskDetail>(`/api/projects/${projectId}/tasks/${taskId}/assign`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+
+    return mapTaskDetail(updated);
+  } catch (error) {
+    throw toBackendApiError(error);
+  }
+}
+
+export async function assignTaskToMe(projectId: number, taskId: number) {
+  try {
+    if (appConfig.useMock) {
+      const actor = getCurrentActor();
+      const task = await assignMockTask(taskId, actor.actorId);
+      return {
+        id: task.id,
+        projectId,
+        title: task.title,
+        status: task.latestReviewStatus === 'IN_PROGRESS' ? 'IN_PROGRESS' : task.latestReviewStatus,
+        priority: task.priority,
+        startDate: task.startDate,
+        dueDate: task.dueDate,
+        authorId: task.authorId,
+        createdAt: task.createdAt,
+        updatedAt: task.updatedAt,
+        description: task.summary,
+      } satisfies TaskDetail;
+    }
+
+    const updated = await backendRequest<BackendTaskDetail>(`/api/projects/${projectId}/tasks/${taskId}/assign/me`, {
+      method: 'POST',
+    });
+
+    return mapTaskDetail(updated);
   } catch (error) {
     throw toBackendApiError(error);
   }

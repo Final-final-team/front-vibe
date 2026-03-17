@@ -1,6 +1,8 @@
 export type InviteStatus = 'ACTIVE' | 'INVITED' | 'EXPIRED' | 'DECLINED';
 export type MilestoneHealth = 'ON_TRACK' | 'AT_RISK' | 'COMPLETE';
 export type PriorityLevel = 'HIGHEST' | 'HIGH' | 'MEDIUM' | 'LOW' | 'LOWEST';
+export type ProjectStatus = 'ACTIVE' | 'ARCHIVED' | 'DELETED' | string;
+export type ProjectMembershipStatus = 'ACTIVE' | 'INVITED' | 'EXPIRED' | 'DECLINED' | string;
 
 export type WorkspaceProject = {
   id: string;
@@ -16,8 +18,22 @@ export type WorkspaceProject = {
   updatedAt: string;
 };
 
+export type ProjectDetail = {
+  projectId: string;
+  projectMemberId: number;
+  myUserId: number;
+  name: string;
+  description: string;
+  imageUrl: string | null;
+  status: ProjectStatus;
+  membershipStatus: ProjectMembershipStatus;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type ProjectMember = {
   id: number;
+  userId: number;
   name: string;
   email: string;
   team: string;

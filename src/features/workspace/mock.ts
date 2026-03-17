@@ -41,6 +41,7 @@ const membersByProject: Record<string, ProjectMember[]> = {
   'spark-console': [
     {
       id: 101,
+      userId: 101,
       name: '김하늘',
       email: 'sky.kim@frontvibe.dev',
       team: 'Frontend Platform',
@@ -50,6 +51,7 @@ const membersByProject: Record<string, ProjectMember[]> = {
     },
     {
       id: 201,
+      userId: 201,
       name: '박정민',
       email: 'jm.park@frontvibe.dev',
       team: 'Product Review',
@@ -59,6 +61,7 @@ const membersByProject: Record<string, ProjectMember[]> = {
     },
     {
       id: 202,
+      userId: 202,
       name: '이서진',
       email: 'sj.lee@frontvibe.dev',
       team: 'PMO',
@@ -68,6 +71,7 @@ const membersByProject: Record<string, ProjectMember[]> = {
     },
     {
       id: 301,
+      userId: 301,
       name: '최민서',
       email: 'ms.choi@frontvibe.dev',
       team: 'Design Ops',
@@ -77,6 +81,7 @@ const membersByProject: Record<string, ProjectMember[]> = {
     },
     {
       id: 401,
+      userId: 401,
       name: '한유진',
       email: 'yj.han@frontvibe.dev',
       team: 'QA',
@@ -86,6 +91,7 @@ const membersByProject: Record<string, ProjectMember[]> = {
     },
     {
       id: 402,
+      userId: 402,
       name: '문태호',
       email: 'th.moon@frontvibe.dev',
       team: 'Security',
@@ -95,6 +101,7 @@ const membersByProject: Record<string, ProjectMember[]> = {
     },
     {
       id: 403,
+      userId: 403,
       name: '장예린',
       email: 'yr.jang@frontvibe.dev',
       team: 'Operations',
@@ -106,6 +113,7 @@ const membersByProject: Record<string, ProjectMember[]> = {
   'lighthouse-ops': [
     {
       id: 501,
+      userId: 501,
       name: '정서윤',
       email: 'sy.jung@frontvibe.dev',
       team: 'Operations',
@@ -115,6 +123,7 @@ const membersByProject: Record<string, ProjectMember[]> = {
     },
     {
       id: 502,
+      userId: 502,
       name: '오현우',
       email: 'hw.oh@frontvibe.dev',
       team: 'Infra',
@@ -124,6 +133,7 @@ const membersByProject: Record<string, ProjectMember[]> = {
     },
     {
       id: 503,
+      userId: 503,
       name: '유다은',
       email: 'de.yu@frontvibe.dev',
       team: 'Support',
@@ -170,6 +180,12 @@ const permissions: PermissionDefinition[] = [
     name: '업무 편집',
     category: '일정 관리',
     description: '업무 내용과 일정, 담당자를 수정합니다.',
+  },
+  {
+    key: 'TASK_ASSIGN',
+    name: '업무 할당',
+    category: '일정 관리',
+    description: '업무 담당자를 본인이나 다른 멤버로 지정합니다.',
   },
   {
     key: 'REVIEW_SUBMIT',

@@ -44,25 +44,25 @@ export default function AppModal({
 }: Props) {
   const sizeClassName =
     size === 'sm'
-      ? 'w-[min(640px,calc(100vw-2.5rem))] max-w-[calc(100vw-2.5rem)] sm:max-w-[640px]'
+      ? 'w-[min(620px,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)] sm:max-w-[620px]'
       : size === 'md'
-        ? 'w-[min(820px,calc(100vw-2.5rem))] max-w-[calc(100vw-2.5rem)] sm:max-w-[820px]'
+        ? 'w-[min(840px,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)] sm:max-w-[840px]'
         : size === 'xl'
-          ? 'w-[min(1180px,calc(100vw-2.5rem))] max-w-[calc(100vw-2.5rem)] sm:max-w-[1180px]'
-          : 'w-[min(1024px,calc(100vw-2.5rem))] max-w-[calc(100vw-2.5rem)] sm:max-w-[1024px]';
+          ? 'w-[min(1140px,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)] sm:max-w-[1140px]'
+          : 'w-[min(980px,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)] sm:max-w-[980px]';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
         className={cn(
-          'top-[52%] max-h-[88vh] overflow-hidden rounded-[28px] border border-border/80 p-0 shadow-[0_28px_90px_rgba(15,23,42,0.18)] sm:top-[49%]',
+          'top-[50%] max-h-[90vh] overflow-hidden rounded-[26px] border border-border/80 p-0 shadow-[0_28px_90px_rgba(15,23,42,0.18)]',
           sizeClassName,
           className,
         )}
       >
-        <div className="m-3 flex max-h-[calc(88vh-1.5rem)] flex-col overflow-hidden rounded-[22px] border border-border/70 bg-background">
-          <div className="flex items-start justify-between gap-4 border-b border-border/70 px-6 py-5">
+        <div className="m-2.5 flex max-h-[calc(90vh-1.25rem)] flex-col overflow-hidden rounded-[22px] border border-border/70 bg-background sm:m-3">
+          <div className="flex items-start justify-between gap-4 border-b border-border/70 px-5 py-4 sm:px-6 sm:py-5">
             <DialogHeader className="min-w-0">
               {badges ? <div className="mb-3 flex flex-wrap items-center gap-2">{badges}</div> : null}
               <DialogTitle className="break-keep text-[24px] font-semibold tracking-tight leading-tight">{title}</DialogTitle>
@@ -80,21 +80,17 @@ export default function AppModal({
             </DialogClose>
           </div>
 
-          <div
-            className={cn(
-              'min-h-0 overflow-y-auto px-6 py-6',
-              side ? 'lg:grid-cols-[minmax(0,1fr)_320px]' : '',
-              bodyClassName,
-            )}
-          >
+          <div className={cn('min-h-0 overflow-y-auto px-5 py-5 sm:px-6 sm:py-6', bodyClassName)}>
             <div className={cn(side ? 'grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_320px]' : '')}>
               <div className="min-w-0">{children}</div>
-              {side ? <aside className={cn('border-l border-border/70 pl-6', sideClassName)}>{side}</aside> : null}
+              {side ? (
+                <aside className={cn('border-t border-border/70 pt-6 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0', sideClassName)}>{side}</aside>
+              ) : null}
             </div>
           </div>
 
           {footer ? (
-            <div className={cn('flex justify-end border-t border-border/70 bg-muted/10 px-6 py-4', footerClassName)}>
+            <div className={cn('flex justify-end border-t border-border/70 bg-muted/10 px-5 py-4 sm:px-6', footerClassName)}>
               {footer}
             </div>
           ) : null}

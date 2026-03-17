@@ -4,23 +4,19 @@ import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { useWorkspace } from '../features/workspace/use-workspace';
 import { formatDate } from '../shared/lib/format';
+import PageHero from '../shared/ui/PageHero';
 
 export default function ProjectsHomePage() {
   const navigate = useNavigate();
-  const { projects, setSelectedProjectId } = useWorkspace();
+  const { projects, currentProjectDetail, setSelectedProjectId } = useWorkspace();
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[30px] border border-border/70 bg-[linear-gradient(160deg,rgba(255,255,255,0.96),rgba(243,246,252,0.96))] px-6 py-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)] md:px-8 md:py-8">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <Badge className="rounded-full bg-primary/12 px-3 py-1 text-primary hover:bg-primary/12">Workspace Home</Badge>
-            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-foreground">프로젝트 허브</h2>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">
-              집 아이콘을 누르면 가장 먼저 보는 메인 화면입니다. 프로젝트 카드에서 작업공간을 고르고,
-              그다음 업무 보드나 검토 보관함으로 들어갑니다.
-            </p>
-          </div>
+      <PageHero
+        eyebrow={<Badge className="rounded-full bg-primary/12 px-3 py-1 text-primary hover:bg-primary/12">Workspace Home</Badge>}
+        title="프로젝트 허브"
+        description="집 아이콘을 누르면 가장 먼저 보는 메인 화면입니다. 프로젝트 카드에서 작업공간을 고르고, 그다음 업무 보드나 검토 보관함으로 들어갑니다."
+        stats={
           <div className="grid gap-3 sm:grid-cols-3">
             <SummaryCard title="프로젝트" value={`${projects.length}개`} icon={<Layers3 size={16} />} />
             <SummaryCard
@@ -34,8 +30,8 @@ export default function ProjectsHomePage() {
               icon={<Users size={16} />}
             />
           </div>
-        </div>
-      </section>
+        }
+      />
 
       <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         {projects.map((project) => (
@@ -47,6 +43,19 @@ export default function ProjectsHomePage() {
               <div>
                 <div className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{project.code}</div>
                 <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground">{project.name}</h3>
+                {currentProjectDetail?.projectId === project.id ? (
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <Badge variant="outline" className="rounded-full border-primary/20 bg-primary/[0.06] text-primary">
+                      현재 작업공간
+                    </Badge>
+                    <Badge variant="outline" className="rounded-full">
+                      멤버십 {getMembershipLabel(currentProjectDetail.membershipStatus)}
+                    </Badge>
+                    <Badge variant="outline" className="rounded-full">
+                      상태 {getProjectStatusLabel(currentProjectDetail.status)}
+                    </Badge>
+                  </div>
+                ) : null}
               </div>
               <div className="rounded-full border border-border/70 bg-muted/30 px-3 py-1 text-xs font-semibold text-muted-foreground">
                 진행률 {project.progress}%
@@ -118,4 +127,32 @@ function MetricCard({ label, value }: { label: string; value: string }) {
       <div className="mt-1 text-sm font-semibold text-foreground">{value}</div>
     </div>
   );
+}
+
+function getMembershipLabel(status: string) {
+  switch (status) {
+    case 'ACTIVE':
+      return '참여중';
+    case 'INVITED':
+      return '초대 대기';
+    case 'DECLINED':
+      return '참여 거절';
+    case 'EXPIRED':
+      return '초대 만료';
+    default:
+      return status;
+  }
+}
+
+function getProjectStatusLabel(status: string) {
+  switch (status) {
+    case 'ACTIVE':
+      return '활성';
+    case 'ARCHIVED':
+      return '보관';
+    case 'DELETED':
+      return '삭제';
+    default:
+      return status;
+  }
 }

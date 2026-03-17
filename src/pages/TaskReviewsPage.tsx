@@ -2,6 +2,8 @@ import { AlertCircle, FilePenLine, SendHorizontal } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import ReviewSummaryTable from '../features/review/components/ReviewSummaryTable';
 import { useTaskReviews, useTasks } from '../features/review/hooks';
+import PageHero from '../shared/ui/PageHero';
+import StatusPill from '../shared/ui/StatusPill';
 
 export default function TaskReviewsPage() {
   const { projectId: projectIdParam, taskId: taskIdParam } = useParams();
@@ -15,37 +17,29 @@ export default function TaskReviewsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-3xl border border-gray-200 bg-white px-6 py-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">
-              Project #{projectId} · Task #{taskId}
-            </div>
-            <h2 className="mt-2 text-2xl font-semibold text-gray-900">
-              {task?.title ?? '선택된 업무의 review 목록'}
-            </h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">
-              목록은 `GET /api/v1/tasks/{'{taskId}'}/reviews`의 페이지 응답에 1:1 매핑됩니다.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3">
+      <PageHero
+        eyebrow={<StatusPill tone="blue">{`Project #${projectId} · Task #${taskId}`}</StatusPill>}
+        title={task?.title ?? '선택된 업무의 review 목록'}
+        description="목록은 `GET /api/v1/tasks/{taskId}/reviews`의 페이지 응답에 1:1 매핑됩니다."
+        actions={
+          <>
             <Link
               to={`/projects/${projectId}/tasks/${taskId}/reviews/new`}
-              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+              className="inline-flex items-center gap-2 rounded-2xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_12px_28px_rgba(37,99,235,0.18)]"
             >
               <SendHorizontal size={16} />
               검토 상신
             </Link>
             <Link
               to={`/projects/${projectId}/tasks`}
-              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-blue-200 hover:text-blue-700"
+              className="inline-flex items-center gap-2 rounded-2xl border border-border/70 bg-background px-4 py-2.5 text-sm font-semibold text-foreground transition hover:border-primary/20 hover:text-primary"
             >
               <FilePenLine size={16} />
               업무 목록
             </Link>
-          </div>
-        </div>
-      </section>
+          </>
+        }
+      />
 
       {!hasValidTaskId ? (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
@@ -70,16 +64,16 @@ export default function TaskReviewsPage() {
           )}
 
           {isLoading ? (
-            <div className="rounded-3xl border border-gray-200 bg-white px-6 py-12 text-sm text-gray-500">
+            <div className="rounded-[28px] border border-border/70 bg-background px-6 py-12 text-sm text-muted-foreground">
               review 목록을 불러오는 중입니다.
             </div>
           ) : reviews.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-gray-200 bg-white px-6 py-12 text-center text-sm text-gray-500">
+            <div className="rounded-[28px] border border-dashed border-border/70 bg-background px-6 py-12 text-center text-sm text-muted-foreground">
               <div>아직 review 라운드가 없습니다.</div>
               <div className="mt-3">
                 <Link
                   to={`/projects/${projectId}/tasks/${taskId}/reviews/new`}
-                  className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+                  className="inline-flex items-center gap-2 rounded-2xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_12px_28px_rgba(37,99,235,0.18)]"
                 >
                   <SendHorizontal size={15} />
                   첫 검토 상신하기

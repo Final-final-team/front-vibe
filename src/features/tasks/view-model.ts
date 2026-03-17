@@ -63,6 +63,7 @@ export function buildTaskViewItems({
 
 export function groupTasksByStatus(items: TaskViewItem[]) {
   return {
+    PENDING: items.filter((item) => item.status === 'PENDING'),
     IN_PROGRESS: items.filter((item) => item.status === 'IN_PROGRESS'),
     IN_REVIEW: items.filter((item) => item.status === 'IN_REVIEW'),
     COMPLETED: items.filter((item) => item.status === 'COMPLETED'),
@@ -71,6 +72,8 @@ export function groupTasksByStatus(items: TaskViewItem[]) {
 
 export function getStatusLabel(status: TaskStatus) {
   switch (status) {
+    case 'PENDING':
+      return '대기';
     case 'COMPLETED':
       return '완료';
     case 'IN_REVIEW':
@@ -82,6 +85,8 @@ export function getStatusLabel(status: TaskStatus) {
 
 export function getStatusTone(status: TaskStatus) {
   switch (status) {
+    case 'PENDING':
+      return 'blue' as const;
     case 'COMPLETED':
       return 'green' as const;
     case 'IN_REVIEW':
@@ -139,6 +144,8 @@ function deriveStartDate(dueDate: string, priority: PriorityLevel) {
 
 function getStatusProgress(status: TaskStatus) {
   switch (status) {
+    case 'PENDING':
+      return 12;
     case 'COMPLETED':
       return 100;
     case 'IN_REVIEW':

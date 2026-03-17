@@ -13,6 +13,7 @@ import type {
   ReviewUpdateInput,
   TaskStatus,
 } from './types';
+import type { PriorityLevel } from '../workspace/types';
 
 const tasksCatalog: ReviewTask[] = [
   {
@@ -308,13 +309,13 @@ function now() {
   return new Date().toISOString();
 }
 
-function computeTaskStatus(taskId: number): TaskStatus {
+function computeTaskStatus(task: ReviewTask): TaskStatus {
   const latestReview = reviews
-    .filter((review) => review.taskId === taskId)
+    .filter((review) => review.taskId === task.id)
     .sort((left, right) => right.roundNo - left.roundNo)[0];
 
   if (!latestReview) {
-    return 'IN_PROGRESS';
+    return task.latestReviewStatus;
   }
 
   if (latestReview.status === 'SUBMITTED') {
@@ -330,7 +331,7 @@ function computeTaskStatus(taskId: number): TaskStatus {
 
 function updateTaskStatuses() {
   tasksCatalog.forEach((task) => {
-    task.latestReviewStatus = computeTaskStatus(task.id);
+    task.latestReviewStatus = computeTaskStatus(task);
   });
 }
 
@@ -388,6 +389,51 @@ export function getMockTasks() {
   return deepCopy(tasksCatalog);
 }
 
+export async function createMockTask(input: {
+  projectId: number;
+  title: string;
+  description: string;
+  startDate: string | null;
+  dueDate: string | null;
+  priority: PriorityLevel;
+  authorId: number;
+}) {
+  const projectTasks = tasksCatalog.filter((task) =>
+    input.projectId >= 20 && input.projectId < 30 ? task.id >= 20 && task.id < 30 : input.projectId >= 30 && input.projectId < 40 ? task.id >= 30 && task.id < 40 : task.id >= 10 && task.id < 20,
+  );
+  const nextId = Math.max(...projectTasks.map((task) => task.id), input.projectId) + 1;
+  const timestamp = now();
+
+  const created: ReviewTask = {
+    id: nextId,
+    title: input.title,
+    summary: input.description,
+    authorId: input.authorId,
+    priority: input.priority,
+    startDate: input.startDate ?? timestamp,
+    dueDate: input.dueDate ?? timestamp,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    latestReviewStatus: 'PENDING',
+  };
+
+  tasksCatalog.unshift(created);
+  return deepCopy(created);
+}
+
+export async function assignMockTask(taskId: number, userId: number) {
+  const task = tasksCatalog.find((item) => item.id === taskId);
+
+  if (!task) {
+    throw createMockError('TASK_NOT_FOUND', 'Task was not found.', 404);
+  }
+
+  task.authorId = userId;
+  task.updatedAt = now();
+
+  return deepCopy(task);
+}
+
 export async function getTaskReviews(taskId: number) {
   return deepCopy(
     reviews
@@ -421,7 +467,7 @@ export async function submitReview(taskId: number, input: ReviewCreateInput, act
     throw createMockError('TASK_NOT_FOUND', 'Task was not found.', 404);
   }
 
-  if (computeTaskStatus(taskId) !== 'IN_PROGRESS') {
+  if (computeTaskStatus(task) !== 'IN_PROGRESS') {
     throw createMockError(
       'REVIEW_SUBMIT_NOT_ALLOWED',
       'Task is not in a state that allows review submission.',

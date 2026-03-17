@@ -19,6 +19,18 @@ export type TaskDetail = TaskSummary & {
   description: string;
 };
 
+export type TaskCreateInput = {
+  title: string;
+  description: string;
+  startDate: string | null;
+  dueDate: string | null;
+  priority: PriorityLevel;
+};
+
+export type TaskAssignInput = {
+  userId: number;
+};
+
 export type TaskPageResult<T> = {
   items: T[];
   page: number;

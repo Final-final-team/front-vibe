@@ -1,7 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { appConfig } from '../../shared/config/app-config';
-import { fetchProjectTasks, fetchTaskDetail } from './api';
-import type { TaskStatus } from './types';
+import { assignTask, assignTaskToMe, createTask, fetchProjectTasks, fetchTaskDetail } from './api';
+import type { TaskAssignInput, TaskCreateInput, TaskStatus } from './types';
 
 export const taskKeys = {
   lists: (projectId: number, statuses?: TaskStatus[]) =>
@@ -21,5 +21,41 @@ export function useTaskDetail(projectId: number, taskId: number, enabled = true)
     queryKey: taskKeys.detail(projectId, taskId),
     queryFn: () => fetchTaskDetail(projectId, taskId),
     enabled,
+  });
+}
+
+export function useCreateTask(projectId = appConfig.defaultProjectId) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: TaskCreateInput) => createTask(projectId, input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'tasks'] });
+    },
+  });
+}
+
+export function useAssignTask(projectId = appConfig.defaultProjectId) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ taskId, input }: { taskId: number; input: TaskAssignInput }) =>
+      assignTask(projectId, taskId, input),
+    onSuccess: (_, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'tasks'] });
+      void queryClient.invalidateQueries({ queryKey: taskKeys.detail(projectId, variables.taskId) });
+    },
+  });
+}
+
+export function useAssignTaskToMe(projectId = appConfig.defaultProjectId) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ taskId }: { taskId: number }) => assignTaskToMe(projectId, taskId),
+    onSuccess: (_, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'tasks'] });
+      void queryClient.invalidateQueries({ queryKey: taskKeys.detail(projectId, variables.taskId) });
+    },
   });
 }
