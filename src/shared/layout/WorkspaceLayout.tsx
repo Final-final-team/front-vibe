@@ -10,8 +10,7 @@ import {
   Users,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import BoardToolbar from '../../components/BoardToolbar';
+import { NavLink, useLocation, useSearchParams } from 'react-router-dom';
 import Header from '../../components/Header';
 import { useWorkspace } from '../../features/workspace/use-workspace';
 import { formatDate } from '../lib/format';
@@ -40,9 +39,10 @@ type Props = {
 
 export default function WorkspaceLayout({ children }: Props) {
   const location = useLocation();
-  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const shell = getShellConfig(location.pathname);
   const { projects, currentProject, selectedProjectId, setSelectedProjectId } = useWorkspace();
+  const taskView = searchParams.get('view') ?? 'table';
 
   return (
     <SidebarProvider defaultOpen>
@@ -121,15 +121,35 @@ export default function WorkspaceLayout({ children }: Props) {
             <SidebarGroupContent>
               <SidebarMenu>
                 {[
-                  { label: '칸반', icon: KanbanSquare },
-                  { label: '캘린더', icon: CalendarClock },
-                  { label: '차트', icon: ChartColumn },
-                  { label: '간트', icon: ChevronRight },
-                ].map(({ label, icon: Icon }) => (
+                  { label: '칸반', icon: KanbanSquare, value: 'kanban' },
+                  { label: '캘린더', icon: CalendarClock, value: 'calendar' },
+                  { label: '차트', icon: ChartColumn, value: 'chart' },
+                  { label: '간트', icon: ChevronRight, value: 'gantt' },
+                ].map(({ label, icon: Icon, value }) => (
                     <SidebarMenuItem key={String(label)}>
-                      <SidebarMenuButton tooltip={String(label)} className="opacity-55">
-                        <Icon />
-                        <span>{label}</span>
+                      <SidebarMenuButton
+                        asChild={shell.domainPath === '/tasks'}
+                        tooltip={String(label)}
+                        className={shell.domainPath === '/tasks' && taskView === value ? '' : shell.domainPath === '/tasks' ? 'opacity-90' : 'opacity-55'}
+                      >
+                        {shell.domainPath === '/tasks' ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = new URLSearchParams(searchParams);
+                              next.set('view', value);
+                              setSearchParams(next, { replace: true });
+                            }}
+                          >
+                            <Icon />
+                            <span>{label}</span>
+                          </button>
+                        ) : (
+                          <div>
+                            <Icon />
+                            <span>{label}</span>
+                          </div>
+                        )}
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
@@ -153,7 +173,7 @@ export default function WorkspaceLayout({ children }: Props) {
 
       <SidebarInset className="bg-[linear-gradient(180deg,#f7f8fb_0%,#fbfcfe_100%)]">
         <div className="flex min-h-screen flex-col">
-          <div className="bg-background/92 backdrop-blur">
+          <div className="sticky top-0 z-20 border-b border-border/70 bg-background/94 backdrop-blur">
             <Header
               title={shell.title}
               subtitle={shell.subtitle}
@@ -176,68 +196,90 @@ export default function WorkspaceLayout({ children }: Props) {
               compactMeta
             />
 
-            <div>
-              <div className="flex items-center overflow-x-auto border-b border-border/70 bg-background px-6 hide-scrollbar">
-                <NavItem to="/tasks" icon={<LayoutTemplate size={16} />}>
+            {shell.domainPath === '/tasks' ? (
+              <div className="flex items-center gap-2 overflow-x-auto px-6 pb-2 hide-scrollbar">
+                <ViewSwitchButton
+                  icon={<LayoutTemplate size={16} />}
+                  active={taskView === 'table'}
+                  onClick={() => updateView('table', searchParams, setSearchParams)}
+                >
                   테이블
-                </NavItem>
-                <NavGhost>칸반</NavGhost>
-                <NavGhost>캘린더</NavGhost>
-                <NavGhost>차트</NavGhost>
-                <NavGhost>간트</NavGhost>
+                </ViewSwitchButton>
+                <ViewSwitchButton
+                  icon={<KanbanSquare size={16} />}
+                  active={taskView === 'kanban'}
+                  onClick={() => updateView('kanban', searchParams, setSearchParams)}
+                >
+                  칸반
+                </ViewSwitchButton>
+                <ViewSwitchButton
+                  icon={<CalendarClock size={16} />}
+                  active={taskView === 'calendar'}
+                  onClick={() => updateView('calendar', searchParams, setSearchParams)}
+                >
+                  캘린더
+                </ViewSwitchButton>
+                <ViewSwitchButton
+                  icon={<ChartColumn size={16} />}
+                  active={taskView === 'chart'}
+                  onClick={() => updateView('chart', searchParams, setSearchParams)}
+                >
+                  차트
+                </ViewSwitchButton>
+                <ViewSwitchButton
+                  icon={<ChevronRight size={16} />}
+                  active={taskView === 'gantt'}
+                  onClick={() => updateView('gantt', searchParams, setSearchParams)}
+                >
+                  간트
+                </ViewSwitchButton>
               </div>
-
-              <BoardToolbar
-                primaryLabel={shell.primaryLabel}
-                filterLabels={shell.filterLabels}
-                contextLabel={shell.contextLabel}
-                onOpenModal={() => navigate(shell.primaryTo)}
-              />
-            </div>
+            ) : null}
           </div>
 
-          <main className="flex-1 px-6 pb-8 pt-4">{children}</main>
+          <main className="flex-1 px-6 pb-8 pt-3">{children}</main>
         </div>
       </SidebarInset>
     </SidebarProvider>
   );
 }
 
-type NavItemProps = {
-  to: string;
+function ViewSwitchButton({
+  icon,
+  active,
+  children,
+  onClick,
+}: {
   icon: ReactNode;
+  active: boolean;
   children: ReactNode;
-};
-
-function NavItem({ to, icon, children }: NavItemProps) {
-  return (
-    <NavLink
-      to={to}
-      className={({ isActive }) =>
-        [
-          'mr-2 flex items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-3 text-sm font-medium transition-colors',
-          isActive
-            ? 'border-primary text-foreground'
-            : 'border-transparent text-muted-foreground hover:text-foreground',
-        ].join(' ')
-      }
-    >
-      {icon}
-      {children}
-    </NavLink>
-  );
-}
-
-function NavGhost({ children }: { children: ReactNode }) {
+  onClick: () => void;
+}) {
   return (
     <button
       type="button"
-      disabled
-      className="mr-2 whitespace-nowrap border-b-2 border-transparent px-3 py-3 text-sm font-medium text-muted-foreground/45"
+      onClick={onClick}
+      className={[
+        'inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors',
+        active
+          ? 'border-primary/30 bg-primary/8 text-foreground'
+          : 'border-transparent bg-transparent text-muted-foreground hover:border-border hover:bg-card hover:text-foreground',
+      ].join(' ')}
     >
+      {icon}
       {children}
     </button>
   );
+}
+
+function updateView(
+  value: string,
+  searchParams: URLSearchParams,
+  setSearchParams: (nextInit: URLSearchParams, navigateOptions?: { replace?: boolean }) => void,
+) {
+  const next = new URLSearchParams(searchParams);
+  next.set('view', value);
+  setSearchParams(next, { replace: true });
 }
 
 function getShellConfig(pathname: string) {

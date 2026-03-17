@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import { useQueries } from '@tanstack/react-query';
 import { Eye, FileSearch, MessageSquareWarning, SendHorizontal } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -9,6 +8,7 @@ import { useWorkspace } from '../features/workspace/use-workspace';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import Card from '../shared/ui/Card';
+import MetricCard from '../shared/ui/MetricCard';
 import StatusPill from '../shared/ui/StatusPill';
 
 export default function ReviewInboxPage() {
@@ -41,19 +41,19 @@ export default function ReviewInboxPage() {
   return (
     <div className="space-y-4">
       <section className="grid gap-3 xl:grid-cols-3">
-        <MiniMetric
+        <MetricCard
           label="검토 대기"
           value={`${waitingQueue.length}건`}
           hint="즉시 처리 대상"
           icon={<SendHorizontal size={16} />}
         />
-        <MiniMetric
+        <MetricCard
           label="최근 승인"
           value={`${approved.length}건`}
           hint="완료 라운드"
           icon={<FileSearch size={16} />}
         />
-        <MiniMetric
+        <MetricCard
           label="미상신 업무"
           value={`${empty.length}건`}
           hint="review 미생성"
@@ -154,30 +154,5 @@ export default function ReviewInboxPage() {
         </Card>
       </div>
     </div>
-  );
-}
-
-function MiniMetric({
-  label,
-  value,
-  hint,
-  icon,
-}: {
-  label: string;
-  value: string;
-  hint: string;
-  icon: ReactNode;
-}) {
-  return (
-    <section className="flex items-center justify-between rounded-xl border border-border/70 bg-card/96 px-4 py-3 shadow-[0_8px_20px_rgba(15,23,42,0.03)]">
-      <div>
-        <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
-        <div className="mt-1 text-[24px] font-semibold tracking-tight text-foreground">{value}</div>
-        <div className="mt-0.5 text-xs text-muted-foreground">{hint}</div>
-      </div>
-      <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-border/70 bg-muted/30 text-foreground/75">
-        {icon}
-      </div>
-    </section>
   );
 }
