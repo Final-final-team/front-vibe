@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { MailPlus, ShieldCheck, UserCheck, Users } from 'lucide-react';
 import { usePermissions, useProjectMembers, useProjectRoles } from '../features/workspace/hooks';
@@ -7,6 +7,7 @@ import { formatDate } from '../shared/lib/format';
 import AppModal from '../shared/ui/AppModal';
 import StatusPill from '../shared/ui/StatusPill';
 import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
 
 const inviteToneMap = {
   ACTIVE: 'green',
@@ -22,6 +23,8 @@ const inviteLabelMap = {
   DECLINED: '초대 거절',
 } as const;
 
+type MemberFilter = 'ALL' | 'ACTIVE' | 'INVITED' | 'PENDING';
+
 export default function MembersPage() {
   const { currentProject } = useWorkspace();
   const { data: members = [] } = useProjectMembers(currentProject?.id ?? null);
@@ -31,6 +34,8 @@ export default function MembersPage() {
   const [profileMemberId, setProfileMemberId] = useState<number | null>(null);
   const [assignmentMemberId, setAssignmentMemberId] = useState<number | null>(null);
   const [draftRoleIds, setDraftRoleIds] = useState<string[]>([]);
+  const [memberKeyword, setMemberKeyword] = useState('');
+  const [memberFilter, setMemberFilter] = useState<MemberFilter>('ALL');
 
   const profileMember = members.find((member) => member.id === profileMemberId) ?? null;
   const assignmentMember = members.find((member) => member.id === assignmentMemberId) ?? null;
@@ -38,6 +43,27 @@ export default function MembersPage() {
   const invitedCount = members.filter((member) => member.inviteStatus === 'INVITED').length;
   const activeCount = members.filter((member) => member.inviteStatus === 'ACTIVE').length;
   const pendingCount = members.filter((member) => member.inviteStatus !== 'ACTIVE').length;
+
+  const filteredMembers = useMemo(() => {
+    const keyword = memberKeyword.trim().toLowerCase();
+
+    return members.filter((member) => {
+      const matchesKeyword =
+        keyword.length === 0 ||
+        member.name.toLowerCase().includes(keyword) ||
+        member.email.toLowerCase().includes(keyword) ||
+        member.team.toLowerCase().includes(keyword);
+
+      if (!matchesKeyword) return false;
+
+      if (memberFilter === 'ACTIVE') return member.inviteStatus === 'ACTIVE';
+      if (memberFilter === 'INVITED') return member.inviteStatus === 'INVITED';
+      if (memberFilter === 'PENDING') return member.inviteStatus !== 'ACTIVE';
+
+      return true;
+    });
+  }, [members, memberKeyword, memberFilter]);
+
   const profileRoles = roles.filter((role) => profileMember?.roleIds.includes(role.id));
   const profilePermissionKeys = [...new Set(profileRoles.flatMap((role) => role.permissionKeys))];
   const profilePermissionGroups = permissions
@@ -81,8 +107,45 @@ export default function MembersPage() {
             </div>
             <div className="text-xs text-muted-foreground">행 클릭으로 프로필, 우측 버튼으로 역할 부여</div>
           </div>
+
+          <div className="mb-4 grid gap-3 border-b border-border/60 pb-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+            <Input
+              value={memberKeyword}
+              onChange={(event) => setMemberKeyword(event.target.value)}
+              placeholder="멤버명/이메일/팀 검색"
+              className="h-10 rounded-xl"
+            />
+            <div className="flex flex-wrap gap-2">
+              {([
+                { value: 'ALL', label: '전체' },
+                { value: 'ACTIVE', label: '참여중' },
+                { value: 'INVITED', label: '초대 대기' },
+                { value: 'PENDING', label: '추가 확인' },
+              ] as const).map((filter) => (
+                <button
+                  key={filter.value}
+                  type="button"
+                  onClick={() => setMemberFilter(filter.value)}
+                  className={[
+                    'rounded-xl border px-3 py-2 text-sm font-medium transition',
+                    memberFilter === filter.value
+                      ? 'border-primary/30 bg-primary/5 text-primary'
+                      : 'border-border/70 text-muted-foreground hover:border-border',
+                  ].join(' ')}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {filteredMembers.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border/70 px-4 py-10 text-center text-sm text-muted-foreground">
+              검색/필터 조건에 맞는 멤버가 없습니다.
+            </div>
+          ) : null}
+
           <div className="space-y-3 md:hidden">
-            {members.map((member) => (
+            {filteredMembers.map((member) => (
               <div key={member.id} className="border-b border-border/70 pb-4">
                 <button
                   type="button"
@@ -136,7 +199,7 @@ export default function MembersPage() {
                 <div className="text-right">관리</div>
               </div>
               <div className="divide-y divide-gray-100">
-                {members.map((member) => (
+                {filteredMembers.map((member) => (
                   <button
                     key={member.id}
                     type="button"
