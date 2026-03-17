@@ -1,9 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { useQueries } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import {
   closestCenter,
   DndContext,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -21,7 +23,9 @@ import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import StatusPill from '../shared/ui/StatusPill';
-import { useTasks } from '../features/review/hooks';
+import { fetchTaskReviews } from '../features/review/api';
+import ReviewDetailModal from '../features/review/components/ReviewDetailModal';
+import { reviewKeys, useTaskReviews, useTasks } from '../features/review/hooks';
 import { buildTaskViewItems, getStatusLabel, getStatusTone, groupTasksByStatus, type TaskViewItem } from '../features/tasks/view-model';
 import { useProjectMilestones, useProjectTaskMeta } from '../features/workspace/hooks';
 import { useWorkspace } from '../features/workspace/use-workspace';
@@ -39,12 +43,19 @@ export default function TaskListPage() {
   const [searchParams] = useSearchParams();
   const currentView = getCurrentView(searchParams.get('view'));
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
+  const [selectedReviewId, setSelectedReviewId] = useState<number | null>(null);
   const [taskOrderByMilestone, setTaskOrderByMilestone] = useState<Record<string, number[]>>({});
+  const suppressClickUntilRef = useRef(0);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    useSensor(MouseSensor, {
       activationConstraint: {
-        delay: 170,
+        distance: 8,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 180,
         tolerance: 8,
       },
     }),
@@ -67,7 +78,26 @@ export default function TaskListPage() {
     }, {});
   }, [taskItems, milestones]);
 
+  const reviewQueries = useQueries({
+    queries: taskItems.map((task) => ({
+      queryKey: reviewKeys.taskReviews(task.id),
+      queryFn: () => fetchTaskReviews(task.id),
+    })),
+  });
+
+  const latestReviewByTaskId = useMemo(
+    () =>
+      taskItems.reduce<Record<number, number | null>>((acc, task, index) => {
+        acc[task.id] = reviewQueries[index]?.data?.[0]?.reviewId ?? null;
+        return acc;
+      }, {}),
+    [reviewQueries, taskItems],
+  );
+
   const selectedTask = taskItems.find((task) => task.id === selectedTaskId) ?? null;
+  const selectedTaskReviewsQuery = useTaskReviews(selectedTaskId ?? 0, Boolean(selectedTaskId));
+  const selectedTaskReviews = selectedTaskReviewsQuery.data ?? [];
+  const latestSelectedReview = selectedTaskReviews[0] ?? null;
   const groupedByStatus = groupTasksByStatus(taskItems);
   const reviewCount = groupedByStatus.IN_REVIEW.length;
   const completedCount = groupedByStatus.COMPLETED.length;
@@ -81,6 +111,10 @@ export default function TaskListPage() {
     const currentOrder = taskOrderByMilestone[milestoneId] ?? fallbackOrder;
 
     return currentOrder.map((taskId) => taskMap.get(taskId)).filter((task): task is TaskViewItem => Boolean(task));
+  }
+
+  function handleDragStart() {
+    suppressClickUntilRef.current = Date.now() + 400;
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -106,6 +140,7 @@ export default function TaskListPage() {
       return;
     }
 
+    suppressClickUntilRef.current = Date.now() + 400;
     setTaskOrderByMilestone((prev) => ({
       ...prev,
       [milestoneId]: arrayMove(currentOrder, oldIndex, newIndex),
@@ -130,7 +165,7 @@ export default function TaskListPage() {
 
       <section className="min-w-0 border-t border-border/70 bg-background">
           {currentView === 'table' ? (
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
               <div className="divide-y divide-border/70">
                 {milestones.map((milestone) => {
                   const milestoneTasks = getMilestoneTasks(milestone.id);
@@ -190,7 +225,20 @@ export default function TaskListPage() {
                                 key={task.id}
                                 task={task}
                                 selected={selectedTask?.id === task.id}
-                                onSelect={() => setSelectedTaskId(task.id)}
+                                onSelect={() => {
+                                  if (Date.now() < suppressClickUntilRef.current) {
+                                    return;
+                                  }
+                                  setSelectedTaskId(task.id);
+                                }}
+                                onOpenReview={() => {
+                                  const reviewId = latestReviewByTaskId[task.id];
+                                  if (reviewId) {
+                                    setSelectedReviewId(reviewId);
+                                    return;
+                                  }
+                                  setSelectedTaskId(task.id);
+                                }}
                               />
                             ))}
                           </SortableContext>
@@ -232,20 +280,48 @@ export default function TaskListPage() {
         }
         side={
           selectedTask ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground">바로가기</div>
               <div className="flex flex-col gap-2">
-                <Button asChild className="h-9 rounded-md justify-between px-3">
-                  <Link to={`/tasks/${selectedTask.id}/reviews`}>
-                    검토 목록
+                {latestSelectedReview ? (
+                  <Button
+                    type="button"
+                    className="h-9 rounded-md justify-between px-3"
+                    onClick={() => setSelectedReviewId(latestSelectedReview.reviewId)}
+                  >
+                    최신 검토 상세
                     <ArrowRight size={16} />
-                  </Link>
-                </Button>
+                  </Button>
+                ) : null}
                 <Button asChild variant="outline" className="h-9 rounded-md px-3">
                   <Link to={`/tasks/${selectedTask.id}/reviews/new`}>
                     새 검토 상신
                   </Link>
                 </Button>
+              </div>
+              <div>
+                <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground">연결 검토 라운드</div>
+                <div className="mt-3 space-y-2">
+                  {selectedTaskReviews.length > 0 ? (
+                    selectedTaskReviews.slice(0, 3).map((review) => (
+                      <button
+                        key={review.reviewId}
+                        type="button"
+                        onClick={() => setSelectedReviewId(review.reviewId)}
+                        className="flex w-full items-center justify-between rounded-xl border border-border/70 px-3 py-3 text-left text-sm transition hover:border-primary/30"
+                      >
+                        <span className="font-medium text-foreground">{review.roundNo}차 검토</span>
+                        <StatusPill tone={review.status === 'APPROVED' ? 'green' : review.status === 'REJECTED' ? 'rose' : 'amber'}>
+                          {getReviewStatusLabel(review.status)}
+                        </StatusPill>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-border/70 px-3 py-3 text-sm text-muted-foreground">
+                      아직 생성된 검토 라운드가 없습니다.
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           ) : null
@@ -258,21 +334,61 @@ export default function TaskListPage() {
       >
         {selectedTask ? (
           <div className="space-y-4">
-            <div className="grid gap-3 border-b border-border/70 pb-4">
+            <div className="grid gap-3 border-b border-border/70 pb-4 lg:grid-cols-2">
               <MetaRow label="기한" value={formatDate(selectedTask.dueDate)} />
               <MetaRow label="시작" value={formatDate(selectedTask.startDate)} />
               <MetaRow label="우선순위" value={getPriorityLabel(selectedTask.priority)} />
               <MetaRow label="현재 상태" value={getStatusLabel(selectedTask.status)} />
+              <MetaRow label="도메인" value={selectedTask.domain} />
+              <MetaRow label="마일스톤" value={selectedTask.milestoneName} />
+              <MetaRow label="담당자" value={selectedTask.assigneeName} />
+              <MetaRow label="연결 검토" value={`${selectedTaskReviews.length}건`} />
             </div>
-            <div className="space-y-2">
-              <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground">업무 메모</div>
-              <p className="break-keep text-sm leading-6 text-muted-foreground">
-                선택한 업무의 상태와 검토 진입 액션을 여기서 확인합니다. 우측 전체 폭을 침범하지 않도록 상세는 모달로 분리합니다.
-              </p>
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+              <div className="space-y-2">
+                <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground">업무 메모</div>
+                <p className="break-keep text-sm leading-6 text-muted-foreground">{selectedTask.summary}</p>
+                <div className="rounded-2xl border border-border/70 bg-muted/10 px-4 py-4 text-sm leading-6 text-muted-foreground">
+                  이 업무는 <span className="font-semibold text-foreground">{selectedTask.domain}</span> 도메인에 속하고, 현재{' '}
+                  <span className="font-semibold text-foreground">{selectedTask.milestoneName}</span> 마일스톤 안에서 운영됩니다.
+                  실제 task 도메인 개발이 완료되면 체크리스트, 산출물 규칙, 상태 전이 정책이 이 영역에 함께 표시됩니다.
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground">최신 검토 요약</div>
+                <div className="rounded-2xl border border-border/70 bg-muted/10 px-4 py-4 text-sm leading-6 text-muted-foreground">
+                  {latestSelectedReview ? (
+                    <>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="font-medium text-foreground">{latestSelectedReview.roundNo}차 검토</span>
+                        <StatusPill tone={latestSelectedReview.status === 'APPROVED' ? 'green' : latestSelectedReview.status === 'REJECTED' ? 'rose' : 'amber'}>
+                          {getReviewStatusLabel(latestSelectedReview.status)}
+                        </StatusPill>
+                      </div>
+                      <div className="mt-3 space-y-2">
+                        <MetaRow label="상신 시각" value={formatDate(latestSelectedReview.submittedAt)} />
+                        <MetaRow label="처리 시각" value={formatDate(latestSelectedReview.decidedAt)} />
+                        <MetaRow label="잠금 버전" value={`v${latestSelectedReview.lockVersion}`} />
+                      </div>
+                    </>
+                  ) : (
+                    '아직 검토가 생성되지 않았습니다. 새 검토 상신으로 첫 라운드를 시작할 수 있습니다.'
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         ) : null}
       </AppModal>
+      <ReviewDetailModal
+        reviewId={selectedReviewId}
+        open={Boolean(selectedReviewId)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedReviewId(null);
+          }
+        }}
+      />
     </div>
   );
 }
@@ -557,10 +673,12 @@ function SortableTaskRow({
   task,
   selected,
   onSelect,
+  onOpenReview,
 }: {
   task: TaskViewItem;
   selected: boolean;
   onSelect: () => void;
+  onOpenReview: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
@@ -611,10 +729,14 @@ function SortableTaskRow({
       <TableCell>
         <div className="flex items-center gap-3">
           <Link
-            to={`/tasks/${task.id}/reviews`}
+            to="#"
             className="text-sm font-semibold text-primary hover:text-primary/80"
             onPointerDown={(event) => event.stopPropagation()}
-            onClick={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onOpenReview();
+            }}
           >
             검토
           </Link>
@@ -694,5 +816,18 @@ function getMilestoneHealthLabel(health: 'AT_RISK' | 'ON_TRACK' | 'COMPLETE') {
       return '완료';
     default:
       return '정상';
+  }
+}
+
+function getReviewStatusLabel(status: 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'CANCELLED') {
+  switch (status) {
+    case 'APPROVED':
+      return '승인';
+    case 'REJECTED':
+      return '반려';
+    case 'CANCELLED':
+      return '취소';
+    default:
+      return '제출';
   }
 }

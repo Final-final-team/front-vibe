@@ -35,24 +35,27 @@ export function useTasks() {
   });
 }
 
-export function useTaskReviews(taskId: number) {
+export function useTaskReviews(taskId: number, enabled = true) {
   return useQuery({
     queryKey: reviewKeys.taskReviews(taskId),
     queryFn: () => fetchTaskReviews(taskId),
+    enabled,
   });
 }
 
-export function useReviewDetail(reviewId: number) {
+export function useReviewDetail(reviewId: number, enabled = true) {
   return useQuery({
     queryKey: reviewKeys.detail(reviewId),
     queryFn: () => fetchReviewDetail(reviewId),
+    enabled,
   });
 }
 
-export function useReviewHistories(reviewId: number) {
+export function useReviewHistories(reviewId: number, enabled = true) {
   return useQuery({
     queryKey: reviewKeys.histories(reviewId),
     queryFn: () => fetchReviewHistories(reviewId),
+    enabled,
   });
 }
 

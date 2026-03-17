@@ -27,15 +27,19 @@ export default function MembersPage() {
   const { data: members = [] } = useProjectMembers(currentProject?.id ?? null);
   const { data: roles = [] } = useProjectRoles(currentProject?.id ?? null);
   const [invitePlanOpen, setInvitePlanOpen] = useState(false);
+  const [profileMemberId, setProfileMemberId] = useState<number | null>(null);
   const [assignmentMemberId, setAssignmentMemberId] = useState<number | null>(null);
   const [draftRoleIds, setDraftRoleIds] = useState<string[]>([]);
 
   const mergedMembers = useMemo(() => members, [members]);
+  const profileMember = mergedMembers.find((member) => member.id === profileMemberId) ?? null;
   const assignmentMember = mergedMembers.find((member) => member.id === assignmentMemberId) ?? null;
 
   const invitedCount = mergedMembers.filter((member) => member.inviteStatus === 'INVITED').length;
   const activeCount = mergedMembers.filter((member) => member.inviteStatus === 'ACTIVE').length;
   const pendingCount = mergedMembers.filter((member) => member.inviteStatus !== 'ACTIVE').length;
+  const profileRoles = roles.filter((role) => profileMember?.roleIds.includes(role.id));
+  const profilePermissionKeys = [...new Set(profileRoles.flatMap((role) => role.permissionKeys))];
 
   const effectiveRoleIds = draftRoleIds.length > 0 ? draftRoleIds : assignmentMember?.roleIds ?? [];
   const effectiveRoles = roles.filter((role) => effectiveRoleIds.includes(role.id));
@@ -121,7 +125,13 @@ export default function MembersPage() {
                     className="grid grid-cols-[1.8fr_0.9fr_1.1fr_1.5fr_1.5fr_1fr_0.9fr] gap-4 py-4 text-sm"
                   >
                     <div>
-                      <div className="font-semibold text-gray-900">{member.name}</div>
+                      <button
+                        type="button"
+                        className="font-semibold text-gray-900 transition hover:text-primary"
+                        onClick={() => setProfileMemberId(member.id)}
+                      >
+                        {member.name}
+                      </button>
                       <div className="mt-1 text-gray-500">{member.email}</div>
                     </div>
                     <div className="flex items-center">
@@ -173,6 +183,100 @@ export default function MembersPage() {
           </div>
         </section>
       </div>
+
+      <AppModal
+        open={Boolean(profileMember)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setProfileMemberId(null);
+          }
+        }}
+        title={profileMember ? `${profileMember.name} 프로필` : ''}
+        description="멤버 시점에서는 내가 가진 역할과, 그 역할이 허용한 권한만 확인할 수 있습니다."
+        badges={
+          profileMember ? (
+            <>
+              <StatusPill tone={inviteToneMap[profileMember.inviteStatus]}>{inviteLabelMap[profileMember.inviteStatus]}</StatusPill>
+              <StatusPill tone="teal">{profileMember.team}</StatusPill>
+            </>
+          ) : null
+        }
+        side={
+          profileMember ? (
+            <div className="space-y-5">
+              <div>
+                <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">역할 기반 접근</div>
+                <div className="mt-3 rounded-2xl border border-border/70 bg-muted/15 px-4 py-4 text-sm leading-6 text-muted-foreground">
+                  멤버는 역할 / 권한 화면에 직접 접근하지 않고, 자기에게 연결된 역할이 허용한 권한 결과만 확인합니다.
+                </div>
+              </div>
+              <div>
+                <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">현재 연결 역할</div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {profileRoles.map((role) => (
+                    <span
+                      key={role.id}
+                      className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold text-white"
+                      style={{ backgroundColor: role.color }}
+                    >
+                      {role.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : null
+        }
+        footer={
+          <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => setProfileMemberId(null)}>
+            닫기
+          </Button>
+        }
+        sideClassName="lg:max-w-[340px]"
+      >
+        {profileMember ? (
+          <div className="space-y-5">
+            <div className="grid gap-4 border-b border-border/70 pb-5 lg:grid-cols-2">
+              <div>
+                <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">멤버 정보</div>
+                <div className="mt-3 space-y-3 text-sm text-muted-foreground">
+                  <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                    <span>이메일</span>
+                    <span className="font-medium text-foreground">{profileMember.email}</span>
+                  </div>
+                  <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                    <span>소속 팀</span>
+                    <span className="font-medium text-foreground">{profileMember.team}</span>
+                  </div>
+                  <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                    <span>최근 활동</span>
+                    <span className="font-medium text-foreground">
+                      {profileMember.lastActiveAt ? formatDate(profileMember.lastActiveAt) : '아직 미참여'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">허용 권한 수</div>
+                <div className="mt-3 rounded-2xl border border-border/70 bg-muted/10 px-4 py-4">
+                  <div className="text-3xl font-semibold tracking-tight text-foreground">{profilePermissionKeys.length}</div>
+                  <div className="mt-2 text-sm text-muted-foreground">역할이 허용한 실제 권한</div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">허용 권한</div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {profilePermissionKeys.map((permissionKey) => (
+                  <StatusPill key={permissionKey} tone="slate">
+                    {buildPermissionLabel(permissionKey)}
+                  </StatusPill>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </AppModal>
 
       <AppModal
         open={invitePlanOpen}

@@ -1,4 +1,5 @@
 import { useQueries } from '@tanstack/react-query';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Eye, FileSearch, MessageSquareWarning, SendHorizontal } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -6,6 +7,7 @@ import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { fetchTaskReviews } from '../features/review/api';
+import ReviewDetailModal from '../features/review/components/ReviewDetailModal';
 import { reviewKeys, useTasks } from '../features/review/hooks';
 import { useProjectTaskMeta } from '../features/workspace/hooks';
 import { useWorkspace } from '../features/workspace/use-workspace';
@@ -15,6 +17,7 @@ export default function ReviewInboxPage() {
   const { currentProject } = useWorkspace();
   const { data: taskMeta = [] } = useProjectTaskMeta(currentProject?.id ?? null);
   const { data: tasks = [] } = useTasks();
+  const [selectedReviewId, setSelectedReviewId] = useState<number | null>(null);
 
   const reviewQueries = useQueries({
     queries: taskMeta.map((meta) => ({
@@ -79,7 +82,15 @@ export default function ReviewInboxPage() {
           </TableHeader>
           <TableBody>
             {inboxRows.map(({ meta, task, latestReview }) => (
-              <TableRow key={meta.taskId}>
+              <TableRow
+                key={meta.taskId}
+                className={latestReview ? 'cursor-pointer' : ''}
+                onClick={() => {
+                  if (latestReview) {
+                    setSelectedReviewId(latestReview.reviewId);
+                  }
+                }}
+              >
                 <TableCell className="py-4">
                   <div className="min-w-0">
                     <div className="font-semibold text-foreground">{task?.title}</div>
@@ -128,18 +139,31 @@ export default function ReviewInboxPage() {
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Button asChild variant="ghost" size="sm" className="h-8 rounded-md px-2.5 text-primary hover:text-primary">
-                      <Link to={`/tasks/${meta.taskId}/reviews`}>
+                      <Link
+                        to="#"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          if (latestReview) {
+                            setSelectedReviewId(latestReview.reviewId);
+                          }
+                        }}
+                      >
                         <Eye size={14} />
-                        목록
+                        검토
                       </Link>
                     </Button>
                     {latestReview && (
-                      <Link
-                        to={`/reviews/${latestReview.reviewId}`}
+                      <button
+                        type="button"
                         className="text-sm font-semibold text-foreground/70 hover:text-foreground"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setSelectedReviewId(latestReview.reviewId);
+                        }}
                       >
                         상세
-                      </Link>
+                      </button>
                     )}
                   </div>
                 </TableCell>
@@ -148,6 +172,16 @@ export default function ReviewInboxPage() {
           </TableBody>
         </Table>
       </section>
+
+      <ReviewDetailModal
+        reviewId={selectedReviewId}
+        open={Boolean(selectedReviewId)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedReviewId(null);
+          }
+        }}
+      />
     </div>
   );
 }
