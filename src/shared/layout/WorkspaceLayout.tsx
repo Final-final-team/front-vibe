@@ -57,24 +57,24 @@ export default function WorkspaceLayout({ children }: Props) {
   return (
     <SidebarProvider defaultOpen>
       <Sidebar variant="inset" collapsible="icon" className="border-r border-border/60">
-        <SidebarHeader className="px-3 py-4">
+        <SidebarHeader className="px-2.5 py-3">
           <div className="flex items-center justify-between gap-2 px-1 group-data-[collapsible=icon]:justify-center">
             <div className="flex min-w-0 items-center gap-2 group-data-[collapsible=icon]:hidden">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-sidebar-border bg-background text-primary shadow-sm">
-                <Home size={18} />
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-sidebar-border bg-background text-primary shadow-sm">
+                <Home size={16} />
               </div>
               <div className="min-w-0">
                 <div className="truncate text-sm font-semibold text-sidebar-foreground">front-vibe</div>
                 <div className="text-xs text-sidebar-foreground/70">협업 워크스페이스</div>
               </div>
             </div>
-            <SidebarTrigger className="h-8 w-8 rounded-md border border-sidebar-border/80 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10" />
+            <SidebarTrigger className="h-7 w-7 rounded-md border border-sidebar-border/80 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:w-9" />
           </div>
           <div className="relative mt-3 group-data-[collapsible=icon]:hidden">
-            <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sidebar-foreground/55" />
+            <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sidebar-foreground/55" />
             <Input
               placeholder="업무, 검토, 멤버 검색"
-              className="h-10 rounded-lg border-sidebar-border bg-sidebar pl-9 text-sidebar-foreground placeholder:text-sidebar-foreground/50"
+              className="h-9 rounded-lg border-sidebar-border bg-sidebar pl-9 text-sm text-sidebar-foreground placeholder:text-sidebar-foreground/50"
             />
           </div>
         </SidebarHeader>
@@ -84,7 +84,7 @@ export default function WorkspaceLayout({ children }: Props) {
             <SidebarGroupLabel>프로젝트</SidebarGroupLabel>
             <SidebarGroupContent className="px-2 group-data-[collapsible=icon]:hidden">
               <Select value={selectedProjectId ?? currentProject?.id ?? ''} onValueChange={setSelectedProjectId}>
-                <SelectTrigger className="h-9 rounded-lg border-sidebar-border bg-sidebar text-sidebar-foreground shadow-none">
+                <SelectTrigger className="h-8 rounded-lg border-sidebar-border bg-sidebar text-sm text-sidebar-foreground shadow-none">
                   <SelectValue placeholder="프로젝트 선택" />
                 </SelectTrigger>
                 <SelectContent>
@@ -168,12 +168,12 @@ export default function WorkspaceLayout({ children }: Props) {
           ) : null}
         </SidebarContent>
 
-        <SidebarFooter className="px-3 pb-4 group-data-[collapsible=icon]:hidden">
+        <SidebarFooter className="px-2.5 pb-3 group-data-[collapsible=icon]:hidden">
           {currentProject && (
             <div className="border-t border-sidebar-border px-1 pt-3 text-xs text-sidebar-foreground/80">
               <div className="font-semibold text-sidebar-foreground">{currentProject.ownerName}</div>
               <div className="mt-1">업데이트 {formatDate(currentProject.updatedAt)}</div>
-              <div className="mt-3 h-1.5 overflow-hidden bg-sidebar/70">
+              <div className="mt-2.5 h-1.5 overflow-hidden bg-sidebar/70">
                 <div className="h-full bg-primary" style={{ width: `${currentProject.progress}%` }} />
               </div>
             </div>
@@ -208,7 +208,7 @@ export default function WorkspaceLayout({ children }: Props) {
 
             {shell.domainPath === '/tasks' ? (
               <>
-                <div className="hidden items-center gap-1 overflow-x-auto px-5 pb-1.5 hide-scrollbar md:flex">
+                <div className="hidden items-center gap-1 overflow-x-auto px-4 pb-1 hide-scrollbar md:flex">
                 <ViewSwitchButton
                   icon={<LayoutTemplate size={16} />}
                   active={taskView === 'table'}
@@ -246,7 +246,7 @@ export default function WorkspaceLayout({ children }: Props) {
                 </ViewSwitchButton>
                 </div>
 
-                <div className="flex items-center justify-between gap-2 px-5 pb-2 md:hidden">
+                <div className="flex items-center justify-between gap-2 px-4 pb-1.5 md:hidden">
                   <div className="flex min-w-0 items-center gap-1 overflow-x-auto hide-scrollbar">
                     <ViewSwitchButton
                       icon={<LayoutTemplate size={15} />}
@@ -278,7 +278,7 @@ export default function WorkspaceLayout({ children }: Props) {
                       <Button
                         type="button"
                         variant="outline"
-                        className="h-8 shrink-0 rounded-md px-3 text-xs"
+                        className="h-7 shrink-0 rounded-md px-2.5 text-[11px]"
                       >
                         {taskView === 'chart' ? '차트' : taskView === 'gantt' ? '간트' : '더보기'}
                       </Button>
@@ -297,7 +297,7 @@ export default function WorkspaceLayout({ children }: Props) {
             ) : null}
           </div>
 
-          <main className="flex-1 px-4 pb-6 pt-2 md:px-5 xl:px-7">{children}</main>
+          <main className="flex-1 px-3 pb-5 pt-2 md:px-4 xl:px-6">{children}</main>
         </div>
       </SidebarInset>
     </SidebarProvider>
