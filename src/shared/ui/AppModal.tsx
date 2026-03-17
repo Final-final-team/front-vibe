@@ -56,12 +56,12 @@ export default function AppModal({
       <DialogContent
         showCloseButton={false}
         className={cn(
-          'max-h-[92vh] overflow-hidden rounded-[28px] border border-border/80 p-0 shadow-[0_28px_90px_rgba(15,23,42,0.18)]',
+          'top-[46%] max-h-[88vh] overflow-hidden rounded-[28px] border border-border/80 p-0 shadow-[0_28px_90px_rgba(15,23,42,0.18)] sm:top-[40%]',
           sizeClassName,
           className,
         )}
       >
-        <div className="m-3 flex max-h-[calc(92vh-1.5rem)] flex-col overflow-hidden rounded-[22px] border border-border/70 bg-background">
+        <div className="m-3 flex max-h-[calc(88vh-1.5rem)] flex-col overflow-hidden rounded-[22px] border border-border/70 bg-background">
           <div className="flex items-start justify-between gap-4 border-b border-border/70 px-6 py-5">
             <DialogHeader className="min-w-0">
               {badges ? <div className="mb-3 flex flex-wrap items-center gap-2">{badges}</div> : null}

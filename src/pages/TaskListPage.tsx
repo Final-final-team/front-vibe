@@ -459,7 +459,7 @@ export default function TaskListPage() {
           }
         }}
         title={selectedTask?.title ?? ''}
-        description={selectedTask?.summary}
+        description={selectedTask ? `${selectedTask.milestoneName} · ${selectedTask.assigneeName}` : undefined}
         badges={
           selectedTask ? (
             <>
@@ -526,8 +526,8 @@ export default function TaskListPage() {
         {selectedTask ? (
           <div className="space-y-4">
             <div className="grid gap-3 border-b border-border/70 pb-4 lg:grid-cols-2">
-              <MetaRow label="기한" value={formatDate(selectedTask.dueDate)} />
-              <MetaRow label="시작" value={formatDate(selectedTask.startDate)} />
+              <MetaRow label="기한" value={formatDueDateShort(selectedTask.dueDate)} />
+              <MetaRow label="시작" value={formatDueDateShort(selectedTask.startDate)} />
               <MetaRow label="우선순위" value={getPriorityLabel(selectedTask.priority)} />
               <MetaRow label="현재 상태" value={getStatusLabel(selectedTask.status)} />
               <MetaRow label="최근 갱신" value={formatDate(selectedTask.updatedAt)} />
@@ -558,8 +558,8 @@ export default function TaskListPage() {
                         </StatusPill>
                       </div>
                       <div className="mt-3 space-y-2">
-                        <MetaRow label="상신 시각" value={formatDate(latestSelectedReview.submittedAt)} />
-                        <MetaRow label="처리 시각" value={formatDate(latestSelectedReview.decidedAt)} />
+                        <MetaRow label="상신 시각" value={formatDueDateShort(latestSelectedReview.submittedAt)} />
+                        <MetaRow label="처리 시각" value={formatDueDateShort(latestSelectedReview.decidedAt)} />
                         <MetaRow label="잠금 버전" value={`v${latestSelectedReview.lockVersion}`} />
                       </div>
                     </>
@@ -636,14 +636,13 @@ function KanbanView({
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="font-semibold text-foreground">{task.title}</div>
-                    <div className="mt-1 text-sm leading-6 text-muted-foreground">{task.summary}</div>
                   </div>
                   <StatusPill tone={column.tone}>{getStatusLabel(task.status)}</StatusPill>
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <StatusPill tone="purple">{task.assigneeName}</StatusPill>
                   <StatusPill tone="teal">{task.domain}</StatusPill>
-                  <span className="text-xs text-muted-foreground">{formatDate(task.dueDate)}</span>
+                  <span className="text-xs text-muted-foreground">{formatDueDateShort(task.dueDate)}</span>
                 </div>
               </button>
             ))}
@@ -985,7 +984,6 @@ function SortableTaskRow({
           </span>
           <div className="min-w-0">
             <div className="font-semibold text-foreground">{task.title}</div>
-            <div className="mt-1 line-clamp-2 text-sm leading-6 text-muted-foreground">{task.summary}</div>
           </div>
         </div>
       </TableCell>
@@ -999,7 +997,7 @@ function SortableTaskRow({
       <TableCell>
         <StatusPill tone={getStatusTone(task.status)}>{getStatusLabel(task.status)}</StatusPill>
       </TableCell>
-      <TableCell>{formatDate(task.dueDate)}</TableCell>
+      <TableCell>{formatDueDateShort(task.dueDate)}</TableCell>
       <TableCell>
         <div className="flex items-center gap-3">
           <Link
@@ -1048,7 +1046,6 @@ function TaskMobileCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="font-semibold text-foreground">{task.title}</div>
-          <div className="mt-1 text-sm leading-6 text-muted-foreground">{task.summary}</div>
         </div>
         <StatusPill tone={getStatusTone(task.status)}>{getStatusLabel(task.status)}</StatusPill>
       </div>
@@ -1069,7 +1066,7 @@ function TaskMobileCard({
         </div>
         <div className="flex items-center justify-between gap-3">
           <span>기한</span>
-          <span className="font-medium text-foreground">{formatDate(task.dueDate)}</span>
+          <span className="font-medium text-foreground">{formatDueDateShort(task.dueDate)}</span>
         </div>
       </div>
       <div className="mt-3 flex justify-end">
@@ -1133,6 +1130,22 @@ function MetaRow({ label, value }: { label: string; value: string }) {
       <span className="font-medium text-foreground">{value}</span>
     </div>
   );
+}
+
+function formatDueDateShort(value: string | null) {
+  if (!value) return '-';
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return '-';
+  }
+
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const hours = `${date.getHours()}`.padStart(2, '0');
+  const minutes = `${date.getMinutes()}`.padStart(2, '0');
+
+  return `${month}/${day} ${hours}:${minutes}`;
 }
 
 function getCurrentView(value: string | null): TaskView {
