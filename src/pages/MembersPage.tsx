@@ -86,7 +86,7 @@ export default function MembersPage() {
       </section>
 
       <div className="space-y-8">
-        <section className="border-t border-border/70 pt-4">
+        <section className="pt-3">
           <div className="mb-4 flex items-end justify-between gap-4">
             <div>
               <h2 className="text-base font-semibold tracking-tight text-foreground">프로젝트 멤버</h2>

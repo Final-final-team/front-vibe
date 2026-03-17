@@ -165,7 +165,7 @@ export default function TaskListPage() {
 
   return (
     <div className="space-y-5">
-      <section className="flex flex-wrap items-end justify-between gap-3 border-b border-border/70 pb-5 pt-3">
+      <section className="flex flex-wrap items-end justify-between gap-3 border-b border-border/70 pb-4 pt-2">
         <div className="flex flex-wrap items-center gap-5">
           <InlineStat label="마일스톤" value={`${milestones.length}개`} icon={<Rows3 size={15} />} />
           <InlineStat label="검토중" value={`${reviewCount}건`} icon={<SendHorizontal size={15} />} />
@@ -179,8 +179,8 @@ export default function TaskListPage() {
         </div>
       </section>
 
-      <section className="min-w-0 border-t border-border/70 bg-background pt-5">
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-5">
+      <section className="min-w-0 bg-background pt-4">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-4">
             <div className="flex flex-wrap items-center gap-2">
               <ScopeButton active={taskScope === 'milestone'} onClick={() => setTaskScope('milestone')}>
                 마일스톤별 보기

@@ -119,7 +119,7 @@ export default function MilestonesPage() {
 
   return (
     <div className="space-y-7">
-      <section className="border-t border-border/70 pt-8">
+      <section className="pt-6">
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold tracking-tight text-foreground">마일스톤 목록</h2>

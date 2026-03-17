@@ -28,7 +28,7 @@ export default function AuditLogsPage() {
 
   return (
     <div className="space-y-4">
-      <section className="flex flex-wrap items-end justify-between gap-3 border-b border-border/70 pb-3">
+      <section className="flex flex-wrap items-end justify-between gap-3 border-b border-border/70 pb-3 pt-1">
         <div className="flex flex-wrap items-center gap-5">
           <InlineStat label="변경 기록" value={`${logs.length}건`} icon={<History size={15} />} />
           <InlineStat label="작성자" value={`${actorCount}명`} icon={<ShieldCheck size={15} />} />
@@ -41,8 +41,8 @@ export default function AuditLogsPage() {
         </div>
       </section>
 
-      <section className="border-t border-border/70 bg-background">
-        <div className="flex items-end justify-between gap-3 border-b border-border/70 pb-4 pt-4">
+      <section className="bg-background pt-4">
+        <div className="flex items-end justify-between gap-3 border-b border-border/70 pb-4 pt-2">
           <div>
             <h2 className="text-base font-semibold tracking-tight text-foreground">감사 로그</h2>
             <p className="mt-1 text-xs text-muted-foreground">
