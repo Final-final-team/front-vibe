@@ -23,7 +23,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '../components/ui/dialog';
@@ -272,11 +271,11 @@ export default function TaskListPage() {
                 </div>
               </div>
             </div>
-            <DialogFooter className="border-t border-border/70 px-6 py-4">
-              <Button type="button" variant="outline" className="rounded-md" onClick={() => setSelectedTaskId(null)}>
+            <div className="flex justify-end border-t border-border/70 bg-muted/15 px-6 py-4">
+              <Button type="button" variant="outline" size="lg" className="min-w-24 rounded-xl px-4" onClick={() => setSelectedTaskId(null)}>
                 닫기
               </Button>
-            </DialogFooter>
+            </div>
             </div>
           </DialogContent>
         ) : null}

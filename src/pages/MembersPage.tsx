@@ -63,12 +63,29 @@ export default function MembersPage() {
         />
       </section>
 
-      <div className="grid gap-10 xl:grid-cols-[minmax(0,1.35fr)_320px]">
+      <div className="space-y-8">
         <section className="border-t border-border/70 pt-4">
           <div className="mb-4 flex items-end justify-between gap-4">
             <div>
               <h2 className="text-base font-semibold tracking-tight text-foreground">프로젝트 멤버</h2>
               <p className="mt-1 text-sm text-muted-foreground">초대 상태와 프로젝트 내 역할 연결을 한 화면에서 확인합니다.</p>
+            </div>
+            <Button variant="secondary" onClick={() => setInvitePlanOpen(true)}>
+              멤버 초대
+            </Button>
+          </div>
+          <div className="mb-5 grid gap-3 border-y border-border/60 py-4 lg:grid-cols-3">
+            <div>
+              <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">1. 멤버 선택</div>
+              <div className="mt-2 text-sm text-foreground">초대 상태와 소속 팀을 확인하고 프로젝트 참여 대상을 고릅니다.</div>
+            </div>
+            <div>
+              <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">2. 역할 연결</div>
+              <div className="mt-2 text-sm text-foreground">멤버에게 직접 권한을 주지 않고 역할을 연결합니다.</div>
+            </div>
+            <div>
+              <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">3. 권한 반영</div>
+              <div className="mt-2 text-sm text-foreground">역할이 가진 권한 묶음이 멤버에게 그대로 적용됩니다.</div>
             </div>
           </div>
           <div className="overflow-x-auto">
@@ -119,25 +136,6 @@ export default function MembersPage() {
             </div>
           </div>
         </section>
-
-        <div className="space-y-6">
-          <section className="border-t border-border/70 pt-4">
-            <div className="mb-4 flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-base font-semibold tracking-tight text-foreground">멤버 초대</h2>
-                <p className="mt-1 text-sm text-muted-foreground">초대 발송, 링크 수락, 만료 처리 플로우는 실제 사용자/이메일 연동 시점에 연결합니다.</p>
-              </div>
-              <div>
-                <Button variant="secondary" onClick={() => setInvitePlanOpen(true)}>
-                  멤버 초대
-                </Button>
-              </div>
-            </div>
-            <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-4 text-sm leading-6 text-muted-foreground">
-              현재는 초대 상태와 역할 연결 현황만 우선 보여주고, 실제 초대 발송 모달은 추후 구현 예정으로 둡니다.
-            </div>
-          </section>
-        </div>
       </div>
 
       <Dialog
