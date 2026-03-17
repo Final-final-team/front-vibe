@@ -19,13 +19,6 @@ import { ArrowRight, ChartColumn, GripVertical, Rows3, SendHorizontal, Users2 } 
 import { Link, useSearchParams } from 'react-router-dom';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '../components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import StatusPill from '../shared/ui/StatusPill';
 import { useTasks } from '../features/review/hooks';
@@ -33,6 +26,7 @@ import { buildTaskViewItems, getStatusLabel, getStatusTone, groupTasksByStatus, 
 import { useProjectMilestones, useProjectTaskMeta } from '../features/workspace/hooks';
 import { useWorkspace } from '../features/workspace/use-workspace';
 import { formatDate } from '../shared/lib/format';
+import AppModal from '../shared/ui/AppModal';
 
 const VIEW_VALUES = ['table', 'kanban', 'calendar', 'chart', 'gantt'] as const;
 type TaskView = (typeof VIEW_VALUES)[number];
@@ -218,68 +212,67 @@ export default function TaskListPage() {
           )}
       </section>
 
-      <Dialog open={Boolean(selectedTask)} onOpenChange={(open) => {
-        if (!open) {
-          setSelectedTaskId(null);
+      <AppModal
+        open={Boolean(selectedTask)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedTaskId(null);
+          }
+        }}
+        title={selectedTask?.title ?? ''}
+        description={selectedTask?.summary}
+        badges={
+          selectedTask ? (
+            <>
+              <StatusPill tone="teal">{selectedTask.domain}</StatusPill>
+              <StatusPill tone="purple">{selectedTask.assigneeName}</StatusPill>
+              <StatusPill tone="slate">{selectedTask.milestoneName}</StatusPill>
+            </>
+          ) : null
         }
-      }}>
+        side={
+          selectedTask ? (
+            <div className="space-y-3">
+              <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground">바로가기</div>
+              <div className="flex flex-col gap-2">
+                <Button asChild className="h-9 rounded-md justify-between px-3">
+                  <Link to={`/tasks/${selectedTask.id}/reviews`}>
+                    검토 목록
+                    <ArrowRight size={16} />
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="h-9 rounded-md px-3">
+                  <Link to={`/tasks/${selectedTask.id}/reviews/new`}>
+                    새 검토 상신
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          ) : null
+        }
+        footer={
+          <Button type="button" variant="outline" size="lg" className="min-w-24 rounded-xl px-4" onClick={() => setSelectedTaskId(null)}>
+            닫기
+          </Button>
+        }
+      >
         {selectedTask ? (
-          <DialogContent className="w-[min(1120px,calc(100vw-3rem))] max-w-[calc(100vw-3rem)] overflow-hidden rounded-[28px] border border-border/80 p-0 shadow-[0_28px_90px_rgba(15,23,42,0.18)] sm:max-w-[1120px]">
-            <div className="m-3 rounded-[22px] border border-border/70 bg-background">
-            <DialogHeader className="border-b border-border/70 px-5 py-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <StatusPill tone="teal">{selectedTask.domain}</StatusPill>
-                <StatusPill tone="purple">{selectedTask.assigneeName}</StatusPill>
-                <StatusPill tone="slate">{selectedTask.milestoneName}</StatusPill>
-              </div>
-              <DialogTitle className="mt-3 text-[26px] font-semibold tracking-tight">{selectedTask.title}</DialogTitle>
-              <DialogDescription className="mt-2 text-sm leading-6">
-                {selectedTask.summary}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="grid items-start gap-8 px-6 py-6 lg:grid-cols-[minmax(0,1fr)_280px]">
-              <div className="space-y-4">
-                <div className="grid gap-3 border-b border-border/70 pb-4">
-                  <MetaRow label="기한" value={formatDate(selectedTask.dueDate)} />
-                  <MetaRow label="시작" value={formatDate(selectedTask.startDate)} />
-                  <MetaRow label="우선순위" value={getPriorityLabel(selectedTask.priority)} />
-                  <MetaRow label="현재 상태" value={getStatusLabel(selectedTask.status)} />
-                </div>
-                <div className="space-y-2">
-                  <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground">업무 메모</div>
-                  <p className="break-keep text-sm leading-6 text-muted-foreground">
-                    선택한 업무의 상태와 검토 진입 액션을 여기서 확인합니다. 우측 전체 폭을 침범하지 않도록 상세는 모달로 분리합니다.
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-3 border-l border-border/70 pl-6">
-                <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground">바로가기</div>
-                <div className="flex flex-col gap-2">
-                  <Button asChild className="h-9 rounded-md justify-between px-3">
-                    <Link to={`/tasks/${selectedTask.id}/reviews`}>
-                      검토 목록
-                      <ArrowRight size={16} />
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" className="h-9 rounded-md px-3">
-                    <Link to={`/tasks/${selectedTask.id}/reviews/new`}>
-                      새 검토 상신
-                    </Link>
-                  </Button>
-                </div>
-              </div>
+          <div className="space-y-4">
+            <div className="grid gap-3 border-b border-border/70 pb-4">
+              <MetaRow label="기한" value={formatDate(selectedTask.dueDate)} />
+              <MetaRow label="시작" value={formatDate(selectedTask.startDate)} />
+              <MetaRow label="우선순위" value={getPriorityLabel(selectedTask.priority)} />
+              <MetaRow label="현재 상태" value={getStatusLabel(selectedTask.status)} />
             </div>
-            <div className="flex justify-end border-t border-border/70 bg-muted/15 px-6 py-4">
-              <Button type="button" variant="outline" size="lg" className="min-w-24 rounded-xl px-4" onClick={() => setSelectedTaskId(null)}>
-                닫기
-              </Button>
+            <div className="space-y-2">
+              <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground">업무 메모</div>
+              <p className="break-keep text-sm leading-6 text-muted-foreground">
+                선택한 업무의 상태와 검토 진입 액션을 여기서 확인합니다. 우측 전체 폭을 침범하지 않도록 상세는 모달로 분리합니다.
+              </p>
             </div>
-            </div>
-          </DialogContent>
+          </div>
         ) : null}
-      </Dialog>
+      </AppModal>
     </div>
   );
 }
