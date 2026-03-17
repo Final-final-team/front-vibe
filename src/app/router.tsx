@@ -2,10 +2,12 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import App from '../App';
 import AuditLogsPage from '../pages/AuditLogsPage';
 import AuthCallbackPage from '../pages/AuthCallbackPage';
+import DefaultEntryRedirectPage from '../pages/DefaultEntryRedirectPage';
 import LoginPage from '../pages/LoginPage';
 import MembersPage from '../pages/MembersPage';
 import MilestonesPage from '../pages/MilestonesPage';
 import NotFoundPage from '../pages/NotFoundPage';
+import ProjectOnboardingPage from '../pages/ProjectOnboardingPage';
 import ReviewDetailPage from '../pages/ReviewDetailPage';
 import ReviewEditorPage from '../pages/ReviewEditorPage';
 import ReviewInboxPage from '../pages/ReviewInboxPage';
@@ -26,9 +28,10 @@ export const router = createBrowserRouter([
     element: <App />,
     errorElement: <NotFoundPage />,
     children: [
-      { index: true, element: <Navigate to={`${defaultProjectPath}/tasks`} replace /> },
-      { path: '/tasks', element: <Navigate to={`${defaultProjectPath}/tasks`} replace /> },
-      { path: '/reviews', element: <Navigate to={`${defaultProjectPath}/reviews`} replace /> },
+      { index: true, element: <DefaultEntryRedirectPage /> },
+      { path: '/tasks', element: <DefaultEntryRedirectPage /> },
+      { path: '/reviews', element: <DefaultEntryRedirectPage /> },
+      { path: '/onboarding/project', element: <ProjectOnboardingPage /> },
       { path: '/logs', element: <Navigate to={`${defaultProjectPath}/logs`} replace /> },
       { path: '/members', element: <Navigate to={`${defaultProjectPath}/members`} replace /> },
       { path: '/roles', element: <Navigate to={`${defaultProjectPath}/roles`} replace /> },

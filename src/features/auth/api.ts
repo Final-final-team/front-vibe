@@ -1,24 +1,5 @@
 import { backendRequest, BackendApiError, toBackendApiError } from '../../shared/lib/http';
 
-export type LocalAuthPayload = {
-  email: string;
-  password: string;
-};
-
-export type LocalSignupPayload = LocalAuthPayload & {
-  nickname: string;
-};
-
-export type LocalAuthResult = {
-  userId: number;
-  email: string;
-  nickname: string;
-  accessToken: string;
-  refreshToken: string;
-  accessTokenExpiresAt: string;
-  refreshTokenExpiresAt: string;
-};
-
 export async function refreshSession() {
   await backendRequest<void>('/api/auth/refresh', {
     method: 'POST',
@@ -58,18 +39,4 @@ export async function verifySession() {
 
     throw apiError;
   }
-}
-
-export async function loginWithLocalAccount(payload: LocalAuthPayload) {
-  return await backendRequest<LocalAuthResult>('/api/auth/local/login', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
-}
-
-export async function signupWithLocalAccount(payload: LocalSignupPayload) {
-  return await backendRequest<LocalAuthResult>('/api/auth/local/signup', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
 }

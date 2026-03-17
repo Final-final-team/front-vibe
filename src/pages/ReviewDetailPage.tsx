@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { AlertTriangle, Clock3, MessageSquareText } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ApiError } from '../features/review/api';
@@ -26,8 +26,8 @@ import {
   useUpdateComment,
   useUploadAttachment,
 } from '../features/review/hooks';
-import { REVIEW_PERMISSIONS, getCurrentActor } from '../shared/lib/session';
 import { appConfig } from '../shared/config/app-config';
+import { getCurrentActor } from '../shared/lib/session';
 import { formatDate } from '../shared/lib/format';
 import Button from '../shared/ui/Button';
 import Card from '../shared/ui/Card';
@@ -37,7 +37,7 @@ export default function ReviewDetailPage() {
   const navigate = useNavigate();
   const { reviewId: reviewIdParam } = useParams();
   const reviewId = Number(reviewIdParam);
-  const actor = getCurrentActor();
+  const actorId = appConfig.useMock ? getCurrentActor().actorId : null;
   const detailQuery = useReviewDetail(reviewId);
   const historiesQuery = useReviewHistories(reviewId);
   const { data: tasks = [] } = useTasks();
@@ -66,11 +66,6 @@ export default function ReviewDetailPage() {
   const [cancelReason, setCancelReason] = useState('');
   const [pageError, setPageError] = useState<string | null>(null);
 
-  const permissions = useMemo(
-    () => new Set(actor.permissions.length > 0 ? actor.permissions : REVIEW_PERMISSIONS),
-    [actor.permissions],
-  );
-
   if (detailQuery.isLoading) {
     return (
       <div className="rounded-3xl border border-gray-200 bg-white px-6 py-12 text-sm text-gray-500">
@@ -88,25 +83,18 @@ export default function ReviewDetailPage() {
   }
 
   const isSubmitted = review.status === 'SUBMITTED';
-  const isSubmitter = actor.actorId === review.submittedBy;
+  const isSubmitter = actorId != null && actorId === review.submittedBy;
   const isApproved = review.status === 'APPROVED';
+  const isAdditionalReviewer =
+    actorId != null && review.additionalReviewers.some((reviewer) => reviewer.userId === actorId);
 
-  const canEdit = isSubmitted && (permissions.has('REVIEW_UPDATE') || isSubmitter);
-  const canApprove =
-    isSubmitted &&
-    (permissions.has('REVIEW_APPROVE') ||
-      review.additionalReviewers.some((reviewer) => reviewer.userId === actor.actorId));
-  const canReject =
-    isSubmitted &&
-    (permissions.has('REVIEW_REJECT') ||
-      review.additionalReviewers.some((reviewer) => reviewer.userId === actor.actorId));
-  const canCancel = isSubmitted && (permissions.has('REVIEW_CANCEL') || isSubmitter);
-  const canManageReferences =
-    isSubmitted && (permissions.has('REVIEW_REFERENCE_MANAGE') || isSubmitter);
-  const canManageAdditionalReviewers =
-    isSubmitted && (permissions.has('REVIEW_ADDITIONAL_REVIEWER_MANAGE') || isSubmitter);
-  const canManageAttachments =
-    isSubmitted && (permissions.has('REVIEW_ATTACHMENT_MANAGE') || isSubmitter);
+  const canEdit = isSubmitted && isSubmitter;
+  const canApprove = isSubmitted && (!appConfig.useMock || isAdditionalReviewer || isSubmitter);
+  const canReject = isSubmitted && (!appConfig.useMock || isAdditionalReviewer || isSubmitter);
+  const canCancel = isSubmitted && isSubmitter;
+  const canManageReferences = isSubmitted && isSubmitter;
+  const canManageAdditionalReviewers = isSubmitted && isSubmitter;
+  const canManageAttachments = isSubmitted && isSubmitter;
   const canCreateComment = isSubmitted || isApproved;
   const canResubmit = review.status === 'REJECTED' || review.status === 'CANCELLED';
 
@@ -244,7 +232,7 @@ export default function ReviewDetailPage() {
           <ReviewCommentThread
             comments={review.comments}
             status={review.status}
-            currentUserId={actor.actorId}
+            currentUserId={actorId}
             canCreate={canCreateComment}
             onCreate={(content) =>
               runAction(() => createCommentMutation.mutateAsync({ content })).then(() => undefined)

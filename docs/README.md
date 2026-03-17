@@ -14,6 +14,9 @@
 - `../WHY/0005-query-vs-zustand-vs-redux-toolkit.md`
 - `../WHY/0006-router-choice-for-review-workflow.md`
 - `../WHY/0007-wsl-runtime-and-vite-proxy-for-local-integration.md`
+- `../WHY/0008-single-project-shell-until-project-api.md`
+- `../WHY/0017-oauth-only-entry-with-single-project-assumption.md`
+- `../WHY/0018-temporary-project-onboarding-before-project-api.md`
 
 Note:
 - Backend source of truth: [be-api-server](https://github.com/Final-final-team/be-api-server)

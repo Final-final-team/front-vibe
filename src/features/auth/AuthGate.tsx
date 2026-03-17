@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { LoaderCircle, ShieldAlert } from 'lucide-react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { verifySession } from './api';
 
 type Props = {
@@ -11,7 +11,6 @@ type Props = {
 const authQueryKey = ['auth', 'session'] as const;
 
 export default function AuthGate({ children }: Props) {
-  const location = useLocation();
   const sessionQuery = useQuery({
     queryKey: authQueryKey,
     queryFn: verifySession,
@@ -43,7 +42,7 @@ export default function AuthGate({ children }: Props) {
   }
 
   if (!sessionQuery.data?.authenticated) {
-    return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
+    return <Navigate to="/login" replace />;
   }
 
   return <>{children}</>;

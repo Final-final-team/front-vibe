@@ -3,8 +3,10 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { appConfig } from '../shared/config/app-config';
+import { hasCompletedProjectOnboarding } from '../shared/lib/project-onboarding';
 
-const redirectTarget = `/projects/${appConfig.defaultProjectId}/tasks`;
+const defaultProjectTarget = `/projects/${appConfig.defaultProjectId}/tasks`;
+const onboardingTarget = '/onboarding/project';
 
 export default function AuthCallbackPage() {
   const navigate = useNavigate();
@@ -14,7 +16,7 @@ export default function AuthCallbackPage() {
     void queryClient.invalidateQueries({ queryKey: ['auth', 'session'] });
 
     const timer = window.setTimeout(() => {
-      navigate(redirectTarget, { replace: true });
+      navigate(hasCompletedProjectOnboarding() ? defaultProjectTarget : onboardingTarget, { replace: true });
     }, 400);
 
     return () => window.clearTimeout(timer);

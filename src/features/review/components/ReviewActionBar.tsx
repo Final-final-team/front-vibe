@@ -70,7 +70,7 @@ export default function ReviewActionBar({
       )}
       <div className="ml-auto inline-flex items-center gap-2 rounded-xl bg-blue-50 px-3 py-2 text-sm text-blue-700">
         <UserPlus size={15} />
-        권한이 맞지 않는 액션은 선제 차단됩니다.
+        최종 권한 판정은 서버 응답 기준으로 확인됩니다.
       </div>
     </div>
   );

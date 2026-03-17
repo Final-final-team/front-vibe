@@ -7,7 +7,7 @@ import type { CommentInfo, ReviewStatus } from '../types';
 type Props = {
   comments: CommentInfo[];
   status: ReviewStatus;
-  currentUserId: number;
+  currentUserId: number | null;
   canCreate: boolean;
   onCreate: (content: string) => Promise<void>;
   onUpdate: (commentId: number, content: string) => Promise<void>;
@@ -39,7 +39,8 @@ export default function ReviewCommentThread({
       <div className="space-y-4">
         {comments.length === 0 && <p className="text-sm text-gray-500">작성된 코멘트가 없습니다.</p>}
         {comments.map((comment) => {
-          const editable = status === 'SUBMITTED' && comment.authorId === currentUserId;
+          const editable =
+            status === 'SUBMITTED' && currentUserId != null && comment.authorId === currentUserId;
           const isEditing = editingId === comment.commentId;
 
           return (

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { appConfig } from '../../shared/config/app-config';
+import { getProjectOnboardingDraft } from '../../shared/lib/project-onboarding';
 import type { WorkspaceProject } from './types';
 
 export const workspaceKeys = {
@@ -15,22 +16,26 @@ export const workspaceKeys = {
 export function useProjects() {
   return useQuery({
     queryKey: workspaceKeys.projects,
-    queryFn: async () =>
-      [
+    queryFn: async () => {
+      const onboardingDraft = getProjectOnboardingDraft();
+
+      return [
         {
           id: String(appConfig.defaultProjectId),
-          name: `프로젝트 ${appConfig.defaultProjectId}`,
+          name: onboardingDraft?.projectName || `프로젝트 ${appConfig.defaultProjectId}`,
           code: `PRJ-${appConfig.defaultProjectId}`,
-          description: '백엔드 task/review API 기준으로 연결된 기본 프로젝트',
+          description:
+            onboardingDraft?.projectSummary || '백엔드 task/review API 기준으로 연결된 기본 프로젝트',
           ownerName: '백엔드 기준 연동',
           memberCount: 0,
           milestoneCount: 0,
           openTaskCount: 0,
           reviewQueueCount: 0,
           progress: 0,
-          updatedAt: new Date().toISOString(),
+          updatedAt: onboardingDraft?.completedAt ?? new Date().toISOString(),
         } satisfies WorkspaceProject,
-      ],
+      ];
+    },
   });
 }
 

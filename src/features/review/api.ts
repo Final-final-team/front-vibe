@@ -58,6 +58,14 @@ function getActorHeaders(contentType = true, method?: string) {
   return headers;
 }
 
+function getReviewHeaders(contentType = true, method?: string) {
+  if (USE_MOCK) {
+    return getActorHeaders(contentType, method);
+  }
+
+  return buildBackendHeaders({ contentType, method });
+}
+
 function toApiError(error: unknown) {
   if (error instanceof ApiError || error instanceof BackendApiError) {
     return error;
@@ -130,7 +138,7 @@ export async function submitReview(taskId: number, input: ReviewCreateInput) {
 
     return await backendRequest<ReviewDetail>(`/api/v1/tasks/${taskId}/reviews`, {
       method: 'POST',
-      headers: getActorHeaders(true, 'POST'),
+      headers: getReviewHeaders(true, 'POST'),
       body: JSON.stringify(input),
     });
   } catch (error) {
@@ -146,7 +154,7 @@ export async function updateReview(reviewId: number, lockVersion: number, input:
       return await updateReviewMock(reviewId, lockVersion, input, actor.actorId);
     }
 
-    const headers = getActorHeaders(true, 'PATCH');
+    const headers = getReviewHeaders(true, 'PATCH');
     headers.set('If-Match', String(lockVersion));
 
     return await backendRequest<ReviewDetail>(`/api/v1/reviews/${reviewId}`, {
@@ -167,7 +175,7 @@ export async function approveReview(reviewId: number, lockVersion: number) {
       return await approveReviewMock(reviewId, lockVersion, actor.actorId);
     }
 
-    const headers = getActorHeaders(false, 'POST');
+    const headers = getReviewHeaders(false, 'POST');
     headers.set('If-Match', String(lockVersion));
 
     return await backendRequest<ReviewDetail>(`/api/v1/reviews/${reviewId}/approve`, {
@@ -187,7 +195,7 @@ export async function rejectReview(reviewId: number, lockVersion: number, reason
       return await rejectReviewMock(reviewId, lockVersion, { reason }, actor.actorId);
     }
 
-    const headers = getActorHeaders(true, 'POST');
+    const headers = getReviewHeaders(true, 'POST');
     headers.set('If-Match', String(lockVersion));
 
     return await backendRequest<ReviewDetail>(`/api/v1/reviews/${reviewId}/reject`, {
@@ -208,7 +216,7 @@ export async function cancelReview(reviewId: number, lockVersion: number, input:
       return await cancelReviewMock(reviewId, lockVersion, input, actor.actorId);
     }
 
-    const headers = getActorHeaders(true, 'POST');
+    const headers = getReviewHeaders(true, 'POST');
     headers.set('If-Match', String(lockVersion));
 
     return await backendRequest<ReviewDetail>(`/api/v1/reviews/${reviewId}/cancel`, {
@@ -229,7 +237,7 @@ export async function addReference(reviewId: number, lockVersion: number, userId
       return await addReferenceMock(reviewId, lockVersion, userId, actor.actorId);
     }
 
-    const headers = getActorHeaders(true, 'POST');
+    const headers = getReviewHeaders(true, 'POST');
     headers.set('If-Match', String(lockVersion));
 
     return await backendRequest<ReviewDetail>(`/api/v1/reviews/${reviewId}/references`, {
@@ -250,7 +258,7 @@ export async function removeReference(reviewId: number, userId: number, lockVers
       return await removeReferenceMock(reviewId, userId, lockVersion, actor.actorId);
     }
 
-    const headers = getActorHeaders(false, 'DELETE');
+    const headers = getReviewHeaders(false, 'DELETE');
     headers.set('If-Match', String(lockVersion));
 
     return await backendRequest<ReviewDetail>(`/api/v1/reviews/${reviewId}/references/${userId}`, {
@@ -270,7 +278,7 @@ export async function addAdditionalReviewer(reviewId: number, lockVersion: numbe
       return await addAdditionalReviewerMock(reviewId, lockVersion, userId, actor.actorId);
     }
 
-    const headers = getActorHeaders(true, 'POST');
+    const headers = getReviewHeaders(true, 'POST');
     headers.set('If-Match', String(lockVersion));
 
     return await backendRequest<ReviewDetail>(`/api/v1/reviews/${reviewId}/additional-reviewers`, {
@@ -295,7 +303,7 @@ export async function removeAdditionalReviewer(
       return await removeAdditionalReviewerMock(reviewId, userId, lockVersion, actor.actorId);
     }
 
-    const headers = getActorHeaders(false, 'DELETE');
+    const headers = getReviewHeaders(false, 'DELETE');
     headers.set('If-Match', String(lockVersion));
 
     return await backendRequest<ReviewDetail>(`/api/v1/reviews/${reviewId}/additional-reviewers/${userId}`, {
@@ -315,7 +323,7 @@ export async function uploadAttachment(reviewId: number, lockVersion: number, fi
       return await uploadAttachmentMock(reviewId, lockVersion, file, actor.actorId);
     }
 
-    const presignHeaders = getActorHeaders(true, 'POST');
+    const presignHeaders = getReviewHeaders(true, 'POST');
     presignHeaders.set('If-Match', String(lockVersion));
     const presign = await backendRequest<{ objectKey: string; uploadUrl: string; expiresAt: string }>(
       `/api/v1/reviews/${reviewId}/attachments/presign`,
@@ -344,7 +352,7 @@ export async function uploadAttachment(reviewId: number, lockVersion: number, fi
       });
     }
 
-    const confirmHeaders = getActorHeaders(true, 'POST');
+    const confirmHeaders = getReviewHeaders(true, 'POST');
     confirmHeaders.set('If-Match', String(lockVersion));
 
     return await backendRequest<ReviewDetail>(`/api/v1/reviews/${reviewId}/attachments`, {
@@ -371,7 +379,7 @@ export async function deleteAttachment(reviewId: number, attachmentId: number, l
       return await deleteAttachmentMock(reviewId, attachmentId, lockVersion, actor.actorId);
     }
 
-    const headers = getActorHeaders(false, 'DELETE');
+    const headers = getReviewHeaders(false, 'DELETE');
     headers.set('If-Match', String(lockVersion));
 
     return await backendRequest<ReviewDetail>(`/api/v1/reviews/${reviewId}/attachments/${attachmentId}`, {
@@ -393,7 +401,7 @@ export async function createComment(reviewId: number, content: string) {
 
     return await backendRequest<ReviewDetail>(`/api/v1/reviews/${reviewId}/comments`, {
       method: 'POST',
-      headers: getActorHeaders(true, 'POST'),
+      headers: getReviewHeaders(true, 'POST'),
       body: JSON.stringify({ content }),
     });
   } catch (error) {
@@ -411,7 +419,7 @@ export async function updateComment(reviewId: number, commentId: number, content
 
     return await backendRequest<ReviewDetail>(`/api/v1/reviews/${reviewId}/comments/${commentId}`, {
       method: 'PATCH',
-      headers: getActorHeaders(true, 'PATCH'),
+      headers: getReviewHeaders(true, 'PATCH'),
       body: JSON.stringify({ content }),
     });
   } catch (error) {
@@ -429,7 +437,7 @@ export async function deleteComment(reviewId: number, commentId: number) {
 
     return await backendRequest<ReviewDetail>(`/api/v1/reviews/${reviewId}/comments/${commentId}`, {
       method: 'DELETE',
-      headers: getActorHeaders(false, 'DELETE'),
+      headers: getReviewHeaders(false, 'DELETE'),
     });
   } catch (error) {
     throw toApiError(error);
@@ -450,7 +458,7 @@ export async function fetchAttachmentDownload(reviewId: number, attachmentId: nu
     return await backendRequest<ReviewAttachmentDownload>(
       `/api/v1/reviews/${reviewId}/attachments/${attachmentId}/download`,
       {
-        headers: getActorHeaders(false, 'GET'),
+        headers: getReviewHeaders(false, 'GET'),
       },
     );
   } catch (error) {
