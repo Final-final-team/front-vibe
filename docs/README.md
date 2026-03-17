@@ -16,8 +16,8 @@
 - `../WHY/0007-wsl-runtime-and-vite-proxy-for-local-integration.md`
 
 Note:
-- Backend source of truth: `/mnt/c/Users/alswl/Desktop/fianl`
-- API reference: `/mnt/c/Users/alswl/Desktop/fianl/DOCS/review/review-action-api-spec.md`
+- Backend source of truth: [be-api-server](https://github.com/Final-final-team/be-api-server)
+- Default backend reference branch: `dev`
 - Frontend stack confirmed from `front-vibe`:
   - `Vite`
   - `React 19`
