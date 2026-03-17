@@ -56,7 +56,7 @@ export default function AppModal({
       <DialogContent
         showCloseButton={false}
         className={cn(
-          'top-[46%] max-h-[88vh] overflow-hidden rounded-[28px] border border-border/80 p-0 shadow-[0_28px_90px_rgba(15,23,42,0.18)] sm:top-[40%]',
+          'top-[49%] max-h-[88vh] overflow-hidden rounded-[28px] border border-border/80 p-0 shadow-[0_28px_90px_rgba(15,23,42,0.18)] sm:top-[45%]',
           sizeClassName,
           className,
         )}
