@@ -225,7 +225,7 @@ export default function TaskListPage() {
         }
       }}>
         {selectedTask ? (
-          <DialogContent className="max-w-5xl rounded-[28px] border border-border/80 p-0 shadow-[0_28px_90px_rgba(15,23,42,0.18)]">
+          <DialogContent className="w-[min(1120px,calc(100vw-3rem))] max-w-[calc(100vw-3rem)] overflow-hidden rounded-[28px] border border-border/80 p-0 shadow-[0_28px_90px_rgba(15,23,42,0.18)] sm:max-w-[1120px]">
             <DialogHeader className="border-b border-border/70 px-5 py-4">
               <div className="flex flex-wrap items-center gap-2">
                 <StatusPill tone="teal">{selectedTask.domain}</StatusPill>
@@ -238,7 +238,7 @@ export default function TaskListPage() {
               </DialogDescription>
             </DialogHeader>
 
-            <div className="grid gap-8 px-6 py-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+            <div className="grid items-start gap-8 px-6 py-6 lg:grid-cols-[minmax(0,1fr)_280px]">
               <div className="space-y-4">
                 <div className="grid gap-3 border-b border-border/70 pb-4">
                   <MetaRow label="기한" value={formatDate(selectedTask.dueDate)} />
@@ -248,7 +248,7 @@ export default function TaskListPage() {
                 </div>
                 <div className="space-y-2">
                   <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground">업무 메모</div>
-                  <p className="text-sm leading-6 text-muted-foreground">
+                  <p className="break-keep text-sm leading-6 text-muted-foreground">
                     선택한 업무의 상태와 검토 진입 액션을 여기서 확인합니다. 우측 전체 폭을 침범하지 않도록 상세는 모달로 분리합니다.
                   </p>
                 </div>
@@ -303,10 +303,21 @@ function KanbanView({
     <div className="grid gap-5 xl:grid-cols-3">
       {columns.map((column) => (
         <section key={column.key} className="min-w-0">
-          <div className="flex items-center justify-between border-b border-border/70 pb-2">
+          <div className="flex min-h-12 items-center justify-between border-b border-border/70 pb-2">
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-semibold text-foreground">{column.title}</h2>
-              <StatusPill tone={column.tone}>{column.items.length}</StatusPill>
+              <span
+                className={[
+                  'inline-flex h-10 min-w-10 items-center justify-center rounded-md border px-3 text-xl font-semibold leading-none',
+                  column.tone === 'green'
+                    ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                    : column.tone === 'amber'
+                      ? 'border-amber-300 bg-amber-50 text-amber-700'
+                      : 'border-slate-300 bg-slate-50 text-slate-700',
+                ].join(' ')}
+              >
+                {column.items.length}
+              </span>
             </div>
           </div>
           <div className="space-y-2.5 pt-3">

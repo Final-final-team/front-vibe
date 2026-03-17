@@ -23,7 +23,7 @@ export default function StatusPill({ children, tone = 'slate', className }: Prop
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-semibold',
+        'inline-flex shrink-0 items-center whitespace-nowrap rounded-md border px-2.5 py-1 text-xs font-semibold leading-none',
         toneStyles[tone],
         className,
       )}
