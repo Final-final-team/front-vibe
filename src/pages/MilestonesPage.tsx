@@ -123,9 +123,7 @@ export default function MilestonesPage() {
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold tracking-tight text-foreground">마일스톤 목록</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              메인 화면에서는 어떤 마일스톤이 진행 중인지, 위험과 진행률이 어떤지까지만 빠르게 보고 상세는 모달에서 확인합니다.
-            </p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">메인 화면에서는 마일스톤 이름, 연결 위험, 진행률만 보고 상세는 모달에서 확인합니다.</p>
           </div>
           <Button type="button" className="rounded-xl px-4" onClick={() => setCreateOpen(true)}>
             <Plus size={15} />
@@ -134,7 +132,7 @@ export default function MilestonesPage() {
         </div>
 
         <div className="grid gap-4 xl:grid-cols-2">
-          {milestoneCards.map(({ milestone, linkedTasks, progress, reviewCount, riskCount, nextDueTask }) => (
+          {milestoneCards.map(({ milestone, linkedTasks, progress, reviewCount, riskCount }) => (
             <button
               key={milestone.id}
               type="button"
@@ -147,7 +145,6 @@ export default function MilestonesPage() {
                     <h3 className="text-lg font-semibold tracking-tight text-foreground">{milestone.name}</h3>
                     <StatusPill tone={healthToneMap[milestone.health]}>{healthLabelMap[milestone.health]}</StatusPill>
                   </div>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{milestone.summary}</p>
                 </div>
                 <Button
                   type="button"
@@ -162,17 +159,16 @@ export default function MilestonesPage() {
                 </Button>
               </div>
 
-              <div className="mt-4 grid gap-3 md:grid-cols-4">
+              <div className="mt-4 grid gap-3 md:grid-cols-3">
                 <InlineInfo label="진행률" value={`${progress}%`} />
                 <InlineInfo label="연결 위험" value={`${riskCount}건`} />
-                <InlineInfo label="검토 대기" value={`${reviewCount}건`} />
-                <InlineInfo label="다음 마감" value={nextDueTask ? formatDate(nextDueTask.dueDate) : '없음'} />
+                <InlineInfo label="연결 업무" value={`${linkedTasks.length}건`} />
               </div>
 
               <div className="mt-4">
                 <div className="mb-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
                   <span>연결 업무 진행률</span>
-                  <span>{linkedTasks.length}개 업무</span>
+                  <span>{reviewCount}건 검토 대기</span>
                 </div>
                 <div className="h-2 rounded-full bg-muted/60">
                   <div className="h-2 rounded-full bg-primary transition-all" style={{ width: `${progress}%` }} />
@@ -291,8 +287,8 @@ export default function MilestonesPage() {
             </section>
 
             <section className="grid gap-4 border-b border-border/70 pb-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-              <MetaBlock label="집중 요약" value={buildMilestoneFocusSummary(detailMilestone, detailBundle.linkedTasks, detailBundle.reviewCount)} multiline />
-              <div className="space-y-4">
+                <MetaBlock label="집중 요약" value={buildMilestoneFocusSummary(detailMilestone, detailBundle.linkedTasks, detailBundle.reviewCount)} multiline />
+                <div className="space-y-4">
                 <MetaBlock
                   label="다음 액션"
                   value={
@@ -373,13 +369,12 @@ function MilestoneTaskRow({ task }: { task: TaskViewItem }) {
           <StatusPill tone={getStatusTone(task.status)}>{getStatusLabel(task.status)}</StatusPill>
           <StatusPill tone={getPriorityTone(task.priority)}>{getPriorityLabel(task.priority)}</StatusPill>
         </div>
-        <div className="mt-2 text-sm leading-6 text-muted-foreground">{task.summary}</div>
       </div>
       <div className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
         <InfoLine label="담당자" value={task.assigneeName} />
         <InfoLine label="업무 영역" value={task.domain} />
-        <InfoLine label="기한" value={formatDate(task.dueDate)} />
-        <InfoLine label="최근 갱신" value={formatDate(task.updatedAt)} />
+        <InfoLine label="기한" value={formatShortDate(task.dueDate)} />
+        <InfoLine label="최근 갱신" value={formatShortDate(task.updatedAt)} />
       </div>
     </div>
   );
@@ -435,6 +430,12 @@ function InfoLine({ label, value }: { label: string; value: string }) {
       <span className="font-medium text-foreground">{value}</span>
     </div>
   );
+}
+
+function formatShortDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '-';
+  return `${date.getMonth() + 1}/${date.getDate()}`;
 }
 
 function FormRow({ label, children }: { label: string; children: ReactNode }) {

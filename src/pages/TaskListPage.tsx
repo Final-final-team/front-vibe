@@ -192,13 +192,7 @@ export default function TaskListPage() {
                 내 업무만
               </ScopeButton>
             </div>
-            <div className="text-xs text-muted-foreground">
-              {taskScope === 'milestone'
-                ? '마일스톤 단위로 업무를 묶어 봅니다.'
-                : taskScope === 'timeline'
-                  ? '기한이 가까운 순서로 업무를 봅니다.'
-                  : `${currentProject?.ownerName ?? '현재 사용자'}에게 연결된 업무만 봅니다.`}
-            </div>
+            <div className="text-xs text-muted-foreground">{scopedTaskItems.length}건 표시</div>
           </div>
           {currentView === 'table' ? (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
@@ -218,7 +212,6 @@ export default function TaskListPage() {
                               <div className="mb-3 flex items-center justify-between gap-3">
                                 <div>
                                   <div className="font-semibold text-foreground">{milestone.name}</div>
-                                  <div className="mt-1 text-sm text-muted-foreground">{milestone.summary}</div>
                                 </div>
                                 <StatusPill tone="slate">{progress}%</StatusPill>
                               </div>
@@ -269,14 +262,13 @@ export default function TaskListPage() {
                               {getMilestoneHealthLabel(milestone.health)}
                             </StatusPill>
                           </div>
-                          <p className="mt-1 text-xs text-muted-foreground">{milestone.summary}</p>
                         </div>
                         <div className="min-w-[190px]">
                           <div className="h-1.5 overflow-hidden bg-muted">
                             <div className="h-full bg-primary" style={{ width: `${progress}%` }} />
                           </div>
                           <div className="mt-2 text-right text-xs text-muted-foreground">
-                            {milestoneTasks.length}건 · 마감 {formatDate(milestone.dueDate)}
+                            {milestoneTasks.length}건 · 마감 {formatListDueDate(milestone.dueDate)}
                           </div>
                         </div>
                       </div>
@@ -334,11 +326,6 @@ export default function TaskListPage() {
                           <h2 className="text-base font-semibold tracking-tight text-foreground">
                             {taskScope === 'mine' ? '내 업무' : '시간순 업무'}
                           </h2>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {taskScope === 'mine'
-                              ? '현재 운영자에게 연결된 업무만 시간순으로 봅니다.'
-                              : '기한 기준으로 전체 업무를 시간순 정렬합니다.'}
-                          </p>
                         </div>
                         <StatusPill tone="slate">{scopedTaskItems.length}건</StatusPill>
                       </div>
@@ -997,7 +984,7 @@ function SortableTaskRow({
       <TableCell>
         <StatusPill tone={getStatusTone(task.status)}>{getStatusLabel(task.status)}</StatusPill>
       </TableCell>
-      <TableCell>{formatDueDateShort(task.dueDate)}</TableCell>
+      <TableCell>{formatListDueDate(task.dueDate)}</TableCell>
       <TableCell>
         <div className="flex items-center gap-3">
           <Link
@@ -1066,7 +1053,7 @@ function TaskMobileCard({
         </div>
         <div className="flex items-center justify-between gap-3">
           <span>기한</span>
-          <span className="font-medium text-foreground">{formatDueDateShort(task.dueDate)}</span>
+          <span className="font-medium text-foreground">{formatListDueDate(task.dueDate)}</span>
         </div>
       </div>
       <div className="mt-3 flex justify-end">
@@ -1146,6 +1133,17 @@ function formatDueDateShort(value: string | null) {
   const minutes = `${date.getMinutes()}`.padStart(2, '0');
 
   return `${month}/${day} ${hours}:${minutes}`;
+}
+
+function formatListDueDate(value: string | null) {
+  if (!value) return '-';
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return '-';
+  }
+
+  return `${date.getMonth() + 1}/${date.getDate()}`;
 }
 
 function getCurrentView(value: string | null): TaskView {

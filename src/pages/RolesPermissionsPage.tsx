@@ -100,13 +100,11 @@ export default function RolesPermissionsPage() {
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold tracking-tight text-foreground">역할 카탈로그</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              역할 / 권한 화면은 역할 정책을 설계하는 곳입니다. 사람에게 역할을 연결하는 조작은 멤버 화면에서만 진행합니다.
-            </p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">메인 화면에서는 역할 이름과 책임만 보고, 세부 정책과 권한 관리는 모달에서 처리합니다.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => setCatalogOpen(true)}>
-              전체 권한 관리
+              전체 권한 보기
             </Button>
             <Button type="button" className="rounded-xl px-4" onClick={() => setCreateRoleOpen(true)}>
               <Plus size={15} />
@@ -135,13 +133,7 @@ export default function RolesPermissionsPage() {
                     </div>
                     <p className="mt-2 text-sm leading-6 text-muted-foreground">{role.description}</p>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                    <span>{effectiveKeys.length}개 권한</span>
-                    <span>·</span>
-                    <span>{categoryCount}개 카테고리</span>
-                    <span>·</span>
-                    <span>{currentProject?.code ?? '-'}</span>
-                  </div>
+                  <StatusPill tone="slate">{currentProject?.code ?? '-'}</StatusPill>
                 </div>
                 <div className="mt-4 flex flex-wrap items-center gap-2">
                   <Button
@@ -162,8 +154,9 @@ export default function RolesPermissionsPage() {
                     className="h-8 rounded-lg px-3 text-sm font-medium text-primary"
                     onClick={() => openPermissionModal(role.id)}
                   >
-                    권한 보기
+                    권한 관리
                   </Button>
+                  <span className="text-xs text-muted-foreground">{effectiveKeys.length}개 권한 · {categoryCount}개 카테고리</span>
                 </div>
               </div>
             );
@@ -252,7 +245,7 @@ export default function RolesPermissionsPage() {
           ) : null
         }
         size="md"
-        className="sm:max-w-[680px]"
+        className="sm:max-w-[620px]"
         footer={
           <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => setDetailRoleId(null)}>
             닫기
@@ -261,20 +254,20 @@ export default function RolesPermissionsPage() {
       >
         {detailRole ? (
           <div className="space-y-6">
-            <div className="grid gap-4 border-b border-border/70 pb-5">
+            <div className="grid gap-3 border-b border-border/70 pb-4">
               <MetaRow label="적용 범위" value={`project/${currentProject?.code ?? 'default'}/*`} />
               <MetaRow label="허용 권한 수" value={`${detailKeys.length}개`} />
             </div>
             <div>
               <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">허용 권한</div>
-              <div className="mt-4 space-y-3">
+              <div className="mt-3 space-y-2.5">
                 {detailPermissionDefinitions.map((permission) => (
-                  <div key={permission.key} className="border-b border-border/60 pb-3">
+                  <div key={permission.key} className="border-b border-border/60 pb-2.5">
                     <div className="flex items-center justify-between gap-3">
                       <span className="font-medium text-foreground">{permission.name}</span>
                       <StatusPill tone="blue">허용</StatusPill>
                     </div>
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{permission.description}</p>
+                    <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{permission.description}</p>
                   </div>
                 ))}
               </div>
@@ -396,7 +389,7 @@ export default function RolesPermissionsPage() {
         open={catalogOpen}
         onOpenChange={setCatalogOpen}
         title="전체 권한 관리"
-        description="현재 프로젝트에서 정의된 전체 권한을 확인하고 역할 편집 전 기준 카탈로그로 참고합니다."
+        description="현재 프로젝트에서 사용할 수 있는 전체 권한 카탈로그를 확인합니다."
         badges={
           <>
             <StatusPill tone="slate">{permissions.length}개 권한</StatusPill>
