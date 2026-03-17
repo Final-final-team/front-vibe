@@ -13,7 +13,6 @@ export default function RolesPermissionsPage() {
   const { currentProject } = useWorkspace();
   const { data: roles = [] } = useProjectRoles(currentProject?.id ?? null);
   const { data: permissions = [] } = usePermissions();
-  const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
   const [detailRoleId, setDetailRoleId] = useState<string | null>(null);
   const [permissionRoleId, setPermissionRoleId] = useState<string | null>(null);
   const [showPolicyStatements, setShowPolicyStatements] = useState(false);
@@ -22,17 +21,14 @@ export default function RolesPermissionsPage() {
 
   const visiblePermissions = useMemo(() => permissions, [permissions]);
   const roleById = useMemo(() => new Map(roles.map((role) => [role.id, role])), [roles]);
-  const selectedRole = roleById.get(selectedRoleId ?? '') ?? roles[0] ?? null;
   const detailRole = roleById.get(detailRoleId ?? '') ?? null;
   const permissionRole = roleById.get(permissionRoleId ?? '') ?? null;
-  const selectedKeys = selectedRole ? getEffectivePermissionKeys(selectedRole.id, selectedRole.permissionKeys, permissionOverrides) : [];
   const detailKeys = detailRole ? getEffectivePermissionKeys(detailRole.id, detailRole.permissionKeys, permissionOverrides) : [];
   const categories = useMemo(() => [...new Set(visiblePermissions.map((permission) => permission.category))], [visiblePermissions]);
   const groupedCatalog = categories.map((category) => ({
     category,
     items: visiblePermissions.filter((permission) => permission.category === category),
   }));
-  const selectedPermissionDefinitions = visiblePermissions.filter((permission) => selectedKeys.includes(permission.key));
   const detailPermissionDefinitions = visiblePermissions.filter((permission) => detailKeys.includes(permission.key));
 
   function openPermissionModal(roleId: string) {
@@ -77,10 +73,9 @@ export default function RolesPermissionsPage() {
             </div>
           </div>
 
-        <div className="grid gap-10 xl:grid-cols-[380px_minmax(0,1fr)]">
-          <aside className="space-y-3 border-t border-border/60 pt-4">
+        <div className="border-t border-border/60 pt-4">
+          <div className="grid gap-3 xl:grid-cols-2">
             {roles.map((role) => {
-              const active = selectedRole?.id === role.id;
               const effectiveKeys = getEffectivePermissionKeys(role.id, role.permissionKeys, permissionOverrides);
               const categoryCount = categories.filter((category) =>
                 visiblePermissions.some((permission) => permission.category === category && effectiveKeys.includes(permission.key)),
@@ -89,22 +84,17 @@ export default function RolesPermissionsPage() {
                 <div
                   key={role.id}
                   className={[
-                    'rounded-[28px] border px-5 py-5 text-left transition',
-                    active
-                      ? 'border-primary/20 bg-primary/[0.07] shadow-[0_18px_40px_-30px_rgba(15,23,42,0.4)]'
-                      : 'border-border/70 bg-background hover:border-primary/15 hover:bg-muted/[0.18]',
+                    'rounded-[28px] border border-border/70 bg-background px-5 py-5 text-left transition hover:border-primary/15 hover:bg-muted/[0.18]',
                   ].join(' ')}
                 >
-                  <button type="button" onClick={() => setSelectedRoleId(role.id)} className="w-full text-left">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">ROLE</div>
-                        <div className="mt-2 text-lg font-semibold text-foreground">{role.name}</div>
-                        <p className="mt-2 text-sm leading-6 text-muted-foreground">{role.description}</p>
-                      </div>
-                      <StatusPill tone={active ? 'blue' : 'slate'}>{effectiveKeys.length}개 권한</StatusPill>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">ROLE</div>
+                      <div className="mt-2 text-lg font-semibold text-foreground">{role.name}</div>
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">{role.description}</p>
                     </div>
-                  </button>
+                    <StatusPill tone="slate">{effectiveKeys.length}개 권한</StatusPill>
+                  </div>
                   <div className="mt-4 grid grid-cols-2 gap-2">
                     <RoleCountCard label="권한" value={`${effectiveKeys.length}개`} />
                     <RoleCountCard label="카테고리" value={`${categoryCount}개`} />
@@ -129,76 +119,6 @@ export default function RolesPermissionsPage() {
                 </div>
               );
             })}
-          </aside>
-
-          <div className="space-y-6">
-            {selectedRole ? (
-              <>
-                <div className="rounded-[30px] border border-border/70 bg-muted/[0.14] px-6 py-6">
-                  <div className="mb-3 text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">현재 선택된 역할</div>
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <h3 className="text-2xl font-semibold tracking-tight text-foreground">{selectedRole.name}</h3>
-                      <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">{selectedRole.description}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <StatusPill tone="slate">프로젝트 전용</StatusPill>
-                      <StatusPill tone="blue">{selectedKeys.length}개 허용 권한</StatusPill>
-                    </div>
-                  </div>
-                  <div className="mt-5 grid gap-3 md:grid-cols-3">
-                    <RoleCountCard label="허용 권한" value={`${selectedKeys.length}개`} />
-                    <RoleCountCard
-                      label="카테고리 수"
-                      value={`${categories.filter((category) => selectedPermissionDefinitions.some((permission) => permission.category === category)).length}개`}
-                    />
-                    <RoleCountCard label="적용 범위" value={`project/${currentProject?.code ?? 'default'}/*`} wide />
-                  </div>
-                  <div className="mt-5 flex flex-wrap gap-2 border-t border-border/60 pt-4">
-                    <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => setDetailRoleId(selectedRole.id)}>
-                      상세 보기
-                    </Button>
-                    <Button type="button" className="rounded-xl px-4" onClick={() => openPermissionModal(selectedRole.id)}>
-                      전체 권한 관리
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="space-y-6 border-t border-border/60 pt-8">
-                  <div>
-                    <div className="mb-4 text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">허용 권한 요약</div>
-                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                      {categories.map((category) => {
-                        const count = selectedPermissionDefinitions.filter((permission) => permission.category === category).length;
-                        if (count === 0) return null;
-                        return (
-                          <div key={category} className="rounded-[22px] border border-border/70 bg-background px-4 py-4">
-                            <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">{category}</div>
-                            <div className="mt-2 text-xl font-semibold tracking-tight text-foreground">{count}개</div>
-                            <div className="mt-1 text-sm text-muted-foreground">현재 역할에 허용됨</div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="mb-4 text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">현재 허용 권한</div>
-                    <div className="space-y-3">
-                      {selectedPermissionDefinitions.map((permission) => (
-                        <div key={permission.key} className="flex items-start justify-between gap-4 border-b border-border/60 pb-3">
-                          <div className="min-w-0">
-                            <div className="font-medium text-foreground">{permission.name}</div>
-                            <p className="mt-2 text-sm leading-6 text-muted-foreground">{permission.description}</p>
-                          </div>
-                          <StatusPill tone="blue">허용</StatusPill>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </>
-            ) : null}
           </div>
         </div>
       </section>
