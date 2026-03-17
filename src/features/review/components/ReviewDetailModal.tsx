@@ -54,8 +54,9 @@ export default function ReviewDetailModal({ reviewId, open, onOpenChange }: Prop
               <div className="mt-3 space-y-2">
                 {(historiesQuery.data ?? []).slice(0, 4).map((history) => (
                   <div key={history.historyId} className="border-b border-border/50 pb-2 text-sm">
-                    <div className="font-medium text-foreground">{history.actionType.replaceAll('_', ' ')}</div>
+                    <div className="font-medium text-foreground">{getHistoryActionLabel(history.actionType)}</div>
                     <div className="mt-1 text-muted-foreground">{formatDate(history.occurredAt)}</div>
+                    {history.reason ? <div className="mt-1 text-muted-foreground">{history.reason}</div> : null}
                   </div>
                 ))}
               </div>
@@ -206,5 +207,28 @@ function getReviewTone(status: 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'CANCELLE
       return 'slate';
     default:
       return 'amber';
+  }
+}
+
+function getHistoryActionLabel(actionType: string) {
+  switch (actionType) {
+    case 'REVIEW_CREATED':
+      return '검토 생성';
+    case 'REVIEW_APPROVED':
+      return '검토 승인';
+    case 'REVIEW_REJECTED':
+      return '검토 반려';
+    case 'REVIEW_CANCELLED':
+      return '검토 취소';
+    case 'REFERENCE_ASSIGNED':
+      return '참조자 지정';
+    case 'ADDITIONAL_REVIEWER_ASSIGNED':
+      return '추가 검토자 지정';
+    case 'COMMENT_CREATED':
+      return '코멘트 작성';
+    case 'ATTACHMENT_ADDED':
+      return '첨부 추가';
+    default:
+      return actionType.replaceAll('_', ' ');
   }
 }

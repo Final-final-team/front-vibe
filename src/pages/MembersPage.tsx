@@ -281,8 +281,8 @@ export default function MembersPage() {
         }}
         title={assignmentMember ? `${assignmentMember.name} 역할 부여` : ''}
         description="멤버에게 직접 권한을 주지 않고 역할만 부여합니다. 권한 설계와 수정은 역할 / 권한 화면에서 관리합니다."
-        className="w-[min(680px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] sm:max-w-[680px]"
-        bodyClassName="px-5 py-5"
+        size="sm"
+        bodyClassName="px-5 py-4"
         footerClassName="px-5 py-3"
         badges={
           assignmentMember ? (
@@ -308,11 +308,11 @@ export default function MembersPage() {
         }
       >
         {assignmentMember ? (
-          <div className="space-y-5">
-            <div className="grid gap-4 border-b border-border/70 pb-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="space-y-4">
+            <div className="grid gap-4 border-b border-border/70 pb-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
               <div>
                 <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">멤버 정보</div>
-                <div className="mt-3 space-y-3 text-sm text-muted-foreground">
+                <div className="mt-3 space-y-2 text-sm text-muted-foreground">
                   <div className="flex items-center justify-between border-b border-border/50 pb-2">
                     <span>이메일</span>
                     <span className="font-medium text-foreground">{assignmentMember.email}</span>
@@ -350,8 +350,11 @@ export default function MembersPage() {
             </div>
 
             <div>
-              <div className="mb-3 text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">역할 카탈로그</div>
-              <div className="space-y-3">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">역할 카탈로그</div>
+                <div className="text-xs text-muted-foreground">{draftRoleIds.length}개 선택</div>
+              </div>
+              <div className="space-y-2">
                 {roles.map((role) => {
                   const active = draftRoleIds.includes(role.id);
 
@@ -361,7 +364,7 @@ export default function MembersPage() {
                       type="button"
                       onClick={() => toggleRole(role.id)}
                       className={[
-                        'w-full rounded-xl border px-4 py-4 text-left transition',
+                        'w-full rounded-xl border px-3 py-3 text-left transition',
                         active
                           ? 'border-primary/30 bg-primary/5'
                           : 'border-border/70 hover:border-border',
@@ -373,13 +376,16 @@ export default function MembersPage() {
                             <span className="font-semibold text-foreground">{role.name}</span>
                             <StatusPill tone={active ? 'blue' : 'slate'}>{active ? '선택됨' : '미선택'}</StatusPill>
                           </div>
-                          <p className="mt-2 text-sm leading-6 text-muted-foreground">{role.description}</p>
+                          <p className="mt-1 text-sm leading-6 text-muted-foreground">{role.description}</p>
                         </div>
                         <div className="text-xs font-semibold text-muted-foreground">{role.permissionKeys.length}개 권한</div>
                       </div>
                     </button>
                   );
                 })}
+              </div>
+              <div className="mt-3 text-sm leading-6 text-muted-foreground">
+                역할에 연결된 실제 권한 설계와 변경은 역할 / 권한 화면에서만 진행합니다.
               </div>
             </div>
           </div>
