@@ -66,6 +66,14 @@ export default function MilestonesPage() {
           const done = linkedTasks.filter((item) => item.task?.latestReviewStatus === 'COMPLETED').length;
           const review = linkedTasks.filter((item) => item.task?.latestReviewStatus === 'IN_REVIEW').length;
           const progress = Math.round((done / total) * 100);
+          const activeDomains = [...new Set(linkedTasks.map(({ meta }) => meta.domain))];
+          const nextDueTask = [...linkedTasks].sort((a, b) => new Date(a.meta.dueDate).getTime() - new Date(b.meta.dueDate).getTime())[0];
+          const riskText =
+            milestone.health === 'AT_RISK'
+              ? '마감 전 검토 대기 업무가 남아 있어 조정이 필요합니다.'
+              : milestone.health === 'COMPLETE'
+                ? '연결 업무 기준으로 완료 상태입니다.'
+                : '현재 리듬은 안정적이며 연결 업무가 계획대로 진행 중입니다.';
 
           return (
             <section key={milestone.id} className="border-t border-border/70 pt-4">
@@ -94,6 +102,30 @@ export default function MilestonesPage() {
                     <StatusPill tone="green">{done}개 완료</StatusPill>
                     <StatusPill tone="amber">{review}개 검토중</StatusPill>
                     <StatusPill tone="slate">{linkedTasks.length - done - review}개 진행중</StatusPill>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 border-y border-border/60 py-4 lg:grid-cols-3">
+                  <div>
+                    <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">다음 체크포인트</div>
+                    <div className="mt-2 text-sm font-medium text-foreground">
+                      {nextDueTask ? nextDueTask.task?.title : '연결 업무 없음'}
+                    </div>
+                    <div className="mt-1 text-sm text-muted-foreground">
+                      {nextDueTask ? `마감 ${formatDate(nextDueTask.meta.dueDate)}` : '후속 업무를 연결하면 여기서 확인할 수 있습니다.'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">연결 도메인</div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {activeDomains.map((domain) => (
+                        <StatusPill key={domain} tone="teal">{domain}</StatusPill>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">위험 메모</div>
+                    <div className="mt-2 text-sm leading-6 text-muted-foreground">{riskText}</div>
                   </div>
                 </div>
 

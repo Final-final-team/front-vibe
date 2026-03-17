@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import { MailPlus, ShieldCheck, UserCheck, Users } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
 import { useProjectMembers, useProjectRoles } from '../features/workspace/hooks';
 import { useWorkspace } from '../features/workspace/use-workspace';
 import { formatDate } from '../shared/lib/format';
@@ -24,55 +23,16 @@ const inviteLabelMap = {
 } as const;
 
 export default function MembersPage() {
-  const navigate = useNavigate();
-  const location = useLocation();
   const { currentProject } = useWorkspace();
   const { data: members = [] } = useProjectMembers(currentProject?.id ?? null);
   const { data: roles = [] } = useProjectRoles(currentProject?.id ?? null);
-  const [draftName, setDraftName] = useState('');
-  const [draftEmail, setDraftEmail] = useState('');
-  const [draftRoleId, setDraftRoleId] = useState('');
-  const [localInvites, setLocalInvites] = useState<typeof members>([]);
+  const [invitePlanOpen, setInvitePlanOpen] = useState(false);
 
-  const isInviteOpen = location.hash === '#invite';
-  const mergedMembers = useMemo(() => [...localInvites, ...members], [localInvites, members]);
+  const mergedMembers = useMemo(() => members, [members]);
 
   const invitedCount = mergedMembers.filter((member) => member.inviteStatus === 'INVITED').length;
   const activeCount = mergedMembers.filter((member) => member.inviteStatus === 'ACTIVE').length;
   const pendingCount = mergedMembers.filter((member) => member.inviteStatus !== 'ACTIVE').length;
-
-  function openInvite() {
-    navigate('/members#invite');
-  }
-
-  function closeInvite() {
-    navigate('/members', { replace: true });
-  }
-
-  function handleInviteConfirm() {
-    if (!draftName.trim() || !draftEmail.trim()) {
-      return;
-    }
-
-    const roleId = draftRoleId || roles[0]?.id || '';
-
-    setLocalInvites((prev) => [
-      {
-        id: Date.now(),
-        name: draftName.trim(),
-        email: draftEmail.trim(),
-        team: '초대 예정',
-        inviteStatus: 'INVITED',
-        roleIds: roleId ? [roleId] : [],
-        lastActiveAt: null,
-      },
-      ...prev,
-    ]);
-    setDraftName('');
-    setDraftEmail('');
-    setDraftRoleId('');
-    closeInvite();
-  }
 
   return (
     <div className="space-y-6">
@@ -164,85 +124,33 @@ export default function MembersPage() {
           <section className="border-t border-border/70 pt-4">
             <div className="mb-4 flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-base font-semibold tracking-tight text-foreground">초대 플로우</h2>
-                <p className="mt-1 text-sm text-muted-foreground">공개 회원가입 대신 초대 기반 참여 구조를 유지합니다.</p>
+                <h2 className="text-base font-semibold tracking-tight text-foreground">멤버 초대</h2>
+                <p className="mt-1 text-sm text-muted-foreground">초대 발송, 링크 수락, 만료 처리 플로우는 실제 사용자/이메일 연동 시점에 연결합니다.</p>
               </div>
-              <div id="invite">
-                <Button variant="secondary" onClick={openInvite}>
+              <div>
+                <Button variant="secondary" onClick={() => setInvitePlanOpen(true)}>
                   멤버 초대
                 </Button>
               </div>
             </div>
-            <div className="space-y-3 text-sm leading-6 text-gray-600">
-              <p>1. 운영자가 프로젝트 초대를 발송합니다.</p>
-              <p>2. 수신자는 링크를 통해 프로젝트에 합류합니다.</p>
-              <p>3. 합류 후 역할 연결이 완료되어야 실제 업무/검토 탭 접근이 열립니다.</p>
+            <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-4 text-sm leading-6 text-muted-foreground">
+              현재는 초대 상태와 역할 연결 현황만 우선 보여주고, 실제 초대 발송 모달은 추후 구현 예정으로 둡니다.
             </div>
-          </section>
-
-          <section className="border-t border-border/70 pt-4">
-            <div className="mb-4">
-              <h2 className="text-base font-semibold tracking-tight text-foreground">온보딩 기준</h2>
-              <p className="mt-1 text-sm text-muted-foreground">지금 구조에서 가정하고 있는 멤버십 원칙입니다.</p>
-            </div>
-            <ul className="space-y-3 text-sm leading-6 text-gray-600">
-              <li>초대 상태는 `대기/수락/만료/거절` 4단계로만 노출합니다.</li>
-              <li>권한은 직접 부여하지 않고 반드시 프로젝트 역할을 통해 연결합니다.</li>
-              <li>만료/거절 상태는 후속 조치 대상을 분리해서 보이게 유지합니다.</li>
-            </ul>
           </section>
         </div>
       </div>
 
       <Dialog
-        open={isInviteOpen}
-        title="멤버 초대"
-        description="이 플로우는 추후 실제 초대 API 또는 이메일 발송으로 연결될 수 있도록 Dialog 기반으로 열어 둡니다."
-        confirmLabel="초대 추가"
-        confirmDisabled={!draftName.trim() || !draftEmail.trim()}
-        onCancel={closeInvite}
-        onConfirm={handleInviteConfirm}
+        open={invitePlanOpen}
+        title="멤버 초대 기능 준비 중"
+        description="초대 발송, 토큰 검증, 수락/만료 처리 플로우는 사용자/이메일 도메인이 정리된 뒤 연결합니다."
+        confirmLabel="확인"
+        onCancel={() => setInvitePlanOpen(false)}
+        onConfirm={() => setInvitePlanOpen(false)}
       >
-        <div className="space-y-4">
-          <label className="block">
-            <span className="text-sm font-semibold text-gray-700">이름</span>
-            <input
-              type="text"
-              value={draftName}
-              onChange={(event) => setDraftName(event.target.value)}
-              placeholder="초대할 멤버 이름"
-              className="mt-2 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-blue-300"
-            />
-          </label>
-          <label className="block">
-            <span className="text-sm font-semibold text-gray-700">이메일</span>
-            <input
-              type="email"
-              value={draftEmail}
-              onChange={(event) => setDraftEmail(event.target.value)}
-              placeholder="name@example.com"
-              className="mt-2 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-blue-300"
-            />
-          </label>
-          <label className="block">
-            <span className="text-sm font-semibold text-gray-700">초기 역할</span>
-            <select
-              value={draftRoleId}
-              onChange={(event) => setDraftRoleId(event.target.value)}
-              className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-300"
-            >
-              <option value="">기본 역할 선택</option>
-              {roles.map((role) => (
-                <option key={role.id} value={role.id}>
-                  {role.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-3 text-sm leading-6 text-gray-500">
-            현재는 프론트 mock 상태에만 초대 대기 멤버를 추가합니다. 실제 연동 시에는 초대 발송, 토큰 검증, 수락/만료 처리 API를 별도로 연결해야 합니다.
+        <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-4 text-sm leading-6 text-muted-foreground">
+          이 버튼은 이후 초대 모달, 이메일 발송, 만료/거절 재초대 흐름까지 연결될 예정입니다. 지금 단계에서는 멤버 현황과 상태 모델만 먼저 검증합니다.
           </div>
-        </div>
       </Dialog>
     </div>
   );

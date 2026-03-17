@@ -15,6 +15,7 @@ export default function RolesPermissionsPage() {
   const selectedRole = roles.find((role) => role.id === selectedRoleId) ?? roles[0];
   const assignedMembers = members.filter((member) => selectedRole?.memberIds.includes(member.id));
   const categories = [...new Set(permissions.map((permission) => permission.category))];
+  const policyStatements = (selectedRole?.permissionKeys ?? []).map((permissionKey) => buildPolicyStatement(permissionKey));
 
   return (
     <div className="space-y-6">
@@ -81,6 +82,36 @@ export default function RolesPermissionsPage() {
                 <p className="mt-1 text-sm text-muted-foreground">{selectedRole?.description ?? '역할을 선택하면 상세 권한을 보여줍니다.'}</p>
               </div>
               <StatusPill tone="purple">프로젝트 전용 역할</StatusPill>
+            </div>
+            <div className="mb-6 grid gap-5 border-b border-border/70 pb-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+              <div>
+                <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">정책 문장</div>
+                <div className="mt-3 space-y-2">
+                  {policyStatements.map((statement) => (
+                    <div key={statement} className="flex items-center gap-2 border-b border-border/50 pb-2 text-sm last:border-b-0">
+                      <StatusPill tone="slate">ALLOW</StatusPill>
+                      <code className="rounded-md bg-muted/35 px-2 py-1 text-[12px] text-foreground">{statement}</code>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">적용 범위</div>
+                <div className="mt-3 space-y-3 text-sm text-muted-foreground">
+                  <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                    <span>역할 멤버 수</span>
+                    <span className="font-medium text-foreground">{selectedRole?.memberIds.length ?? 0}명</span>
+                  </div>
+                  <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                    <span>연결 권한 수</span>
+                    <span className="font-medium text-foreground">{selectedRole?.permissionKeys.length ?? 0}개</span>
+                  </div>
+                  <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                    <span>리소스 스코프</span>
+                    <span className="font-medium text-foreground">project/{currentProject?.code ?? 'default'}/*</span>
+                  </div>
+                </div>
+              </div>
             </div>
             <div className="grid gap-5 lg:grid-cols-2">
               {categories.map((category) => {
@@ -163,4 +194,11 @@ export default function RolesPermissionsPage() {
       </div>
     </div>
   );
+}
+
+function buildPolicyStatement(permissionKey: string) {
+  const [resource, ...actions] = permissionKey.split('_');
+  const resourceLabel = resource?.toLowerCase() ?? 'project';
+  const actionLabel = actions.join(':').toLowerCase();
+  return `${resourceLabel}:${actionLabel || 'read'} on project/*`;
 }

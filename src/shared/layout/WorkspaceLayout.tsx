@@ -50,17 +50,17 @@ export default function WorkspaceLayout({ children }: Props) {
     <SidebarProvider defaultOpen>
       <Sidebar variant="inset" collapsible="icon" className="border-r border-border/60">
         <SidebarHeader className="px-3 py-4">
-          <div className="flex items-center justify-between gap-2 px-1">
-            <div className="flex min-w-0 items-center gap-2">
+          <div className="flex items-center justify-between gap-2 px-1 group-data-[collapsible=icon]:justify-center">
+            <div className="flex min-w-0 items-center gap-2 group-data-[collapsible=icon]:hidden">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-sidebar-border bg-background text-primary shadow-sm">
                 <Home size={18} />
               </div>
-              <div className="min-w-0 group-data-[collapsible=icon]:hidden">
+              <div className="min-w-0">
                 <div className="truncate text-sm font-semibold text-sidebar-foreground">front-vibe</div>
                 <div className="text-xs text-sidebar-foreground/70">협업 워크스페이스</div>
               </div>
             </div>
-            <SidebarTrigger className="h-8 w-8 rounded-md border border-sidebar-border/80 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground" />
+            <SidebarTrigger className="h-8 w-8 rounded-md border border-sidebar-border/80 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10" />
           </div>
           <div className="relative mt-3 group-data-[collapsible=icon]:hidden">
             <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sidebar-foreground/55" />
