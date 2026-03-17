@@ -2,6 +2,7 @@ import { useQueries } from '@tanstack/react-query';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { ChevronRight, FileSearch, SendHorizontal } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { fetchTaskReviews } from '../features/review/api';
@@ -77,7 +78,7 @@ export default function ReviewInboxPage() {
         </div>
 
         <div className="pt-5">
-          <div className="grid grid-cols-[minmax(0,2.2fr)_minmax(120px,0.8fr)_minmax(120px,0.9fr)_minmax(130px,0.9fr)_minmax(140px,1fr)_minmax(140px,1fr)_96px] gap-4 border-b border-border/70 px-2 pb-3 text-[11px] font-semibold tracking-[0.08em] text-muted-foreground">
+          <div className="hidden grid-cols-[minmax(0,2.2fr)_minmax(120px,0.8fr)_minmax(120px,0.9fr)_minmax(130px,0.9fr)_minmax(140px,1fr)_minmax(140px,1fr)_96px] gap-4 border-b border-border/70 px-2 pb-3 text-[11px] font-semibold tracking-[0.08em] text-muted-foreground lg:grid">
             <div>업무</div>
             <div>업무 영역</div>
             <div>최신 라운드</div>
@@ -86,7 +87,7 @@ export default function ReviewInboxPage() {
             <div>처리 시각</div>
             <div className="text-right">상세</div>
           </div>
-          <div className="divide-y divide-border/70">
+          <div className="hidden divide-y divide-border/70 lg:block">
             {reviewRows.length > 0 ? (
               reviewRows.map(({ meta, task, latestReview }) => (
                 <div
@@ -134,9 +135,51 @@ export default function ReviewInboxPage() {
                 </div>
               ))
             ) : (
-              <div className="py-12 text-center text-sm text-muted-foreground">
-                아직 생성된 검토 라운드가 없습니다.
-              </div>
+              <ReviewEmptyState />
+            )}
+          </div>
+          <div className="space-y-3 lg:hidden">
+            {reviewRows.length > 0 ? (
+              reviewRows.map(({ meta, task, latestReview }) => (
+                <div key={meta.taskId} className="border-b border-border/70 pb-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-semibold text-foreground">{task?.title ?? `업무 #${meta.taskId}`}</div>
+                      <div className="mt-1 text-sm text-muted-foreground">{meta.domain}</div>
+                    </div>
+                    <StatusPill tone={latestReview.status === 'APPROVED' ? 'green' : latestReview.status === 'REJECTED' ? 'rose' : latestReview.status === 'CANCELLED' ? 'slate' : 'amber'}>
+                      {getReviewStatusLabel(latestReview.status)}
+                    </StatusPill>
+                  </div>
+                  <div className="mt-3 grid gap-2 text-sm text-muted-foreground">
+                    <div className="flex items-center justify-between gap-3">
+                      <span>최신 라운드</span>
+                      <span className="font-medium text-foreground">{latestReview.roundNo}차</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span>상신 시각</span>
+                      <span className="font-medium text-foreground">{formatCompactDate(latestReview.submittedAt)}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span>처리 시각</span>
+                      <span className="font-medium text-foreground">{formatCompactDate(latestReview.decidedAt)}</span>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-8 rounded-lg px-3 text-xs"
+                      onClick={() => setSelectedReviewId(latestReview.reviewId)}
+                    >
+                      상세 보기
+                      <ChevronRight size={13} />
+                    </Button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <ReviewEmptyState />
             )}
           </div>
         </div>
@@ -151,6 +194,20 @@ export default function ReviewInboxPage() {
           }
         }}
       />
+    </div>
+  );
+}
+
+function ReviewEmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center gap-4 border border-dashed border-border/70 px-5 py-12 text-center">
+      <div className="text-base font-semibold text-foreground">검토가 아직 없습니다</div>
+      <p className="max-w-md text-sm leading-6 text-muted-foreground">
+        현재 프로젝트에 생성된 검토 라운드가 없습니다. 업무 화면에서 첫 상신을 시작하면 이 화면에서 최신 검토 흐름을 바로 관리할 수 있습니다.
+      </p>
+      <Button asChild className="rounded-xl px-4">
+        <Link to="/tasks">업무에서 첫 상신 시작</Link>
+      </Button>
     </div>
   );
 }

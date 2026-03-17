@@ -198,7 +198,7 @@ const permissions: PermissionDefinition[] = [
   {
     key: 'AUDIT_LOG_VIEW',
     name: '감사 로그 조회',
-    category: 'Governance',
+    category: '감사 추적',
     description: '검토 이력과 변경 로그를 조회합니다.',
   },
 ];
@@ -434,7 +434,7 @@ const auditLogsByProject: Record<string, AuditLogItem[]> = {
       occurredAt: '2026-03-17T01:10:00Z',
       actorName: '김하늘',
       actionLabel: '역할 정책 수정',
-      targetLabel: 'Project Admin',
+      targetLabel: '프로젝트 관리자',
       area: '역할 정책',
       summary: '검토 승인과 반려 권한 범위를 정리하고 역할 설명을 수정했습니다.',
     },
@@ -456,7 +456,7 @@ const auditLogsByProject: Record<string, AuditLogItem[]> = {
       actionLabel: '멤버 초대 재발송',
       targetLabel: '한유진',
       area: '멤버십',
-      summary: '만료된 초대를 재발송하고 기본 역할을 Observer로 설정했습니다.',
+      summary: '만료된 초대를 재발송하고 기본 역할을 옵저버로 설정했습니다.',
     },
     {
       id: 'log-104',

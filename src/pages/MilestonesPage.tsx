@@ -140,36 +140,58 @@ export default function MilestonesPage() {
               </div>
             </div>
 
-            <div className="grid gap-5 lg:grid-cols-4">
-              <Panel title="현재 단계" value={milestoneStage} description={`${review}개 검토 대기 업무`} />
-              <Panel
-                title="다음 체크포인트"
-                value={nextDueTask ? nextDueTask.task?.title ?? '연결 업무 없음' : '연결 업무 없음'}
-                description={nextDueTask ? `마감 ${formatDate(nextDueTask.meta.dueDate)}` : '후속 업무를 연결하면 여기서 확인할 수 있습니다.'}
-              />
-              <Panel
-                title="최근 변경"
-                value={lastUpdatedAt ? formatDate(new Date(lastUpdatedAt).toISOString()) : '변경 없음'}
-                description="마감 기준 최신 일정"
-              />
-              <Panel title="위험 메모" value={riskText} description="연결 업무와 검토 상태를 기준으로 산출한 요약" />
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_320px]">
+              <div className="border-y border-border/60 py-5">
+                <div className="grid gap-5 lg:grid-cols-3">
+                  <Panel title="현재 단계" value={milestoneStage} description={`${review}개 검토 대기 업무`} />
+                  <Panel
+                    title="위험 메모"
+                    value={riskText}
+                    description="연결 업무와 검토 상태를 기준으로 산출한 요약"
+                  />
+                  <Panel
+                    title="다음 액션"
+                    value={nextDueTask ? nextDueTask.task?.title ?? '연결 업무 없음' : '연결 업무 없음'}
+                    description={nextDueTask ? `마감 ${formatDate(nextDueTask.meta.dueDate)}` : '후속 업무를 연결하면 여기서 확인할 수 있습니다.'}
+                  />
+                </div>
+              </div>
+              <div className="border-y border-border/60 py-5">
+                <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">진행 개요</div>
+                <div className="mt-4 space-y-4">
+                  <div className="flex items-center justify-between gap-4 text-sm text-muted-foreground">
+                    <span>연결 업무 진행률</span>
+                    <span className="font-medium text-foreground">{progress}%</span>
+                  </div>
+                  <div className="h-3 overflow-hidden rounded-full bg-gray-100">
+                    <div className="h-full rounded-full bg-blue-600" style={{ width: `${progress}%` }} />
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <StatusPill tone="green">{done}개 완료</StatusPill>
+                    <StatusPill tone="amber">{review}개 검토중</StatusPill>
+                    <StatusPill tone="slate">{linkedTasks.length - done - review}개 진행중</StatusPill>
+                  </div>
+                  <div className="border-t border-border/60 pt-4 text-sm text-muted-foreground">
+                    <div className="flex items-center justify-between gap-4 border-b border-border/50 pb-2">
+                      <span>최근 변경</span>
+                      <span className="font-medium text-foreground">
+                        {lastUpdatedAt ? formatDate(new Date(lastUpdatedAt).toISOString()) : '변경 없음'}
+                      </span>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {activeDomains.map((domain) => (
+                        <StatusPill key={domain} tone="teal">{domain}</StatusPill>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="border-y border-border/60 py-5">
+            <div className="border-b border-border/60 py-5">
               <div className="flex items-center justify-between gap-4 text-sm text-muted-foreground">
-                <span>연결 업무 진행률</span>
-                <span className="font-medium text-foreground">{progress}%</span>
-              </div>
-              <div className="mt-3 h-3 overflow-hidden rounded-full bg-gray-100">
-                <div className="h-full rounded-full bg-blue-600" style={{ width: `${progress}%` }} />
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <StatusPill tone="green">{done}개 완료</StatusPill>
-                <StatusPill tone="amber">{review}개 검토중</StatusPill>
-                <StatusPill tone="slate">{linkedTasks.length - done - review}개 진행중</StatusPill>
-                {activeDomains.map((domain) => (
-                  <StatusPill key={domain} tone="teal">{domain}</StatusPill>
-                ))}
+                <span>연결 업무</span>
+                <span className="font-medium text-foreground">{linkedTasks.length}건</span>
               </div>
             </div>
 

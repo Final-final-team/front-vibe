@@ -56,12 +56,12 @@ export default function AppModal({
       <DialogContent
         showCloseButton={false}
         className={cn(
-          'overflow-hidden rounded-[28px] border border-border/80 p-0 shadow-[0_28px_90px_rgba(15,23,42,0.18)]',
+          'max-h-[92vh] overflow-hidden rounded-[28px] border border-border/80 p-0 shadow-[0_28px_90px_rgba(15,23,42,0.18)]',
           sizeClassName,
           className,
         )}
       >
-        <div className="m-3 overflow-hidden rounded-[22px] border border-border/70 bg-background">
+        <div className="m-3 flex max-h-[calc(92vh-1.5rem)] flex-col overflow-hidden rounded-[22px] border border-border/70 bg-background">
           <div className="flex items-start justify-between gap-4 border-b border-border/70 px-6 py-5">
             <DialogHeader className="min-w-0">
               {badges ? <div className="mb-3 flex flex-wrap items-center gap-2">{badges}</div> : null}
@@ -82,13 +82,15 @@ export default function AppModal({
 
           <div
             className={cn(
-              'grid items-start gap-8 px-6 py-6',
+              'min-h-0 overflow-y-auto px-6 py-6',
               side ? 'lg:grid-cols-[minmax(0,1fr)_320px]' : '',
               bodyClassName,
             )}
           >
-            <div className="min-w-0">{children}</div>
-            {side ? <aside className={cn('border-l border-border/70 pl-6', sideClassName)}>{side}</aside> : null}
+            <div className={cn(side ? 'grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_320px]' : '')}>
+              <div className="min-w-0">{children}</div>
+              {side ? <aside className={cn('border-l border-border/70 pl-6', sideClassName)}>{side}</aside> : null}
+            </div>
           </div>
 
           {footer ? (

@@ -1,18 +1,30 @@
+import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { History, ShieldCheck, SlidersHorizontal } from 'lucide-react';
 import { Badge } from '../components/ui/badge';
+import { Button } from '../components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { useProjectAuditLogs } from '../features/workspace/hooks';
 import { useWorkspace } from '../features/workspace/use-workspace';
 import { formatDate } from '../shared/lib/format';
+import AppModal from '../shared/ui/AppModal';
 import StatusPill from '../shared/ui/StatusPill';
 
 export default function AuditLogsPage() {
   const { currentProject } = useWorkspace();
   const { data: logs = [] } = useProjectAuditLogs(currentProject?.id ?? null);
+  const [selectedArea, setSelectedArea] = useState<'전체' | string>('전체');
+  const [selectedLogId, setSelectedLogId] = useState<string | null>(null);
 
   const actorCount = new Set(logs.map((log) => log.actorName)).size;
   const areaCount = new Set(logs.map((log) => log.area)).size;
+  const latestLog = logs[0] ?? null;
+  const visibleLogs = useMemo(
+    () => logs.filter((log) => selectedArea === '전체' || log.area === selectedArea),
+    [logs, selectedArea],
+  );
+  const selectedLog = visibleLogs.find((log) => log.id === selectedLogId) ?? null;
+  const areas = ['전체', ...new Set(logs.map((log) => log.area))];
 
   return (
     <div className="space-y-4">
@@ -30,7 +42,7 @@ export default function AuditLogsPage() {
       </section>
 
       <section className="border-t border-border/70 bg-background">
-        <div className="flex items-end justify-between gap-3 border-b border-border/70 pb-3 pt-3">
+        <div className="flex items-end justify-between gap-3 border-b border-border/70 pb-4 pt-4">
           <div>
             <h2 className="text-base font-semibold tracking-tight text-foreground">감사 로그</h2>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -43,7 +55,28 @@ export default function AuditLogsPage() {
           </div>
         </div>
 
-        <Table className="mt-4 border-t border-border/70">
+        <div className="grid gap-4 border-b border-border/70 py-4 lg:grid-cols-[minmax(0,1fr)_auto]">
+          <div className="grid gap-4 md:grid-cols-3">
+            <SummaryBlock label="최근 활동" value={latestLog?.actionLabel ?? '기록 없음'} description={latestLog?.summary ?? '아직 누적된 활동이 없습니다.'} />
+            <SummaryBlock label="최근 변경 시각" value={latestLog ? formatDate(latestLog.occurredAt) : '-'} description="현재 프로젝트 기준 최신 로그" />
+            <SummaryBlock label="날짜 범위" value="최근 7일" description="필터 기반 탐색은 추후 백엔드 쿼리와 연결합니다." />
+          </div>
+          <div className="flex flex-wrap items-start gap-2">
+            {areas.map((area) => (
+              <Button
+                key={area}
+                type="button"
+                variant={selectedArea === area ? 'default' : 'outline'}
+                className="h-8 rounded-md px-3 text-xs"
+                onClick={() => setSelectedArea(area)}
+              >
+                {area}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        <Table className="border-t border-border/70">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead>시각</TableHead>
@@ -55,8 +88,12 @@ export default function AuditLogsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {logs.map((log) => (
-              <TableRow key={log.id}>
+            {visibleLogs.map((log) => (
+              <TableRow
+                key={log.id}
+                className="cursor-pointer"
+                onClick={() => setSelectedLogId(log.id)}
+              >
                 <TableCell className="text-sm text-muted-foreground">{formatDate(log.occurredAt)}</TableCell>
                 <TableCell className="font-medium text-foreground">{log.actorName}</TableCell>
                 <TableCell>
@@ -72,6 +109,40 @@ export default function AuditLogsPage() {
           </TableBody>
         </Table>
       </section>
+
+      <AppModal
+        open={Boolean(selectedLog)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedLogId(null);
+          }
+        }}
+        title={selectedLog?.actionLabel ?? ''}
+        description={selectedLog?.summary}
+        size="sm"
+        badges={
+          selectedLog ? (
+            <>
+              <StatusPill tone="teal">{selectedLog.area}</StatusPill>
+              <StatusPill tone="slate">{selectedLog.actorName}</StatusPill>
+            </>
+          ) : null
+        }
+        footer={
+          <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => setSelectedLogId(null)}>
+            닫기
+          </Button>
+        }
+      >
+        {selectedLog ? (
+          <div className="space-y-4">
+            <MetaRow label="시각" value={formatDate(selectedLog.occurredAt)} />
+            <MetaRow label="작성자" value={selectedLog.actorName} />
+            <MetaRow label="업무 영역" value={selectedLog.area} />
+            <MetaRow label="대상" value={selectedLog.targetLabel} />
+          </div>
+        ) : null}
+      </AppModal>
     </div>
   );
 }
@@ -92,6 +163,33 @@ function InlineStat({
         <div className="text-[10px] font-semibold tracking-[0.08em] text-muted-foreground">{label}</div>
         <div className="mt-0.5 text-lg font-semibold tracking-tight text-foreground">{value}</div>
       </div>
+    </div>
+  );
+}
+
+function SummaryBlock({
+  label,
+  value,
+  description,
+}: {
+  label: string;
+  value: string;
+  description: string;
+}) {
+  return (
+    <div className="border-t border-border/60 pt-3">
+      <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">{label}</div>
+      <div className="mt-2 text-sm font-semibold text-foreground">{value}</div>
+      <div className="mt-2 text-sm leading-6 text-muted-foreground">{description}</div>
+    </div>
+  );
+}
+
+function MetaRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-4 border-b border-border/60 pb-3 text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium text-foreground">{value}</span>
     </div>
   );
 }

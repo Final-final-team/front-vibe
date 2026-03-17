@@ -164,8 +164,8 @@ export default function TaskListPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <section className="flex flex-wrap items-end justify-between gap-3 border-b border-border/70 pb-7 pt-5">
+    <div className="space-y-5">
+      <section className="flex flex-wrap items-end justify-between gap-3 border-b border-border/70 pb-5 pt-3">
         <div className="flex flex-wrap items-center gap-5">
           <InlineStat label="마일스톤" value={`${milestones.length}개`} icon={<Rows3 size={15} />} />
           <InlineStat label="검토중" value={`${reviewCount}건`} icon={<SendHorizontal size={15} />} />
@@ -179,8 +179,8 @@ export default function TaskListPage() {
         </div>
       </section>
 
-      <section className="min-w-0 border-t border-border/70 bg-background pt-6">
-          <div className="mb-7 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-6">
+      <section className="min-w-0 border-t border-border/70 bg-background pt-5">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-5">
             <div className="flex flex-wrap items-center gap-2">
               <ScopeButton active={taskScope === 'milestone'} onClick={() => setTaskScope('milestone')}>
                 마일스톤별 보기
@@ -204,7 +204,47 @@ export default function TaskListPage() {
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
               <div className="divide-y divide-border/70">
                 {taskScope === 'milestone'
-                  ? milestones.map((milestone) => {
+                  ? (
+                    <>
+                      <div className="lg:hidden space-y-6">
+                        {milestones.map((milestone) => {
+                          const milestoneTasks = getMilestoneTasks(milestone.id);
+                          const total = milestoneTasks.length || 1;
+                          const done = milestoneTasks.filter((task) => task.status === 'COMPLETED').length;
+                          const progress = Math.round((done / total) * 100);
+
+                          return (
+                            <section key={milestone.id} className="border-b border-border/70 pb-5">
+                              <div className="mb-3 flex items-center justify-between gap-3">
+                                <div>
+                                  <div className="font-semibold text-foreground">{milestone.name}</div>
+                                  <div className="mt-1 text-sm text-muted-foreground">{milestone.summary}</div>
+                                </div>
+                                <StatusPill tone="slate">{progress}%</StatusPill>
+                              </div>
+                              <div className="space-y-3">
+                                {milestoneTasks.map((task) => (
+                                  <TaskMobileCard
+                                    key={task.id}
+                                    task={task}
+                                    onSelect={() => setSelectedTaskId(task.id)}
+                                    onOpenReview={() => {
+                                      const reviewId = latestReviewByTaskId[task.id];
+                                      if (reviewId) {
+                                        setSelectedReviewId(reviewId);
+                                        return;
+                                      }
+                                      setSelectedTaskId(task.id);
+                                    }}
+                                  />
+                                ))}
+                              </div>
+                            </section>
+                          );
+                        })}
+                      </div>
+                      <div className="hidden lg:block">
+                        {milestones.map((milestone) => {
                   const milestoneTasks = getMilestoneTasks(milestone.id);
                   const total = milestoneTasks.length || 1;
                   const done = milestoneTasks.filter((task) => task.status === 'COMPLETED').length;
@@ -283,7 +323,10 @@ export default function TaskListPage() {
                       </Table>
                     </section>
                   );
-                })
+                })}
+                      </div>
+                    </>
+                  )
                   : (
                     <section className="py-2">
                       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -299,7 +342,25 @@ export default function TaskListPage() {
                         </div>
                         <StatusPill tone="slate">{scopedTaskItems.length}건</StatusPill>
                       </div>
-                      <Table className="border-t border-border/70">
+                      <div className="space-y-3 lg:hidden">
+                        {scopedTaskItems.map((task) => (
+                          <TaskMobileCard
+                            key={task.id}
+                            task={task}
+                            onSelect={() => setSelectedTaskId(task.id)}
+                            onOpenReview={() => {
+                              const reviewId = latestReviewByTaskId[task.id];
+                              if (reviewId) {
+                                setSelectedReviewId(reviewId);
+                                return;
+                              }
+                              setSelectedTaskId(task.id);
+                            }}
+                            showMilestone
+                          />
+                        ))}
+                      </div>
+                      <Table className="hidden border-t border-border/70 lg:table">
                         <TableHeader>
                           <TableRow className="hover:bg-transparent">
                             <TableHead>업무</TableHead>
@@ -540,7 +601,7 @@ function KanbanView({
   ];
 
   return (
-    <div className="grid gap-7 xl:grid-cols-3">
+    <div className="grid gap-8 xl:grid-cols-3">
       {columns.map((column) => (
         <section key={column.key} className="min-w-0">
           <div className="flex min-h-14 items-center justify-between border-b border-border/70 pb-4">
@@ -560,7 +621,7 @@ function KanbanView({
               </span>
             </div>
           </div>
-          <div className="space-y-4 pt-4">
+          <div className="space-y-5 pt-5">
             {column.items.map((task) => (
               <button
                 key={task.id}
@@ -653,7 +714,7 @@ function CalendarView({
           </Button>
         </div>
       </div>
-      <div className="grid grid-cols-7 gap-1.5">
+      <div className="grid grid-cols-7 gap-1">
         {['일', '월', '화', '수', '목', '금', '토'].map((day) => (
           <div key={day} className="px-1.5 pb-1.5 text-[11px] font-semibold text-muted-foreground">
             {day}
@@ -672,7 +733,7 @@ function CalendarView({
               {day > 0 && day <= daysInMonth ? (
                 <>
                   <div className="text-xs font-semibold text-foreground">{day}</div>
-                  <div className="mt-1.5 space-y-1.5">
+                  <div className="mt-1 space-y-1">
                     {dayTasks.map((task) => (
                       <button
                         key={task.id}
@@ -830,7 +891,7 @@ function GanttView({
       </div>
       <div
         className="grid gap-x-1 border-b border-border/70 pb-3"
-        style={{ gridTemplateColumns: `minmax(160px,2.3fr) repeat(${days.length}, minmax(0,1fr))` }}
+        style={{ gridTemplateColumns: `minmax(136px,2fr) repeat(${days.length}, minmax(0,1fr))` }}
       >
         <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">업무</div>
         {days.map((day) => (
@@ -856,7 +917,7 @@ function GanttView({
                 'grid w-full items-center gap-x-1 px-2 py-2.5 text-left transition hover:bg-muted/35',
                 selectedTaskId === task.id ? 'bg-primary/5' : '',
               ].join(' ')}
-              style={{ gridTemplateColumns: `minmax(160px,2.3fr) repeat(${days.length}, minmax(0,1fr))` }}
+              style={{ gridTemplateColumns: `minmax(136px,2fr) repeat(${days.length}, minmax(0,1fr))` }}
             >
               <div className="min-w-0 pr-2">
                 <div className="truncate font-semibold text-foreground">{task.title}</div>
@@ -865,7 +926,7 @@ function GanttView({
               {days.map((_, index) => {
                 const active = index >= offset && index < offset + span;
                 return (
-                  <div key={`${task.id}-${index}`} className="h-6 rounded-sm bg-muted/35">
+                  <div key={`${task.id}-${index}`} className="h-5 rounded-sm bg-muted/35">
                     {active ? <div className="h-full rounded-sm bg-primary/85" /> : null}
                   </div>
                 );
@@ -963,6 +1024,67 @@ function SortableTaskRow({
         </div>
       </TableCell>
     </tr>
+  );
+}
+
+function TaskMobileCard({
+  task,
+  onSelect,
+  onOpenReview,
+  showMilestone = false,
+}: {
+  task: TaskViewItem;
+  onSelect: () => void;
+  onOpenReview: () => void;
+  showMilestone?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className="block w-full border-b border-border/70 pb-4 text-left"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="font-semibold text-foreground">{task.title}</div>
+          <div className="mt-1 text-sm leading-6 text-muted-foreground">{task.summary}</div>
+        </div>
+        <StatusPill tone={getStatusTone(task.status)}>{getStatusLabel(task.status)}</StatusPill>
+      </div>
+      <div className="mt-3 grid gap-2 text-sm text-muted-foreground">
+        {showMilestone ? (
+          <div className="flex items-center justify-between gap-3">
+            <span>마일스톤</span>
+            <span className="font-medium text-foreground">{task.milestoneName}</span>
+          </div>
+        ) : null}
+        <div className="flex items-center justify-between gap-3">
+          <span>담당자</span>
+          <span className="font-medium text-foreground">{task.assigneeName}</span>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <span>우선순위</span>
+          <span className="font-medium text-foreground">{getPriorityLabel(task.priority)}</span>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <span>기한</span>
+          <span className="font-medium text-foreground">{formatDate(task.dueDate)}</span>
+        </div>
+      </div>
+      <div className="mt-3 flex justify-end">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-8 rounded-lg px-3 text-xs"
+          onClick={(event) => {
+            event.stopPropagation();
+            onOpenReview();
+          }}
+        >
+          검토 보기
+        </Button>
+      </div>
+    </button>
   );
 }
 

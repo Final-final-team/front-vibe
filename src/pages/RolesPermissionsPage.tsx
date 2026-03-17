@@ -161,6 +161,7 @@ export default function RolesPermissionsPage() {
             {selectedRole ? (
               <>
                 <div className="border-t border-border/70 pt-8">
+                  <div className="mb-3 text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">현재 선택된 역할</div>
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                       <h3 className="text-xl font-semibold tracking-tight text-foreground">{selectedRole.name}</h3>
@@ -234,7 +235,7 @@ export default function RolesPermissionsPage() {
           ) : null
         }
         size="md"
-        className="sm:max-w-[760px]"
+        className="sm:max-w-[700px]"
         footer={
           <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => setDetailRoleId(null)}>
             닫기
@@ -306,7 +307,7 @@ export default function RolesPermissionsPage() {
           ) : null
         }
         size="md"
-        className="sm:max-w-[880px]"
+        className="sm:max-w-[760px]"
         footer={
           <div className="flex w-full items-center justify-between gap-3">
             <div className="text-sm text-muted-foreground">정책 문장은 상세 보기 안에서만 확인합니다.</div>
@@ -365,7 +366,7 @@ export default function RolesPermissionsPage() {
         title="전체 권한 보기"
         description="현재 시스템에 정의된 권한 카탈로그를 카테고리별로 확인합니다."
         size="md"
-        className="sm:max-w-[840px]"
+        className="sm:max-w-[760px]"
         footer={
           <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => setCatalogOpen(false)}>
             닫기

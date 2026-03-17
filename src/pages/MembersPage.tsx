@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { MailPlus, ShieldCheck, UserCheck, Users } from 'lucide-react';
-import { useProjectMembers, useProjectRoles } from '../features/workspace/hooks';
+import { usePermissions, useProjectMembers, useProjectRoles } from '../features/workspace/hooks';
 import { useWorkspace } from '../features/workspace/use-workspace';
 import { formatDate } from '../shared/lib/format';
 import AppModal from '../shared/ui/AppModal';
@@ -26,6 +26,7 @@ export default function MembersPage() {
   const { currentProject } = useWorkspace();
   const { data: members = [] } = useProjectMembers(currentProject?.id ?? null);
   const { data: roles = [] } = useProjectRoles(currentProject?.id ?? null);
+  const { data: permissions = [] } = usePermissions();
   const [invitePlanOpen, setInvitePlanOpen] = useState(false);
   const [profileMemberId, setProfileMemberId] = useState<number | null>(null);
   const [assignmentMemberId, setAssignmentMemberId] = useState<number | null>(null);
@@ -39,6 +40,12 @@ export default function MembersPage() {
   const pendingCount = members.filter((member) => member.inviteStatus !== 'ACTIVE').length;
   const profileRoles = roles.filter((role) => profileMember?.roleIds.includes(role.id));
   const profilePermissionKeys = [...new Set(profileRoles.flatMap((role) => role.permissionKeys))];
+  const profilePermissionGroups = permissions
+    .filter((permission) => profilePermissionKeys.includes(permission.key))
+    .reduce<Record<string, typeof permissions>>((acc, permission) => {
+      acc[permission.category] = [...(acc[permission.category] ?? []), permission];
+      return acc;
+    }, {});
 
   const effectiveRoleIds = draftRoleIds.length > 0 ? draftRoleIds : assignmentMember?.roleIds ?? [];
   const effectiveRoles = roles.filter((role) => effectiveRoleIds.includes(role.id));
@@ -89,7 +96,57 @@ export default function MembersPage() {
               멤버 초대
             </Button>
           </div>
-          <div className="overflow-x-auto">
+          <div className="space-y-3 md:hidden">
+            {members.map((member) => (
+              <div key={member.id} className="border-b border-border/70 pb-4">
+                <button
+                  type="button"
+                  onClick={() => setProfileMemberId(member.id)}
+                  className="block w-full text-left"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-semibold text-foreground">{member.name}</div>
+                      <div className="mt-1 text-sm text-muted-foreground">{member.team}</div>
+                    </div>
+                    <StatusPill tone={inviteToneMap[member.inviteStatus]}>
+                      {inviteLabelMap[member.inviteStatus]}
+                    </StatusPill>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {member.roleIds.map((roleId) => {
+                      const role = roles.find((item) => item.id === roleId);
+                      return (
+                        <span
+                          key={roleId}
+                          className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold text-white"
+                          style={{ backgroundColor: role?.color ?? '#6b7280' }}
+                        >
+                          {role?.name ?? roleId}
+                        </span>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-3 text-xs text-muted-foreground">
+                    {member.lastActiveAt ? `최근 활동 ${formatDate(member.lastActiveAt)}` : '아직 미참여'}
+                  </div>
+                </button>
+                <div className="mt-3 flex justify-end">
+                  <Button
+                    variant="outline"
+                    className="h-9 rounded-xl px-4"
+                    onClick={() => {
+                      setAssignmentMemberId(member.id);
+                      setDraftRoleIds(member.roleIds);
+                    }}
+                  >
+                    역할 부여
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="hidden overflow-x-auto md:block">
             <div className="min-w-[980px]">
               <div className="grid grid-cols-[2fr_0.9fr_1.1fr_1.7fr_1fr_0.9fr] border-b border-gray-200 pb-3 text-xs font-semibold uppercase tracking-[0.14em] text-gray-400">
                 <div>멤버</div>
@@ -110,6 +167,7 @@ export default function MembersPage() {
                     <div>
                       <div className="font-semibold text-gray-900">{member.name}</div>
                       <div className="mt-1 text-gray-500">{member.email}</div>
+                      <div className="mt-2 text-xs font-medium text-primary/80">행 클릭 시 프로필 보기</div>
                     </div>
                     <div className="flex items-center">
                       <StatusPill tone={inviteToneMap[member.inviteStatus]}>
@@ -237,11 +295,18 @@ export default function MembersPage() {
             </div>
             <div>
               <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">허용 권한</div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {profilePermissionKeys.map((permissionKey) => (
-                  <StatusPill key={permissionKey} tone="slate">
-                    {buildPermissionLabel(permissionKey)}
-                  </StatusPill>
+              <div className="mt-3 space-y-4">
+                {Object.entries(profilePermissionGroups).map(([category, categoryPermissions]) => (
+                  <div key={category} className="border-t border-border/60 pt-3">
+                    <div className="text-sm font-semibold text-foreground">{category}</div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {categoryPermissions.map((permission) => (
+                        <StatusPill key={permission.key} tone="slate">
+                          {permission.name}
+                        </StatusPill>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -393,54 +458,4 @@ export default function MembersPage() {
       </AppModal>
     </div>
   );
-}
-
-function buildPermissionLabel(permissionKey: string) {
-  return permissionKey
-    .split('_')
-    .map((token) => {
-      switch (token) {
-        case 'PROJECT':
-          return '프로젝트';
-        case 'MEMBER':
-          return '멤버';
-        case 'INVITE':
-          return '초대';
-        case 'ROLE':
-          return '역할';
-        case 'ASSIGN':
-          return '할당';
-        case 'MANAGE':
-          return '관리';
-        case 'PERMISSION':
-          return '권한';
-        case 'BIND':
-          return '연결';
-        case 'MILESTONE':
-          return '마일스톤';
-        case 'TASK':
-          return '업무';
-        case 'EDIT':
-          return '편집';
-        case 'REVIEW':
-          return '검토';
-        case 'SUBMIT':
-          return '상신';
-        case 'APPROVE':
-          return '승인';
-        case 'REJECT':
-          return '반려';
-        case 'ATTACHMENT':
-          return '첨부';
-        case 'AUDIT':
-          return '감사';
-        case 'LOG':
-          return '로그';
-        case 'VIEW':
-          return '조회';
-        default:
-          return token;
-      }
-    })
-    .join(' ');
 }

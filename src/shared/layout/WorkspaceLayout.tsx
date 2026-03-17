@@ -34,6 +34,13 @@ import {
 } from '../../components/ui/sidebar';
 import { Input } from '../../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../../components/ui/dropdown-menu';
+import { Button } from '../../components/ui/button';
 
 type Props = {
   children: ReactNode;
@@ -200,7 +207,8 @@ export default function WorkspaceLayout({ children }: Props) {
             />
 
             {shell.domainPath === '/tasks' ? (
-              <div className="flex items-center gap-1 overflow-x-auto px-5 pb-1.5 hide-scrollbar">
+              <>
+                <div className="hidden items-center gap-1 overflow-x-auto px-5 pb-1.5 hide-scrollbar md:flex">
                 <ViewSwitchButton
                   icon={<LayoutTemplate size={16} />}
                   active={taskView === 'table'}
@@ -236,11 +244,60 @@ export default function WorkspaceLayout({ children }: Props) {
                 >
                   간트
                 </ViewSwitchButton>
-              </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-2 px-5 pb-2 md:hidden">
+                  <div className="flex min-w-0 items-center gap-1 overflow-x-auto hide-scrollbar">
+                    <ViewSwitchButton
+                      icon={<LayoutTemplate size={15} />}
+                      active={taskView === 'table'}
+                      mobile
+                      onClick={() => updateView('table', searchParams, setSearchParams)}
+                    >
+                      테이블
+                    </ViewSwitchButton>
+                    <ViewSwitchButton
+                      icon={<KanbanSquare size={15} />}
+                      active={taskView === 'kanban'}
+                      mobile
+                      onClick={() => updateView('kanban', searchParams, setSearchParams)}
+                    >
+                      칸반
+                    </ViewSwitchButton>
+                    <ViewSwitchButton
+                      icon={<CalendarClock size={15} />}
+                      active={taskView === 'calendar'}
+                      mobile
+                      onClick={() => updateView('calendar', searchParams, setSearchParams)}
+                    >
+                      캘린더
+                    </ViewSwitchButton>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-8 shrink-0 rounded-md px-3 text-xs"
+                      >
+                        {taskView === 'chart' ? '차트' : taskView === 'gantt' ? '간트' : '더보기'}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-36">
+                      <DropdownMenuItem onClick={() => updateView('chart', searchParams, setSearchParams)}>
+                        차트
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => updateView('gantt', searchParams, setSearchParams)}>
+                        간트
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </>
             ) : null}
           </div>
 
-          <main className="flex-1 px-5 pb-6 pt-2">{children}</main>
+          <main className="flex-1 px-4 pb-6 pt-2 md:px-5 xl:px-7">{children}</main>
         </div>
       </SidebarInset>
     </SidebarProvider>
@@ -252,18 +309,21 @@ function ViewSwitchButton({
   active,
   children,
   onClick,
+  mobile = false,
 }: {
   icon: ReactNode;
   active: boolean;
   children: ReactNode;
   onClick: () => void;
+  mobile?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={[
-        'inline-flex items-center gap-2 border-b-2 px-2.5 py-1.5 text-[15px] font-medium transition-colors',
+        'inline-flex items-center gap-2 border-b-2 px-2.5 py-1.5 font-medium transition-colors',
+        mobile ? 'shrink-0 text-sm' : 'text-[15px]',
         active
           ? 'border-primary text-foreground'
           : 'border-transparent bg-transparent text-muted-foreground hover:border-border hover:text-foreground',
