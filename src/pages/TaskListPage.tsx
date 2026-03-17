@@ -279,7 +279,26 @@ export default function TaskListPage() {
           ) : currentView === 'chart' ? (
             <ChartView items={taskItems} milestones={milestones} />
           ) : (
-            <GanttView items={taskItems} selectedTaskId={selectedTask?.id ?? null} onSelect={setSelectedTaskId} />
+            <GanttView
+              items={taskItems}
+              cursor={calendarCursor}
+              onMoveMonth={(offset) => {
+                setCalendarCursor((current) => {
+                  const next = new Date(current);
+                  next.setMonth(current.getMonth() + offset, 1);
+                  return next;
+                });
+              }}
+              onMoveYear={(offset) => {
+                setCalendarCursor((current) => {
+                  const next = new Date(current);
+                  next.setFullYear(current.getFullYear() + offset, current.getMonth(), 1);
+                  return next;
+                });
+              }}
+              selectedTaskId={selectedTask?.id ?? null}
+              onSelect={setSelectedTaskId}
+            />
           )}
       </section>
 
@@ -650,24 +669,53 @@ function ChartView({
 
 function GanttView({
   items,
+  cursor,
+  onMoveMonth,
+  onMoveYear,
   selectedTaskId,
   onSelect,
 }: {
   items: TaskViewItem[];
+  cursor: Date;
+  onMoveMonth: (offset: number) => void;
+  onMoveYear: (offset: number) => void;
   selectedTaskId: number | null;
   onSelect: (taskId: number) => void;
 }) {
-  const start = new Date(Math.min(...items.map((item) => new Date(item.startDate).getTime())));
-  const end = new Date(Math.max(...items.map((item) => new Date(item.dueDate).getTime())));
-  const totalDays = Math.max(1, Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1);
+  const start = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+  const end = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0);
+  const totalDays = end.getDate();
   const days = Array.from({ length: totalDays }, (_, index) => {
     const date = new Date(start);
-    date.setDate(start.getDate() + index);
+    date.setDate(index + 1);
     return date;
   });
+  const visibleItems = items.filter((item) => new Date(item.dueDate) >= start && new Date(item.startDate) <= end);
 
   return (
     <div className="border-t border-border/70 pt-3">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-3">
+        <div>
+          <h2 className="text-base font-semibold text-foreground">
+            {cursor.getFullYear()}년 {cursor.getMonth() + 1}월 타임라인
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">월과 연도를 이동하며 간트 범위를 탐색할 수 있습니다.</p>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Button type="button" variant="outline" size="icon-sm" className="rounded-md" onClick={() => onMoveYear(-1)}>
+            <ChevronsLeft size={14} />
+          </Button>
+          <Button type="button" variant="outline" size="icon-sm" className="rounded-md" onClick={() => onMoveMonth(-1)}>
+            <ChevronLeft size={14} />
+          </Button>
+          <Button type="button" variant="outline" size="icon-sm" className="rounded-md" onClick={() => onMoveMonth(1)}>
+            <ChevronRight size={14} />
+          </Button>
+          <Button type="button" variant="outline" size="icon-sm" className="rounded-md" onClick={() => onMoveYear(1)}>
+            <ChevronsRight size={14} />
+          </Button>
+        </div>
+      </div>
       <div className="overflow-x-auto">
         <div className="min-w-[860px]">
           <div
@@ -683,9 +731,11 @@ function GanttView({
           </div>
 
           <div className="space-y-2 pt-4">
-            {items.map((task) => {
-              const offset = Math.round((new Date(task.startDate).getTime() - start.getTime()) / 86_400_000);
-              const span = Math.max(1, Math.round((new Date(task.dueDate).getTime() - new Date(task.startDate).getTime()) / 86_400_000) + 1);
+            {visibleItems.map((task) => {
+              const clippedStart = new Date(Math.max(new Date(task.startDate).getTime(), start.getTime()));
+              const clippedEnd = new Date(Math.min(new Date(task.dueDate).getTime(), end.getTime()));
+              const offset = Math.max(0, Math.round((clippedStart.getTime() - start.getTime()) / 86_400_000));
+              const span = Math.max(1, Math.round((clippedEnd.getTime() - clippedStart.getTime()) / 86_400_000) + 1);
 
               return (
                 <button

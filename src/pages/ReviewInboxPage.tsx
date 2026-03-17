@@ -78,6 +78,7 @@ export default function ReviewInboxPage() {
               <TableHead>업무 영역</TableHead>
               <TableHead>현재 상태</TableHead>
               <TableHead>최신 라운드</TableHead>
+              <TableHead>상신 시각</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -135,6 +136,16 @@ export default function ReviewInboxPage() {
                       <ChevronRight size={14} />
                     </span>
                   </div>
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  {latestReview.submittedAt
+                    ? new Date(latestReview.submittedAt).toLocaleDateString('ko-KR', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                    : '미상신'}
                 </TableCell>
               </TableRow>
             ))}

@@ -1,9 +1,9 @@
+import type { ReactNode } from 'react';
 import { Flag, ListTodo, TimerReset } from 'lucide-react';
 import { useTasks } from '../features/review/hooks';
 import { useProjectMilestones, useProjectTaskMeta } from '../features/workspace/hooks';
 import { useWorkspace } from '../features/workspace/use-workspace';
 import { formatDate } from '../shared/lib/format';
-import MetricCard from '../shared/ui/MetricCard';
 import StatusPill from '../shared/ui/StatusPill';
 
 const healthToneMap = {
@@ -31,25 +31,13 @@ export default function MilestonesPage() {
 
   return (
     <div className="space-y-5">
-      <section className="grid gap-4 xl:grid-cols-3">
-        <MetricCard
-          label="마일스톤"
-          value={`${milestones.length}개`}
-          hint="독립 워크플로우가 아닌 큰 목표 묶음"
-          icon={<Flag size={18} />}
-        />
-        <MetricCard
-          label="연결 업무"
-          value={`${totalTasks}개`}
-          hint="마일스톤에 연결된 전체 업무"
-          icon={<ListTodo size={18} />}
-        />
-        <MetricCard
-          label="완료 업무"
-          value={`${completedTasks}개`}
-          hint="연결 업무 완료 기준으로 집계"
-          icon={<TimerReset size={18} />}
-        />
+      <section className="flex flex-wrap items-end justify-between gap-3 border-b border-border/70 pb-3">
+        <div className="flex flex-wrap items-center gap-5">
+          <InlineStat label="마일스톤" value={`${milestones.length}개`} icon={<Flag size={15} />} />
+          <InlineStat label="연결 업무" value={`${totalTasks}개`} icon={<ListTodo size={15} />} />
+          <InlineStat label="완료 업무" value={`${completedTasks}개`} icon={<TimerReset size={15} />} />
+        </div>
+        <div className="text-xs text-muted-foreground">체크포인트와 연결 업무 기준으로 진행을 추적합니다.</div>
       </section>
 
       <section className="border-t border-border/70 pt-4">
@@ -198,6 +186,26 @@ export default function MilestonesPage() {
           </div>
         </div>
       </section>
+    </div>
+  );
+}
+
+function InlineStat({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: string;
+  icon: ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <div className="text-muted-foreground">{icon}</div>
+      <div>
+        <div className="text-[10px] font-semibold tracking-[0.08em] text-muted-foreground">{label}</div>
+        <div className="mt-0.5 text-lg font-semibold tracking-tight text-foreground">{value}</div>
+      </div>
     </div>
   );
 }

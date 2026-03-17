@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { ChevronRight, LockKeyhole, Shield, UserCog } from 'lucide-react';
-import { useProjectMembers, usePermissions, useProjectRoles } from '../features/workspace/hooks';
+import { usePermissions, useProjectRoles } from '../features/workspace/hooks';
 import { useWorkspace } from '../features/workspace/use-workspace';
 import MetricCard from '../shared/ui/MetricCard';
 import StatusPill from '../shared/ui/StatusPill';
@@ -11,7 +11,6 @@ export default function RolesPermissionsPage() {
   const { currentProject } = useWorkspace();
   const { data: roles = [] } = useProjectRoles(currentProject?.id ?? null);
   const { data: permissions = [] } = usePermissions();
-  const { data: members = [] } = useProjectMembers(currentProject?.id ?? null);
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
   const [detailRoleId, setDetailRoleId] = useState<string | null>(null);
   const visiblePermissions = useMemo(() => permissions.filter((permission) => permission.key !== 'AUDIT_LOG_VIEW'), [permissions]);
@@ -58,9 +57,9 @@ export default function RolesPermissionsPage() {
           icon={<LockKeyhole size={18} />}
         />
         <MetricCard
-          label="할당 멤버"
-          value={`${members.filter((member) => member.roleIds.length > 0).length}명`}
-          hint="최소 1개 역할이 연결된 멤버"
+          label="권한 카테고리"
+          value={`${categories.length}개`}
+          hint="멤버십, 검토, 일정 같은 정책 영역"
           icon={<UserCog size={18} />}
         />
       </section>
@@ -91,10 +90,10 @@ export default function RolesPermissionsPage() {
                   <div className="font-semibold text-gray-900">{role.name}</div>
                   <div className="flex items-center gap-2">
                     <span
-                      className="inline-flex rounded-full px-2 py-1 text-xs font-semibold text-white"
+                      className="inline-flex h-7 items-center rounded-full px-2.5 text-xs font-semibold text-white"
                       style={{ backgroundColor: role.color }}
                     >
-                      {role.memberIds.length}명
+                      정책 역할
                     </span>
                     <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary">
                       상세 보기
@@ -138,10 +137,6 @@ export default function RolesPermissionsPage() {
                 <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">적용 범위</div>
                 <div className="mt-3 space-y-3 text-sm text-muted-foreground">
                   <div className="flex items-center justify-between border-b border-border/50 pb-2">
-                    <span>역할 멤버 수</span>
-                    <span className="font-medium text-foreground">{selectedRole?.memberIds.length ?? 0}명</span>
-                  </div>
-                  <div className="flex items-center justify-between border-b border-border/50 pb-2">
                     <span>연결 권한 수</span>
                     <span className="font-medium text-foreground">{selectedRole?.permissionKeys.length ?? 0}개</span>
                   </div>
@@ -184,34 +179,7 @@ export default function RolesPermissionsPage() {
             </>
           ) : null
         }
-        side={
-          detailRole ? (
-            <div className="space-y-4">
-              <div>
-                <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">적용 범위</div>
-                <div className="mt-3 space-y-3 text-sm text-muted-foreground">
-                  <div className="flex items-center justify-between border-b border-border/50 pb-2">
-                    <span>리소스 스코프</span>
-                    <span className="font-medium text-foreground">project/{currentProject?.code ?? 'default'}/*</span>
-                  </div>
-                  <div className="flex items-center justify-between border-b border-border/50 pb-2">
-                    <span>권한 카테고리</span>
-                    <span className="font-medium text-foreground">
-                      {detailCategories.filter(({ items }) => items.some((permission) => detailRole.permissionKeys.includes(permission.key))).length}개
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">운영 메모</div>
-                <div className="mt-3 rounded-2xl border border-border/70 bg-muted/15 px-4 py-4 text-sm leading-6 text-muted-foreground">
-                  멤버 할당은 멤버 화면에서 처리합니다. 이 모달에서는 역할이 가진 정책과 허용 범위만 검토합니다.
-                </div>
-              </div>
-            </div>
-          ) : null
-        }
-        sideClassName="lg:max-w-[240px] lg:pl-7"
+        side={null}
         footer={
           <Button type="button" variant="outline" className="min-w-24 rounded-xl px-4" onClick={() => setDetailRoleId(null)}>
             닫기
@@ -220,6 +188,13 @@ export default function RolesPermissionsPage() {
       >
         {detailRole ? (
           <div className="space-y-5">
+            <div className="grid gap-4 border-b border-border/70 pb-5 lg:grid-cols-2">
+              <MetaRow label="리소스 스코프" value={`project/${currentProject?.code ?? 'default'}/*`} />
+              <MetaRow
+                label="권한 카테고리"
+                value={`${detailCategories.filter(({ items }) => items.some((permission) => detailRole.permissionKeys.includes(permission.key))).length}개`}
+              />
+            </div>
             <div>
               <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">정책 문장</div>
               <div className="mt-3 space-y-2">
@@ -270,4 +245,13 @@ function buildPolicyStatement(permissionKey: string) {
   const resourceLabel = resource?.toLowerCase() ?? 'project';
   const actionLabel = actions.join(':').toLowerCase();
   return `${resourceLabel}:${actionLabel || 'read'} on project/*`;
+}
+
+function MetaRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-4 border-b border-border/50 pb-2 text-sm text-muted-foreground">
+      <span>{label}</span>
+      <span className="font-medium text-foreground">{value}</span>
+    </div>
+  );
 }
