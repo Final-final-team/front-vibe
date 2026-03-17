@@ -81,22 +81,38 @@ export default function RolesPermissionsPage() {
           </Button>
         </div>
 
-        <div className="grid gap-10 xl:grid-cols-[340px_minmax(0,1fr)]">
-          <aside className="space-y-2 border-t border-border/60 pt-2">
+        <div className="grid gap-10 xl:grid-cols-[380px_minmax(0,1fr)]">
+          <aside className="space-y-3 border-t border-border/60 pt-4">
             {roles.map((role) => {
               const active = selectedRole?.id === role.id;
               const effectiveKeys = getEffectivePermissionKeys(role.id, role.permissionKeys, permissionOverrides);
+              const categoryCount = categories.filter((category) =>
+                visiblePermissions.some((permission) => permission.category === category && effectiveKeys.includes(permission.key)),
+              ).length;
               return (
-                <div key={role.id} className={['border-b border-border/60 px-0 py-4 text-left transition', active ? 'bg-primary/5' : 'hover:bg-muted/10'].join(' ')}>
+                <div
+                  key={role.id}
+                  className={[
+                    'rounded-[28px] border px-5 py-5 text-left transition',
+                    active
+                      ? 'border-primary/20 bg-primary/[0.07] shadow-[0_18px_40px_-30px_rgba(15,23,42,0.4)]'
+                      : 'border-border/70 bg-background hover:border-primary/15 hover:bg-muted/[0.18]',
+                  ].join(' ')}
+                >
                   <button type="button" onClick={() => setSelectedRoleId(role.id)} className="w-full text-left">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <div className="text-lg font-semibold text-foreground">{role.name}</div>
+                        <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">ROLE</div>
+                        <div className="mt-2 text-lg font-semibold text-foreground">{role.name}</div>
                         <p className="mt-2 text-sm leading-6 text-muted-foreground">{role.description}</p>
                       </div>
-                      <span className="pt-0.5 text-xs font-medium text-muted-foreground">{effectiveKeys.length}개 권한</span>
+                      <StatusPill tone={active ? 'blue' : 'slate'}>{effectiveKeys.length}개 권한</StatusPill>
                     </div>
                   </button>
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    <RoleCountCard label="권한" value={`${effectiveKeys.length}개`} />
+                    <RoleCountCard label="카테고리" value={`${categoryCount}개`} />
+                  </div>
                   <div className="mt-4 flex items-center gap-2">
                     <Button
                       type="button"
@@ -122,11 +138,11 @@ export default function RolesPermissionsPage() {
           <div className="space-y-6">
             {selectedRole ? (
               <>
-                <div className="border-t border-border/70 pt-8">
+                <div className="rounded-[30px] border border-border/70 bg-muted/[0.14] px-6 py-6">
                   <div className="mb-3 text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">현재 선택된 역할</div>
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="min-w-0">
-                      <h3 className="text-xl font-semibold tracking-tight text-foreground">{selectedRole.name}</h3>
+                      <h3 className="text-2xl font-semibold tracking-tight text-foreground">{selectedRole.name}</h3>
                       <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">{selectedRole.description}</p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -134,20 +150,30 @@ export default function RolesPermissionsPage() {
                       <StatusPill tone="blue">{selectedKeys.length}개 허용 권한</StatusPill>
                     </div>
                   </div>
+                  <div className="mt-5 grid gap-3 md:grid-cols-3">
+                    <RoleCountCard label="허용 권한" value={`${selectedKeys.length}개`} />
+                    <RoleCountCard
+                      label="카테고리 수"
+                      value={`${categories.filter((category) => selectedPermissionDefinitions.some((permission) => permission.category === category)).length}개`}
+                    />
+                    <RoleCountCard label="적용 범위" value={`project/${currentProject?.code ?? 'default'}/*`} wide />
+                  </div>
                 </div>
 
-                <div className="grid gap-8 border-t border-border/60 pt-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+                <div className="grid gap-8 border-t border-border/60 pt-8 lg:grid-cols-[minmax(0,1fr)_340px]">
                   <div className="space-y-6">
                     <div>
                       <div className="mb-4 text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">허용 권한 요약</div>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                         {categories.map((category) => {
                           const count = selectedPermissionDefinitions.filter((permission) => permission.category === category).length;
                           if (count === 0) return null;
                           return (
-                            <StatusPill key={category} tone="slate">
-                              {category} {count}개
-                            </StatusPill>
+                            <div key={category} className="rounded-[22px] border border-border/70 bg-background px-4 py-4">
+                              <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">{category}</div>
+                              <div className="mt-2 text-xl font-semibold tracking-tight text-foreground">{count}개</div>
+                              <div className="mt-1 text-sm text-muted-foreground">현재 역할에 허용됨</div>
+                            </div>
                           );
                         })}
                       </div>
@@ -157,7 +183,7 @@ export default function RolesPermissionsPage() {
                       <div className="mb-4 text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">현재 허용 권한</div>
                       <div className="grid gap-3 md:grid-cols-2">
                         {selectedPermissionDefinitions.map((permission) => (
-                          <div key={permission.key} className="border-t border-border/60 pt-3">
+                          <div key={permission.key} className="rounded-[22px] border border-border/70 bg-background px-4 py-4">
                             <div className="flex items-center gap-2">
                               <span className="font-medium text-foreground">{permission.name}</span>
                               <StatusPill tone="blue">허용</StatusPill>
@@ -170,14 +196,14 @@ export default function RolesPermissionsPage() {
                   </div>
 
                   <div className="space-y-3">
-                    <div className="rounded-2xl border border-border/70 bg-muted/15 px-4 py-4 text-sm leading-6 text-muted-foreground">
+                    <div className="rounded-[24px] border border-border/70 bg-muted/15 px-4 py-4 text-sm leading-6 text-muted-foreground">
                       역할 카드에서는 정책 문장을 숨기고, 권한 설명과 허용 범위만 빠르게 읽게 합니다.
                     </div>
-                    <div className="border-b border-border/60 pb-3 text-sm">
+                    <div className="rounded-[24px] border border-border/70 bg-background px-4 py-4 text-sm">
                       <div className="text-muted-foreground">적용 범위</div>
                       <div className="mt-1 font-medium text-foreground">project/{currentProject?.code ?? 'default'}/*</div>
                     </div>
-                    <div className="border-b border-border/60 pb-3 text-sm">
+                    <div className="rounded-[24px] border border-border/70 bg-background px-4 py-4 text-sm">
                       <div className="text-muted-foreground">권한 관리 주체</div>
                       <div className="mt-1 font-medium text-foreground">최종관리자만 수정 가능</div>
                     </div>
@@ -379,6 +405,28 @@ function MetaRow({ label, value }: { label: string; value: string }) {
     <div className="flex items-center justify-between gap-4 border-b border-border/50 pb-2 text-sm text-muted-foreground">
       <span>{label}</span>
       <span className="font-medium text-foreground">{value}</span>
+    </div>
+  );
+}
+
+function RoleCountCard({
+  label,
+  value,
+  wide = false,
+}: {
+  label: string;
+  value: string;
+  wide?: boolean;
+}) {
+  return (
+    <div
+      className={[
+        'rounded-[20px] border border-border/70 bg-background px-4 py-3',
+        wide ? 'md:col-span-1 lg:col-span-1' : '',
+      ].join(' ')}
+    >
+      <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">{label}</div>
+      <div className="mt-2 break-all text-base font-semibold tracking-tight text-foreground">{value}</div>
     </div>
   );
 }
