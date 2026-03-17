@@ -413,12 +413,12 @@ function KanbanView({
     <div className="grid gap-5 xl:grid-cols-3">
       {columns.map((column) => (
         <section key={column.key} className="min-w-0">
-          <div className="flex min-h-12 items-center justify-between border-b border-border/70 pb-2">
+          <div className="flex min-h-11 items-center justify-between border-b border-border/70 pb-2">
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-semibold text-foreground">{column.title}</h2>
+              <h2 className="text-base font-semibold leading-none text-foreground">{column.title}</h2>
               <span
                 className={[
-                  'inline-flex h-10 min-w-10 items-center justify-center rounded-md border px-3 text-xl font-semibold leading-none',
+                  'inline-flex h-9 min-w-9 items-center justify-center rounded-md border px-3 text-lg font-semibold leading-none',
                   column.tone === 'green'
                     ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
                     : column.tone === 'amber'
@@ -444,7 +444,7 @@ function KanbanView({
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="font-semibold text-foreground">{task.title}</div>
-                    <div className="mt-1 text-[13px] leading-5 text-muted-foreground">{task.summary}</div>
+                    <div className="mt-1 text-sm leading-6 text-muted-foreground">{task.summary}</div>
                   </div>
                   <StatusPill tone={column.tone}>{getStatusLabel(task.status)}</StatusPill>
                 </div>

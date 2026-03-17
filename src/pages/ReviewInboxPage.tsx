@@ -1,10 +1,8 @@
 import { useQueries } from '@tanstack/react-query';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { Eye, FileSearch, MessageSquareWarning, SendHorizontal } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { FileSearch, MessageSquareWarning, SendHorizontal } from 'lucide-react';
 import { Badge } from '../components/ui/badge';
-import { Button } from '../components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { fetchTaskReviews } from '../features/review/api';
 import ReviewDetailModal from '../features/review/components/ReviewDetailModal';
@@ -40,6 +38,9 @@ export default function ReviewInboxPage() {
   const waitingQueue = inboxRows.filter((row) => row.task?.latestReviewStatus === 'IN_REVIEW');
   const approved = inboxRows.filter((row) => row.latestReview?.status === 'APPROVED');
   const empty = inboxRows.filter((row) => !row.latestReview);
+  const reviewRows = inboxRows.filter(
+    (row): row is typeof row & { latestReview: NonNullable<typeof row.latestReview> } => Boolean(row.latestReview),
+  );
 
   return (
     <div className="space-y-4">
@@ -77,24 +78,21 @@ export default function ReviewInboxPage() {
               <TableHead>업무 영역</TableHead>
               <TableHead>현재 상태</TableHead>
               <TableHead>최신 라운드</TableHead>
-              <TableHead>진입</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {inboxRows.map(({ meta, task, latestReview }) => (
+            {reviewRows.map(({ meta, task, latestReview }) => (
               <TableRow
                 key={meta.taskId}
-                className={latestReview ? 'cursor-pointer' : ''}
-                onClick={() => {
-                  if (latestReview) {
-                    setSelectedReviewId(latestReview.reviewId);
-                  }
-                }}
+                className="cursor-pointer transition hover:bg-muted/20"
+                onClick={() => setSelectedReviewId(latestReview.reviewId)}
               >
                 <TableCell className="py-4">
                   <div className="min-w-0">
                     <div className="font-semibold text-foreground">{task?.title}</div>
-                    <div className="mt-1 line-clamp-2 text-sm leading-6 text-muted-foreground">{task?.summary}</div>
+                    <div className="mt-1 line-clamp-2 text-sm leading-6 text-muted-foreground">
+                      {task?.summary}
+                    </div>
                   </div>
                 </TableCell>
                 <TableCell>
@@ -118,7 +116,7 @@ export default function ReviewInboxPage() {
                   </StatusPill>
                 </TableCell>
                 <TableCell>
-                  {latestReview ? (
+                  <div className="flex items-center justify-between gap-3">
                     <StatusPill
                       tone={
                         latestReview.status === 'APPROVED'
@@ -130,41 +128,9 @@ export default function ReviewInboxPage() {
                               : 'amber'
                       }
                     >
-                        {latestReview.roundNo}차 · {getReviewStatusLabel(latestReview.status)}
+                      {latestReview.roundNo}차 · {getReviewStatusLabel(latestReview.status)}
                     </StatusPill>
-                  ) : (
-                    <span className="text-sm text-muted-foreground">미상신</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Button asChild variant="ghost" size="sm" className="h-8 rounded-md px-2.5 text-primary hover:text-primary">
-                      <Link
-                        to="#"
-                        onClick={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          if (latestReview) {
-                            setSelectedReviewId(latestReview.reviewId);
-                          }
-                        }}
-                      >
-                        <Eye size={14} />
-                        상세 보기
-                      </Link>
-                    </Button>
-                    {latestReview && (
-                      <button
-                        type="button"
-                        className="text-sm font-semibold text-foreground/70 hover:text-foreground"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setSelectedReviewId(latestReview.reviewId);
-                        }}
-                      >
-                        상세
-                      </button>
-                    )}
+                    <span className="text-xs font-medium text-primary">행 선택 시 상세</span>
                   </div>
                 </TableCell>
               </TableRow>

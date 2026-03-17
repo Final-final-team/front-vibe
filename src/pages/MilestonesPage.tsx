@@ -30,7 +30,7 @@ export default function MilestonesPage() {
   ).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <section className="grid gap-4 xl:grid-cols-3">
         <MetricCard
           label="마일스톤"
@@ -52,7 +52,33 @@ export default function MilestonesPage() {
         />
       </section>
 
-      <div className="space-y-8">
+      <section className="border-t border-border/70 pt-4">
+        <div className="grid gap-8 xl:grid-cols-[300px_minmax(0,1fr)]">
+          <aside className="space-y-3">
+            <div>
+              <h2 className="text-base font-semibold tracking-tight text-foreground">진행 개요</h2>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                마일스톤은 큰 목표를 묶는 운영 단위입니다. 각 마일스톤 안에서 다음 체크포인트와 연결 업무 상태를 함께 봅니다.
+              </p>
+            </div>
+            <div className="space-y-2 border-t border-border/70 pt-4">
+              {milestones.map((milestone) => {
+                const linkedCount = taskMeta.filter((task) => task.milestoneId === milestone.id).length;
+
+                return (
+                  <div key={milestone.id} className="border-b border-border/60 pb-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="font-medium text-foreground">{milestone.name}</span>
+                      <StatusPill tone={healthToneMap[milestone.health]}>{healthLabelMap[milestone.health]}</StatusPill>
+                    </div>
+                    <div className="mt-2 text-sm text-muted-foreground">{linkedCount}건 · 마감 {formatDate(milestone.dueDate)}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </aside>
+
+          <div className="space-y-7">
         {milestones.map((milestone) => {
           const linkedTasks = taskMeta
             .filter((task) => task.milestoneId === milestone.id)
@@ -76,11 +102,11 @@ export default function MilestonesPage() {
                 : '현재 리듬은 안정적이며 연결 업무가 계획대로 진행 중입니다.';
 
           return (
-            <section key={milestone.id} className="border-t border-border/70 pt-4">
-              <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
+            <section key={milestone.id} className="border-t border-border/70 pt-4 first:border-t-0 first:pt-0">
+              <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-base font-semibold tracking-tight text-foreground">{milestone.name}</h2>
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <h2 className="text-lg font-semibold tracking-tight text-foreground">{milestone.name}</h2>
                     <StatusPill tone="slate" className="h-8 px-3">{progress}%</StatusPill>
                     <StatusPill tone={healthToneMap[milestone.health]} className="h-8 px-3">
                       {healthLabelMap[milestone.health]}
@@ -92,11 +118,11 @@ export default function MilestonesPage() {
                   <StatusPill tone="slate" className="h-8 px-3">마감 {formatDate(milestone.dueDate)}</StatusPill>
                 </div>
               </div>
-              <div className="space-y-5">
+                <div className="space-y-4">
                 <div>
-                  <div className="flex items-center justify-between gap-4 text-sm text-gray-600">
+                  <div className="flex items-center justify-between gap-4 text-sm text-muted-foreground">
                     <span>연결 업무 진행률</span>
-                    <span>{progress}%</span>
+                    <span className="font-medium text-foreground">{progress}%</span>
                   </div>
                   <div className="mt-3 h-3 overflow-hidden rounded-full bg-gray-100">
                     <div className="h-full rounded-full bg-blue-600" style={{ width: `${progress}%` }} />
@@ -111,7 +137,7 @@ export default function MilestonesPage() {
                 <div className="grid gap-4 border-y border-border/60 py-4 lg:grid-cols-3">
                   <div>
                     <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">다음 체크포인트</div>
-                    <div className="mt-2 text-sm font-medium text-foreground">
+                    <div className="mt-2 text-sm font-medium leading-6 text-foreground">
                       {nextDueTask ? nextDueTask.task?.title : '연결 업무 없음'}
                     </div>
                     <div className="mt-1 text-sm text-muted-foreground">
@@ -132,14 +158,19 @@ export default function MilestonesPage() {
                   </div>
                 </div>
 
-                <div className="grid gap-3 lg:grid-cols-2">
+                <div className="space-y-1">
                   {linkedTasks.map(({ meta, task }) => (
                     <div
                       key={meta.taskId}
-                      className="border-b border-border/60 px-0 py-4"
+                      className="grid gap-4 border-b border-border/60 px-0 py-4 lg:grid-cols-[minmax(0,1fr)_auto]"
                     >
-                      <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
                         <div className="font-semibold text-gray-900">{task?.title}</div>
+                        <div className="mt-2 text-sm leading-6 text-gray-600">{task?.summary}</div>
+                      </div>
+                      <div className="flex flex-wrap items-start justify-end gap-2">
+                        <StatusPill tone="teal">{meta.domain}</StatusPill>
+                        <StatusPill tone="purple">{meta.assigneeName}</StatusPill>
                         <StatusPill
                           tone={
                             task?.latestReviewStatus === 'COMPLETED'
@@ -155,11 +186,6 @@ export default function MilestonesPage() {
                               ? '검토중'
                               : '진행중'}
                         </StatusPill>
-                      </div>
-                      <div className="mt-2 text-sm leading-6 text-gray-600">{task?.summary}</div>
-                      <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-500">
-                        <StatusPill tone="teal">{meta.domain}</StatusPill>
-                        <StatusPill tone="purple">{meta.assigneeName}</StatusPill>
                         <StatusPill tone="slate">마감 {formatDate(meta.dueDate)}</StatusPill>
                       </div>
                     </div>
@@ -169,7 +195,9 @@ export default function MilestonesPage() {
             </section>
           );
         })}
-      </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
