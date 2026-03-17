@@ -100,7 +100,7 @@ export default function RolesPermissionsPage() {
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold tracking-tight text-foreground">역할 카탈로그</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">메인 화면에서는 역할 이름과 책임만 보고, 세부 정책과 권한 관리는 모달에서 처리합니다.</p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">메인 화면에서는 역할 이름과 책임만 보고, 세부 정책과 권한 관리는 모두 모달에서 처리합니다.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => setCatalogOpen(true)}>
@@ -132,6 +132,9 @@ export default function RolesPermissionsPage() {
                       <h3 className="text-lg font-semibold text-foreground">{role.name}</h3>
                     </div>
                     <p className="mt-2 text-sm leading-6 text-muted-foreground">{role.description}</p>
+                    <div className="mt-3 text-xs text-muted-foreground">
+                      {effectiveKeys.length}개 권한 · {categoryCount}개 카테고리
+                    </div>
                   </div>
                   <StatusPill tone="slate">{currentProject?.code ?? '-'}</StatusPill>
                 </div>
@@ -156,7 +159,6 @@ export default function RolesPermissionsPage() {
                   >
                     권한 관리
                   </Button>
-                  <span className="text-xs text-muted-foreground">{effectiveKeys.length}개 권한 · {categoryCount}개 카테고리</span>
                 </div>
               </div>
             );
@@ -388,8 +390,8 @@ export default function RolesPermissionsPage() {
       <AppModal
         open={catalogOpen}
         onOpenChange={setCatalogOpen}
-        title="전체 권한 관리"
-        description="현재 프로젝트에서 사용할 수 있는 전체 권한 카탈로그를 확인합니다."
+        title="전체 권한 보기"
+        description="현재 프로젝트에서 사용할 수 있는 전체 권한 카탈로그를 한 줄씩 확인합니다."
         badges={
           <>
             <StatusPill tone="slate">{permissions.length}개 권한</StatusPill>

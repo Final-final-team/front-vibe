@@ -382,7 +382,7 @@ function MilestoneTaskRow({ task }: { task: TaskViewItem }) {
 
 function InlineInfo({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border border-border/70 bg-muted/10 px-4 py-3">
+    <div className="border-t border-border/60 pt-3">
       <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">{label}</div>
       <div className="mt-2 text-base font-semibold text-foreground">{value}</div>
     </div>

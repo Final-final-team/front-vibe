@@ -1,10 +1,10 @@
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import { MailPlus, ShieldCheck, UserCheck, Users } from 'lucide-react';
 import { usePermissions, useProjectMembers, useProjectRoles } from '../features/workspace/hooks';
 import { useWorkspace } from '../features/workspace/use-workspace';
 import { formatDate } from '../shared/lib/format';
 import AppModal from '../shared/ui/AppModal';
-import MetricCard from '../shared/ui/MetricCard';
 import StatusPill from '../shared/ui/StatusPill';
 import { Button } from '../components/ui/button';
 
@@ -58,57 +58,28 @@ export default function MembersPage() {
 
   return (
     <div className="space-y-6">
-      <section className="grid gap-4 xl:grid-cols-4">
-        <MetricCard
-          label="활성 멤버"
-          value={`${activeCount}명`}
-          hint="프로젝트에 실제 참여 중인 멤버"
-          icon={<Users size={18} />}
-        />
-        <MetricCard
-          label="대기 초대"
-          value={`${invitedCount}건`}
-          hint="수락을 기다리는 초대"
-          icon={<MailPlus size={18} />}
-        />
-        <MetricCard
-          label="역할 연결"
-          value={`${roles.length}개`}
-          hint="현재 프로젝트 역할 카탈로그"
-          icon={<ShieldCheck size={18} />}
-        />
-        <MetricCard
-          label="추가 확인"
-          value={`${pendingCount}명`}
-          hint="만료 또는 거절 상태 포함"
-          icon={<UserCheck size={18} />}
-        />
+      <section className="flex flex-wrap items-end justify-between gap-4 border-b border-border/70 pb-5 pt-3">
+        <div className="flex flex-wrap items-center gap-x-8 gap-y-4 md:gap-x-10">
+          <InlineStat label="활성 멤버" value={`${activeCount}명`} icon={<Users size={15} />} />
+          <InlineStat label="대기 초대" value={`${invitedCount}건`} icon={<MailPlus size={15} />} />
+          <InlineStat label="역할 수" value={`${roles.length}개`} icon={<ShieldCheck size={15} />} />
+          <InlineStat label="추가 확인" value={`${pendingCount}명`} icon={<UserCheck size={15} />} />
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" className="rounded-xl px-4" onClick={() => setInvitePlanOpen(true)}>
+            멤버 초대
+          </Button>
+        </div>
       </section>
 
       <div className="space-y-8">
         <section className="pt-3">
-          <div className="mb-4 flex items-end justify-between gap-4">
+          <div className="mb-5 flex items-end justify-between gap-4 border-b border-border/60 pb-4">
             <div>
               <h2 className="text-base font-semibold tracking-tight text-foreground">프로젝트 멤버</h2>
-              <p className="mt-1 text-sm text-muted-foreground">멤버에게는 역할만 연결하고, 역할이 가진 권한 묶음이 그대로 반영됩니다.</p>
+              <p className="mt-1 text-sm text-muted-foreground">멤버에게는 역할만 연결하고, 실제 권한은 역할 정책에 따라 자동 반영됩니다.</p>
             </div>
-            <Button variant="outline" className="rounded-xl px-4" onClick={() => setInvitePlanOpen(true)}>
-              멤버 초대
-            </Button>
-          </div>
-          <div className="mb-5 grid gap-3 border-b border-border/60 pb-4 text-sm text-muted-foreground md:grid-cols-3">
-            <div className="border-t border-border/60 pt-3">
-              <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">운영 원칙</div>
-              <div className="mt-2 font-medium text-foreground">사람이 아니라 역할에 권한을 부여합니다.</div>
-            </div>
-            <div className="border-t border-border/60 pt-3">
-              <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">즉시 확인 필요</div>
-              <div className="mt-2 font-medium text-foreground">{pendingCount}명</div>
-            </div>
-            <div className="border-t border-border/60 pt-3">
-              <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">최근 활동 멤버</div>
-              <div className="mt-2 font-medium text-foreground">{activeCount}명</div>
-            </div>
+            <div className="text-xs text-muted-foreground">행 클릭으로 프로필, 우측 버튼으로 역할 부여</div>
           </div>
           <div className="space-y-3 md:hidden">
             {members.map((member) => (
@@ -166,20 +137,16 @@ export default function MembersPage() {
               </div>
               <div className="divide-y divide-gray-100">
                 {members.map((member) => (
-                  <div
+                  <button
                     key={member.id}
-                    className="grid grid-cols-[2fr_0.9fr_1.1fr_1.7fr_1fr_0.9fr] gap-4 py-4 text-left text-sm transition hover:bg-muted/10"
+                    type="button"
+                    onClick={() => setProfileMemberId(member.id)}
+                    className="grid w-full grid-cols-[2fr_0.9fr_1.1fr_1.7fr_1fr_0.9fr] gap-4 py-4 text-left text-sm transition hover:bg-muted/10"
                   >
                     <div>
                       <div className="font-semibold text-gray-900">{member.name}</div>
                       <div className="mt-1 text-gray-500">{member.email}</div>
-                      <button
-                        type="button"
-                        className="mt-2 text-xs font-medium text-primary/80 hover:text-primary"
-                        onClick={() => setProfileMemberId(member.id)}
-                      >
-                        프로필 보기
-                      </button>
+                      <div className="mt-2 text-xs font-medium text-primary/80">프로필 보기</div>
                     </div>
                     <div className="flex items-center">
                       <StatusPill tone={inviteToneMap[member.inviteStatus]}>
@@ -200,9 +167,11 @@ export default function MembersPage() {
                     </div>
                     <div className="flex items-center justify-end">
                       <Button
+                        type="button"
                         variant="ghost"
                         className="h-9 rounded-xl px-3 text-sm font-medium"
-                        onClick={() => {
+                        onClick={(event) => {
+                          event.stopPropagation();
                           setAssignmentMemberId(member.id);
                           setDraftRoleIds(member.roleIds);
                         }}
@@ -210,7 +179,7 @@ export default function MembersPage() {
                         역할 부여
                       </Button>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -235,36 +204,15 @@ export default function MembersPage() {
             </>
           ) : null
         }
-        side={
-          profileMember ? (
-            <div className="space-y-5">
-              <div>
-                <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">역할 기반 접근</div>
-                <div className="mt-3 rounded-2xl border border-border/70 bg-muted/15 px-4 py-4 text-sm leading-6 text-muted-foreground">
-                  멤버는 역할 / 권한 화면에 직접 접근하지 않고, 자기에게 연결된 역할이 허용한 권한 결과만 확인합니다.
-                </div>
-              </div>
-              <div>
-                <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">현재 연결 역할</div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {profileRoles.map((role) => (
-                    <RoleToken key={role.id} label={role.name} color={role.color} />
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : null
-        }
         footer={
           <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => setProfileMemberId(null)}>
             닫기
           </Button>
         }
-        sideClassName="lg:max-w-[340px]"
       >
         {profileMember ? (
           <div className="space-y-5">
-            <div className="grid gap-4 border-b border-border/70 pb-5 lg:grid-cols-2">
+            <div className="grid gap-4 border-b border-border/70 pb-5 lg:grid-cols-[minmax(0,1fr)_180px]">
               <div>
                 <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">멤버 정보</div>
                 <div className="mt-3 space-y-3 text-sm text-muted-foreground">
@@ -285,11 +233,13 @@ export default function MembersPage() {
                 </div>
               </div>
               <div>
-                <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">허용 권한 수</div>
-                <div className="mt-3 rounded-2xl border border-border/70 bg-muted/10 px-4 py-4">
-                  <div className="text-3xl font-semibold tracking-tight text-foreground">{profilePermissionKeys.length}</div>
-                  <div className="mt-2 text-sm text-muted-foreground">역할이 허용한 실제 권한</div>
+                <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">현재 연결 역할</div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {profileRoles.map((role) => (
+                    <RoleToken key={role.id} label={role.name} color={role.color} />
+                  ))}
                 </div>
+                <div className="mt-4 text-xs text-muted-foreground">허용 권한 {profilePermissionKeys.length}개</div>
               </div>
             </div>
             <div>
@@ -442,9 +392,7 @@ export default function MembersPage() {
                   );
                 })}
               </div>
-              <div className="mt-3 text-sm leading-6 text-muted-foreground">
-                역할에 연결된 실제 권한 설계와 변경은 역할 / 권한 화면에서만 진행합니다.
-              </div>
+              <div className="mt-3 text-sm leading-6 text-muted-foreground">권한 설계와 변경은 역할 / 권한 화면에서만 진행합니다.</div>
             </div>
           </div>
         ) : null}
@@ -465,5 +413,25 @@ function RoleToken({ label, color }: { label: string; color?: string }) {
     >
       {label}
     </span>
+  );
+}
+
+function InlineStat({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: string;
+  icon: ReactNode;
+}) {
+  return (
+    <div className="flex min-w-[106px] items-center gap-3.5 pr-2">
+      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted/35 text-muted-foreground">{icon}</div>
+      <div>
+        <div className="text-[10px] font-semibold tracking-[0.08em] text-muted-foreground">{label}</div>
+        <div className="mt-1 text-xl font-semibold leading-none tracking-tight text-foreground">{value}</div>
+      </div>
+    </div>
   );
 }
