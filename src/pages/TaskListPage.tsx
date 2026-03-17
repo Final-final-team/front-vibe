@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import {
   closestCenter,
   DndContext,
@@ -14,19 +15,11 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import {
-  ArrowRight,
-  ChartColumn,
-  GripVertical,
-  Rows3,
-  SendHorizontal,
-  Users2,
-} from 'lucide-react';
+import { ArrowRight, ChartColumn, GripVertical, Rows3, SendHorizontal, Users2 } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
-import Card from '../shared/ui/Card';
-import MetricCard from '../shared/ui/MetricCard';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import StatusPill from '../shared/ui/StatusPill';
 import { useTasks } from '../features/review/hooks';
 import { buildTaskViewItems, getStatusLabel, getStatusTone, groupTasksByStatus, type TaskViewItem } from '../features/tasks/view-model';
@@ -118,30 +111,26 @@ export default function TaskListPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-2">
+    <div className="space-y-5">
+      <section className="flex flex-wrap items-end justify-between gap-4 border-b border-border/70 pb-4">
+        <div className="flex flex-wrap items-center gap-6">
+          <InlineStat label="마일스톤" value={`${milestones.length}개`} icon={<Rows3 size={15} />} />
+          <InlineStat label="검토중" value={`${reviewCount}건`} icon={<SendHorizontal size={15} />} />
+          <InlineStat label="완료" value={`${completedCount}건`} icon={<ChartColumn size={15} />} />
+          <InlineStat label="담당자" value={`${activeAssignees}명`} icon={<Users2 size={15} />} />
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           <Badge variant="outline" className="rounded-md">{currentProject?.code ?? 'TASKS'}</Badge>
           <Badge variant="outline" className="rounded-md">{getViewLabel(currentView)}</Badge>
-          <Badge variant="outline" className="rounded-md">backend mapping ready</Badge>
+          <span>backend mapping ready</span>
         </div>
-        <div className="text-xs font-medium text-muted-foreground">
-          같은 업무 데이터를 서로 다른 실행 뷰로 전환합니다.
-        </div>
-      </div>
-
-      <section className="grid gap-3 xl:grid-cols-4">
-        <MetricCard label="마일스톤" value={`${milestones.length}개`} hint="실행 그룹" icon={<Rows3 size={16} />} />
-        <MetricCard label="검토중" value={`${reviewCount}건`} hint="현재 review 큐" icon={<SendHorizontal size={16} />} />
-        <MetricCard label="완료" value={`${completedCount}건`} hint="승인 종료" icon={<ChartColumn size={16} />} />
-        <MetricCard label="담당자" value={`${activeAssignees}명`} hint="활성 assignee" icon={<Users2 size={16} />} />
       </section>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_320px]">
-        <section className="space-y-4">
+      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <section className="min-w-0 border-t border-border/70 bg-background">
           {currentView === 'table' ? (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <div className="space-y-4">
+              <div className="divide-y divide-border/70">
                 {milestones.map((milestone) => {
                   const milestoneTasks = getMilestoneTasks(milestone.id);
                   const total = milestoneTasks.length || 1;
@@ -149,53 +138,64 @@ export default function TaskListPage() {
                   const progress = Math.round((done / total) * 100);
 
                   return (
-                    <Card
-                      key={milestone.id}
-                      title={milestone.name}
-                      description={milestone.summary}
-                      action={
-                        <div className="flex items-center gap-2">
-                          <StatusPill tone="slate">{progress}%</StatusPill>
-                          <Badge variant="outline" className="rounded-md px-2 py-1">
-                            {milestoneTasks.length} tasks
-                          </Badge>
+                    <section key={milestone.id} className="py-5 first:pt-0">
+                      <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h2 className="text-lg font-semibold tracking-tight text-foreground">{milestone.name}</h2>
+                            <StatusPill tone="slate">{progress}%</StatusPill>
+                            <StatusPill
+                              tone={
+                                milestone.health === 'COMPLETE'
+                                  ? 'green'
+                                  : milestone.health === 'AT_RISK'
+                                    ? 'amber'
+                                    : 'teal'
+                              }
+                            >
+                              {milestone.health}
+                            </StatusPill>
+                          </div>
+                          <p className="mt-1 text-sm text-muted-foreground">{milestone.summary}</p>
                         </div>
-                      }
-                    >
-                      <div className="overflow-x-auto">
-                        <div className="min-w-[920px]">
-                          <div className="mb-4 flex items-center gap-3">
-                            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-                              <div className="h-full rounded-full bg-primary" style={{ width: `${progress}%` }} />
-                            </div>
-                            <div className="text-xs font-medium text-muted-foreground">{done}/{total}</div>
+                        <div className="min-w-[220px]">
+                          <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                            <div className="h-full rounded-full bg-primary" style={{ width: `${progress}%` }} />
                           </div>
-                          <div className="grid grid-cols-[2.2fr_1fr_0.8fr_1fr_1fr_1fr] border-b border-border/70 pb-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                            <div>업무</div>
-                            <div>담당자</div>
-                            <div>우선순위</div>
-                            <div>상태</div>
-                            <div>기한</div>
-                            <div>진입</div>
+                          <div className="mt-2 text-right text-xs text-muted-foreground">
+                            {milestoneTasks.length} tasks · due {formatDate(milestone.dueDate)}
                           </div>
+                        </div>
+                      </div>
+
+                      <Table className="border-t border-border/70">
+                        <TableHeader>
+                          <TableRow className="hover:bg-transparent">
+                            <TableHead>업무</TableHead>
+                            <TableHead>담당자</TableHead>
+                            <TableHead>우선순위</TableHead>
+                            <TableHead>상태</TableHead>
+                            <TableHead>기한</TableHead>
+                            <TableHead>진입</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
                           <SortableContext
                             items={milestoneTasks.map((task) => task.id)}
                             strategy={verticalListSortingStrategy}
                           >
-                            <div className="divide-y divide-border/60">
-                              {milestoneTasks.map((task) => (
-                                <SortableTaskRow
-                                  key={task.id}
-                                  task={task}
-                                  selected={selectedTask?.id === task.id}
-                                  onSelect={() => setSelectedTaskId(task.id)}
-                                />
-                              ))}
-                            </div>
+                            {milestoneTasks.map((task) => (
+                              <SortableTaskRow
+                                key={task.id}
+                                task={task}
+                                selected={selectedTask?.id === task.id}
+                                onSelect={() => setSelectedTaskId(task.id)}
+                              />
+                            ))}
                           </SortableContext>
-                        </div>
-                      </div>
-                    </Card>
+                        </TableBody>
+                      </Table>
+                    </section>
                   );
                 })}
               </div>
@@ -211,36 +211,37 @@ export default function TaskListPage() {
           )}
         </section>
 
-        <aside className="space-y-4 xl:sticky xl:top-[128px] xl:self-start">
-          <Card
-            title="선택된 업무"
-            description="선택한 row 또는 카드의 상태와 review 액션"
-            action={<Badge className="rounded-md px-2 py-1">{selectedTask ? `taskId ${selectedTask.id}` : 'idle'}</Badge>}
-          >
+        <aside className="xl:sticky xl:top-[112px] xl:h-fit">
+          <div className="border-l border-border/70 pl-6">
             {selectedTask ? (
-              <div className="space-y-4">
-                <div>
+              <div className="space-y-5">
+                <div className="space-y-3 border-b border-border/70 pb-5">
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusPill tone="teal">{selectedTask.domain}</StatusPill>
                     <StatusPill tone="purple">{selectedTask.assigneeName}</StatusPill>
                     <StatusPill tone="slate">{selectedTask.milestoneName}</StatusPill>
                   </div>
-                  <div className="mt-4 text-2xl font-semibold tracking-tight text-foreground">{selectedTask.title}</div>
-                  <p className="mt-2 text-sm leading-7 text-muted-foreground">{selectedTask.summary}</p>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <MetaItem label="기한" value={formatDate(selectedTask.dueDate)} />
-                  <MetaItem label="시작" value={formatDate(selectedTask.startDate)} />
-                  <MetaItem label="우선순위" value={selectedTask.priority} />
-                  <MetaItem label="현재 상태" value={getStatusLabel(selectedTask.status)} />
-                </div>
-
-                <div className="rounded-lg border border-border/70 bg-muted/20 p-4">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    다음 액션
+                  <div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      selected task
+                    </div>
+                    <div className="mt-2 text-[28px] font-semibold tracking-tight text-foreground">{selectedTask.title}</div>
+                    <p className="mt-2 text-sm leading-7 text-muted-foreground">{selectedTask.summary}</p>
                   </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
+                </div>
+
+                <div className="grid gap-4 border-b border-border/70 pb-5">
+                  <MetaRow label="기한" value={formatDate(selectedTask.dueDate)} />
+                  <MetaRow label="시작" value={formatDate(selectedTask.startDate)} />
+                  <MetaRow label="우선순위" value={selectedTask.priority} />
+                  <MetaRow label="현재 상태" value={getStatusLabel(selectedTask.status)} />
+                </div>
+
+                <div className="space-y-3">
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    actions
+                  </div>
+                  <div className="flex flex-wrap gap-2">
                     <Button asChild className="rounded-lg">
                       <Link to={`/tasks/${selectedTask.id}/reviews`}>
                         review 목록
@@ -256,11 +257,9 @@ export default function TaskListPage() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-lg border border-dashed border-border bg-muted/30 px-4 py-8 text-sm text-muted-foreground">
-                업무를 선택하면 상세 패널이 열립니다.
-              </div>
+              <div className="py-10 text-sm text-muted-foreground">업무를 선택하면 상세가 표시됩니다.</div>
             )}
-          </Card>
+          </div>
         </aside>
       </div>
     </div>
@@ -284,23 +283,24 @@ function KanbanView({
   ];
 
   return (
-    <div className="grid gap-4 xl:grid-cols-3">
+    <div className="grid gap-6 xl:grid-cols-3">
       {columns.map((column) => (
-        <Card
-          key={column.key}
-          title={column.title}
-          description={`${column.items.length}건`}
-          className="bg-card/98"
-        >
-          <div className="space-y-3">
+        <section key={column.key} className="min-w-0">
+          <div className="flex items-center justify-between border-b border-border/70 pb-3">
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-semibold text-foreground">{column.title}</h2>
+              <StatusPill tone={column.tone}>{column.items.length}</StatusPill>
+            </div>
+          </div>
+          <div className="space-y-3 pt-4">
             {column.items.map((task) => (
               <button
                 key={task.id}
                 type="button"
                 onClick={() => onSelect(task.id)}
                 className={[
-                  'w-full rounded-xl border border-border/70 bg-background px-4 py-4 text-left transition hover:border-primary/30 hover:bg-primary/4',
-                  selectedTaskId === task.id ? 'border-primary/35 bg-primary/5 shadow-[0_8px_24px_rgba(15,23,42,0.05)]' : '',
+                  'w-full border-b border-border/70 px-0 pb-4 text-left transition last:border-b-0 hover:border-primary/30',
+                  selectedTaskId === task.id ? 'border-primary/30' : '',
                 ].join(' ')}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -310,15 +310,15 @@ function KanbanView({
                   </div>
                   <StatusPill tone={column.tone}>{getStatusLabel(task.status)}</StatusPill>
                 </div>
-                <div className="mt-4 flex flex-wrap items-center gap-2">
+                <div className="mt-3 flex flex-wrap items-center gap-2">
                   <StatusPill tone="purple">{task.assigneeName}</StatusPill>
                   <StatusPill tone="teal">{task.domain}</StatusPill>
-                  <StatusPill tone="slate">{formatDate(task.dueDate)}</StatusPill>
+                  <span className="text-xs text-muted-foreground">{formatDate(task.dueDate)}</span>
                 </div>
               </button>
             ))}
           </div>
-        </Card>
+        </section>
       ))}
     </div>
   );
@@ -344,12 +344,8 @@ function CalendarView({
   }, {});
 
   return (
-    <Card
-      title={`${targetMonth.getFullYear()}년 ${targetMonth.getMonth() + 1}월`}
-      description="기한 기준 캘린더"
-      action={<Badge variant="outline" className="rounded-md px-2 py-1">{items.length} tasks</Badge>}
-    >
-      <div className="grid grid-cols-7 gap-2">
+    <div className="border-t border-border/70 pt-4">
+            <div className="grid grid-cols-7 gap-2">
         {['일', '월', '화', '수', '목', '금', '토'].map((day) => (
           <div key={day} className="px-2 pb-2 text-xs font-semibold text-muted-foreground">
             {day}
@@ -360,9 +356,9 @@ function CalendarView({
           return (
             <div
               key={`${day}-${index}`}
-              className={[
-                'min-h-[128px] rounded-xl border border-border/70 bg-background p-2',
-                day <= 0 || day > daysInMonth ? 'bg-muted/30' : '',
+                  className={[
+                'min-h-[128px] border-t border-border/70 bg-background p-2',
+                day <= 0 || day > daysInMonth ? 'bg-muted/25' : '',
               ].join(' ')}
             >
               {day > 0 && day <= daysInMonth ? (
@@ -374,7 +370,7 @@ function CalendarView({
                         key={task.id}
                         type="button"
                         onClick={() => onSelect(task.id)}
-                        className="block w-full rounded-lg border border-border/60 bg-muted/25 px-2 py-2 text-left text-xs transition hover:border-primary/30 hover:bg-primary/4"
+                        className="block w-full border-l-2 border-primary px-2 py-1 text-left text-xs transition hover:bg-muted/30"
                       >
                         <div className="font-semibold text-foreground">{task.title}</div>
                         <div className="mt-1 text-muted-foreground">{task.assigneeName}</div>
@@ -387,7 +383,7 @@ function CalendarView({
           );
         })}
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -402,9 +398,13 @@ function ChartView({
   const groups = groupTasksByStatus(items);
 
   return (
-    <div className="grid gap-4 xl:grid-cols-2">
-      <Card title="상태 분포" description="현재 업무 분포를 상태별로 확인합니다.">
-        <div className="space-y-4">
+    <div className="grid gap-8 xl:grid-cols-2">
+      <section className="border-t border-border/70 pt-4">
+        <div className="pb-4">
+          <h2 className="text-lg font-semibold text-foreground">상태 분포</h2>
+          <p className="mt-1 text-sm text-muted-foreground">현재 업무 분포를 상태별로 확인합니다.</p>
+        </div>
+        <div className="space-y-5">
           {[
             { label: '진행중', value: groups.IN_PROGRESS.length, tone: 'slate' as const },
             { label: '검토중', value: groups.IN_REVIEW.length, tone: 'amber' as const },
@@ -415,7 +415,7 @@ function ChartView({
                 <span className="font-medium text-foreground">{row.label}</span>
                 <span className="text-muted-foreground">{row.value}건</span>
               </div>
-              <div className="h-3 overflow-hidden rounded-full bg-muted">
+              <div className="h-3 overflow-hidden bg-muted">
                 <div
                   className={[
                     'h-full rounded-full',
@@ -427,10 +427,14 @@ function ChartView({
             </div>
           ))}
         </div>
-      </Card>
+      </section>
 
-      <Card title="마일스톤 부담" description="마일스톤별 연결 업무와 완료 비율">
-        <div className="space-y-4">
+      <section className="border-t border-border/70 pt-4">
+        <div className="pb-4">
+          <h2 className="text-lg font-semibold text-foreground">마일스톤 부담</h2>
+          <p className="mt-1 text-sm text-muted-foreground">마일스톤별 연결 업무와 완료 비율</p>
+        </div>
+        <div className="space-y-5">
           {milestones.map((milestone) => {
             const milestoneTasks = items.filter((item) => item.milestoneId === milestone.id);
             const done = milestoneTasks.filter((item) => item.status === 'COMPLETED').length;
@@ -442,15 +446,15 @@ function ChartView({
                   <span className="font-medium text-foreground">{milestone.name}</span>
                   <span className="text-muted-foreground">{progress}%</span>
                 </div>
-                <div className="h-3 overflow-hidden rounded-full bg-muted">
-                  <div className="h-full rounded-full bg-primary" style={{ width: `${progress}%` }} />
-                </div>
+              <div className="h-3 overflow-hidden bg-muted">
+                  <div className="h-full bg-primary" style={{ width: `${progress}%` }} />
+              </div>
                 <div className="mt-2 text-xs text-muted-foreground">{milestoneTasks.length} tasks</div>
               </div>
             );
           })}
         </div>
-      </Card>
+      </section>
     </div>
   );
 }
@@ -474,7 +478,7 @@ function GanttView({
   });
 
   return (
-    <Card title="간트 타임라인" description="시작일과 기한 기준 실행 기간">
+    <div className="border-t border-border/70 pt-4">
       <div className="overflow-x-auto">
         <div className="min-w-[960px]">
           <div
@@ -500,8 +504,8 @@ function GanttView({
                   type="button"
                   onClick={() => onSelect(task.id)}
                   className={[
-                    'grid w-full items-center gap-2 rounded-xl px-3 py-3 text-left transition hover:bg-muted/35',
-                    selectedTaskId === task.id ? 'bg-primary/5 ring-1 ring-primary/15' : '',
+                    'grid w-full items-center gap-2 px-3 py-3 text-left transition hover:bg-muted/35',
+                    selectedTaskId === task.id ? 'bg-primary/5' : '',
                   ].join(' ')}
                   style={{ gridTemplateColumns: `220px repeat(${days.length}, minmax(36px, 1fr))` }}
                 >
@@ -512,10 +516,8 @@ function GanttView({
                   {days.map((_, index) => {
                     const active = index >= offset && index < offset + span;
                     return (
-                      <div key={`${task.id}-${index}`} className="h-8 rounded-md bg-muted/40">
-                        {active ? (
-                          <div className="h-full rounded-md bg-primary/85 text-[10px] font-semibold text-primary-foreground" />
-                        ) : null}
+                      <div key={`${task.id}-${index}`} className="h-8 bg-muted/35">
+                        {active ? <div className="h-full bg-primary/85" /> : null}
                       </div>
                     );
                   })}
@@ -525,7 +527,7 @@ function GanttView({
           </div>
         </div>
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -546,77 +548,94 @@ function SortableTaskRow({
   });
 
   return (
-    <div
+    <tr
       ref={setNodeRef}
+      data-slot="table-row"
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
       }}
       className={[
-        'relative grid w-full grid-cols-[2.2fr_1fr_0.8fr_1fr_1fr_1fr] gap-4 rounded-xl px-3 py-4 text-left text-sm transition',
-        selected ? 'bg-primary/7 ring-1 ring-primary/15' : 'hover:bg-muted/40',
-        isDragging ? 'z-10 border border-primary/20 bg-card shadow-[0_12px_28px_rgba(15,23,42,0.08)]' : '',
+        'border-b transition-colors hover:bg-muted/30',
+        selected ? 'bg-primary/7' : '',
+        isDragging ? 'border-primary/20 bg-background shadow-[0_12px_28px_rgba(15,23,42,0.08)]' : '',
       ].join(' ')}
     >
-      <div
-        {...attributes}
-        {...listeners}
-        onClick={onSelect}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            onSelect();
-          }
-        }}
-        className="absolute inset-0 z-0 cursor-grab rounded-xl select-none active:cursor-grabbing"
-        style={{ touchAction: 'none' }}
-      />
-      <div className="pointer-events-none relative z-10 flex items-start gap-3 pl-1">
-        <span className="mt-0.5 text-muted-foreground/60">
-          <GripVertical size={16} />
-        </span>
-        <div>
-          <div className="font-semibold text-foreground">{task.title}</div>
-          <div className="mt-1 line-clamp-2 text-muted-foreground">{task.summary}</div>
+      <TableCell className="relative py-4">
+        <button
+          {...attributes}
+          {...listeners}
+          onClick={onSelect}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              onSelect();
+            }
+          }}
+          className="absolute inset-0 z-0 cursor-grab active:cursor-grabbing"
+          style={{ touchAction: 'none' }}
+        />
+        <div className="relative z-10 flex items-start gap-3">
+          <span className="mt-0.5 text-muted-foreground/60">
+            <GripVertical size={16} />
+          </span>
+          <div className="min-w-0">
+            <div className="font-semibold text-foreground">{task.title}</div>
+            <div className="mt-1 line-clamp-2 text-sm leading-6 text-muted-foreground">{task.summary}</div>
+          </div>
         </div>
-      </div>
-      <div className="pointer-events-none relative z-10 flex items-center text-foreground/80">{task.assigneeName}</div>
-      <div className="pointer-events-none relative z-10 flex items-center">
+      </TableCell>
+      <TableCell>{task.assigneeName}</TableCell>
+      <TableCell>
         <StatusPill tone={task.priority === 'HIGH' ? 'rose' : task.priority === 'MEDIUM' ? 'amber' : 'teal'}>
           {task.priority}
         </StatusPill>
-      </div>
-      <div className="pointer-events-none relative z-10 flex items-center">
+      </TableCell>
+      <TableCell>
         <StatusPill tone={getStatusTone(task.status)}>{getStatusLabel(task.status)}</StatusPill>
-      </div>
-      <div className="pointer-events-none relative z-10 flex items-center text-muted-foreground">{formatDate(task.dueDate)}</div>
-      <div className="relative z-20 flex items-center gap-3">
-        <Link
-          to={`/tasks/${task.id}/reviews`}
-          className="text-sm font-semibold text-primary hover:text-primary/80"
-          onPointerDown={(event) => event.stopPropagation()}
-          onClick={(event) => event.stopPropagation()}
-        >
-          review
-        </Link>
-        <Link
-          to={`/tasks/${task.id}/reviews/new`}
-          className="text-sm font-semibold text-foreground/70 hover:text-foreground"
-          onPointerDown={(event) => event.stopPropagation()}
-          onClick={(event) => event.stopPropagation()}
-        >
-          상신
-        </Link>
+      </TableCell>
+      <TableCell>{formatDate(task.dueDate)}</TableCell>
+      <TableCell>
+        <div className="relative z-10 flex items-center gap-3">
+          <Link
+            to={`/tasks/${task.id}/reviews`}
+            className="text-sm font-semibold text-primary hover:text-primary/80"
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
+          >
+            review
+          </Link>
+          <Link
+            to={`/tasks/${task.id}/reviews/new`}
+            className="text-sm font-semibold text-foreground/70 hover:text-foreground"
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
+          >
+            상신
+          </Link>
+        </div>
+      </TableCell>
+    </tr>
+  );
+}
+
+function InlineStat({ label, value, icon }: { label: string; value: string; icon: ReactNode }) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="text-muted-foreground">{icon}</div>
+      <div>
+        <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
+        <div className="mt-1 text-xl font-semibold tracking-tight text-foreground">{value}</div>
       </div>
     </div>
   );
 }
 
-function MetaItem({ label, value }: { label: string; value: string }) {
+function MetaRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-border/70 bg-muted/25 px-4 py-3">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
-      <div className="mt-2 text-sm font-semibold text-foreground">{value}</div>
+    <div className="flex items-center justify-between gap-4 border-b border-border/70 pb-3 text-sm last:border-b-0 last:pb-0">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium text-foreground">{value}</span>
     </div>
   );
 }

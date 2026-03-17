@@ -1,5 +1,4 @@
 import { Bell, ChevronDown, Sparkles } from 'lucide-react';
-import { Button } from '../components/ui/button';
 
 type Props = {
   title?: string;
@@ -24,7 +23,7 @@ export default function Header({
     <header className="border-b border-border/70 bg-background/94 px-6 py-3 backdrop-blur">
       <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <div className="min-w-0 flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/70 bg-muted/50 text-primary">
+          <div className="flex h-8 w-8 items-center justify-center text-primary">
             <Sparkles size={15} />
           </div>
           <div className="min-w-0">
@@ -40,22 +39,22 @@ export default function Header({
 
         <div className="flex flex-wrap items-center gap-2 xl:justify-end">
           {stats.length > 0 && (
-            <div className="flex items-center gap-2">
-              {stats.map((stat) => (
-                <div
-                  key={stat.label}
-                  className="min-w-[82px] rounded-xl border border-border/70 bg-card px-3 py-2 shadow-[0_8px_20px_rgba(15,23,42,0.03)]"
-                >
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    {stat.label}
+            <div className="hidden items-center xl:flex">
+              {stats.map((stat, index) => (
+                <div key={stat.label} className="flex items-center">
+                  {index > 0 ? <div className="mx-3 h-9 w-px bg-border" /> : null}
+                  <div className="min-w-[72px]">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                      {stat.label}
+                    </div>
+                    <div className="mt-1 text-xl font-semibold tracking-tight text-foreground">{stat.value}</div>
                   </div>
-                  <div className="mt-1 text-xl font-semibold tracking-tight text-foreground">{stat.value}</div>
                 </div>
               ))}
             </div>
           )}
           {projects.length > 0 && onProjectChange && (
-            <label className="flex items-center gap-2 rounded-xl border border-border/70 bg-card px-3 py-2 text-sm text-muted-foreground shadow-[0_8px_20px_rgba(15,23,42,0.03)]">
+            <label className="flex items-center gap-2 border-b border-border/70 px-1 py-2 text-sm text-muted-foreground">
               <span className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">Project</span>
               <select
                 value={selectedProjectId ?? ''}
@@ -70,9 +69,12 @@ export default function Header({
               </select>
             </label>
           )}
-          <Button variant="outline" size="icon-sm" className="rounded-xl">
+          <button
+            type="button"
+            className="inline-flex h-9 w-9 items-center justify-center text-muted-foreground transition hover:text-foreground"
+          >
             <Bell size={15} />
-          </Button>
+          </button>
         </div>
       </div>
     </header>

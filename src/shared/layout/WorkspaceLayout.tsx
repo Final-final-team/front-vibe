@@ -48,15 +48,13 @@ export default function WorkspaceLayout({ children }: Props) {
     <SidebarProvider defaultOpen>
       <Sidebar variant="inset" collapsible="none" className="border-r border-border/60">
         <SidebarHeader className="px-3 py-4">
-          <div className="rounded-xl border border-sidebar-border bg-sidebar-accent/70 p-3 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-                <Home size={18} />
-              </div>
-              <div className="min-w-0">
-                <div className="truncate text-sm font-semibold text-sidebar-foreground">front-vibe</div>
-                <div className="text-xs text-sidebar-foreground/70">workspace shell</div>
-              </div>
+          <div className="flex items-center gap-3 px-1">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-sidebar-border bg-background text-primary shadow-sm">
+              <Home size={18} />
+            </div>
+            <div className="min-w-0">
+              <div className="truncate text-sm font-semibold text-sidebar-foreground">front-vibe</div>
+              <div className="text-xs text-sidebar-foreground/70">workspace shell</div>
             </div>
           </div>
           <div className="relative mt-3">
@@ -160,7 +158,7 @@ export default function WorkspaceLayout({ children }: Props) {
 
         <SidebarFooter className="px-3 pb-4">
           {currentProject && (
-            <div className="rounded-xl border border-sidebar-border bg-sidebar-accent/70 p-3 text-xs text-sidebar-foreground/80">
+            <div className="border-t border-sidebar-border px-1 pt-3 text-xs text-sidebar-foreground/80">
               <div className="font-semibold text-sidebar-foreground">{currentProject.ownerName}</div>
               <div className="mt-1">업데이트 {formatDate(currentProject.updatedAt)}</div>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-sidebar/70">
@@ -260,10 +258,10 @@ function ViewSwitchButton({
       type="button"
       onClick={onClick}
       className={[
-        'inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors',
+        'inline-flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors',
         active
-          ? 'border-primary/30 bg-primary/8 text-foreground'
-          : 'border-transparent bg-transparent text-muted-foreground hover:border-border hover:bg-card hover:text-foreground',
+          ? 'border-primary text-foreground'
+          : 'border-transparent bg-transparent text-muted-foreground hover:border-border hover:text-foreground',
       ].join(' ')}
     >
       {icon}
