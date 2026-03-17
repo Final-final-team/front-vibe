@@ -3,12 +3,14 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { ChevronRight, FileSearch, MessageSquareWarning, SendHorizontal } from 'lucide-react';
 import { Badge } from '../components/ui/badge';
+import { Button } from '../components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { fetchTaskReviews } from '../features/review/api';
 import ReviewDetailModal from '../features/review/components/ReviewDetailModal';
 import { reviewKeys, useTasks } from '../features/review/hooks';
 import { useProjectTaskMeta } from '../features/workspace/hooks';
 import { useWorkspace } from '../features/workspace/use-workspace';
+import AppModal from '../shared/ui/AppModal';
 import StatusPill from '../shared/ui/StatusPill';
 
 export default function ReviewInboxPage() {
@@ -16,6 +18,7 @@ export default function ReviewInboxPage() {
   const { data: taskMeta = [] } = useProjectTaskMeta(currentProject?.id ?? null);
   const { data: tasks = [] } = useTasks();
   const [selectedReviewId, setSelectedReviewId] = useState<number | null>(null);
+  const [emptyTaskId, setEmptyTaskId] = useState<number | null>(null);
 
   const reviewQueries = useQueries({
     queries: taskMeta.map((meta) => ({
@@ -41,10 +44,12 @@ export default function ReviewInboxPage() {
   const reviewRows = inboxRows.filter(
     (row): row is typeof row & { latestReview: NonNullable<typeof row.latestReview> } => Boolean(row.latestReview),
   );
+  const visibleRows = reviewRows.length > 0 ? reviewRows : inboxRows;
+  const emptyTask = inboxRows.find((row) => row.meta.taskId === emptyTaskId)?.task ?? null;
 
   return (
     <div className="space-y-4">
-      <section className="flex flex-wrap items-end justify-between gap-3 border-b border-border/70 pb-3">
+      <section className="flex flex-wrap items-end justify-between gap-3 border-b border-border/70 pb-4">
         <div className="flex flex-wrap items-center gap-5">
           <InlineStat label="검토 대기" value={`${waitingQueue.length}건`} icon={<SendHorizontal size={15} />} />
           <InlineStat label="최근 승인" value={`${approved.length}건`} icon={<FileSearch size={15} />} />
@@ -58,11 +63,13 @@ export default function ReviewInboxPage() {
       </section>
 
       <section className="border-t border-border/70 bg-background">
-        <div className="flex items-end justify-between gap-3 border-b border-border/70 pb-3 pt-3">
+        <div className="flex items-end justify-between gap-3 border-b border-border/70 pb-4 pt-4">
           <div>
             <h2 className="text-base font-semibold tracking-tight text-foreground">검토 보관함</h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              {currentProject?.name ?? '프로젝트'} 기준 검토 큐와 최신 라운드를 한 화면에서 확인합니다.
+              {reviewRows.length > 0
+                ? `${currentProject?.name ?? '프로젝트'} 기준 검토 큐와 최신 라운드를 한 화면에서 확인합니다.`
+                : `${currentProject?.name ?? '프로젝트'} 기준 검토 이력이 아직 없어, 검토 대상 업무까지 함께 보여줍니다.`}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -79,14 +86,21 @@ export default function ReviewInboxPage() {
               <TableHead>현재 상태</TableHead>
               <TableHead>최신 라운드</TableHead>
               <TableHead>상신 시각</TableHead>
+              <TableHead className="text-right">상세</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {reviewRows.map(({ meta, task, latestReview }) => (
+            {visibleRows.map(({ meta, task, latestReview }) => (
               <TableRow
                 key={meta.taskId}
                 className="cursor-pointer transition hover:bg-muted/20"
-                onClick={() => setSelectedReviewId(latestReview.reviewId)}
+                onClick={() => {
+                  if (latestReview) {
+                    setSelectedReviewId(latestReview.reviewId);
+                    return;
+                  }
+                  setEmptyTaskId(meta.taskId);
+                }}
               >
                 <TableCell className="py-4">
                   <div className="min-w-0">
@@ -117,7 +131,7 @@ export default function ReviewInboxPage() {
                   </StatusPill>
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center justify-between gap-3">
+                  {latestReview ? (
                     <StatusPill
                       tone={
                         latestReview.status === 'APPROVED'
@@ -131,14 +145,12 @@ export default function ReviewInboxPage() {
                     >
                       {latestReview.roundNo}차 · {getReviewStatusLabel(latestReview.status)}
                     </StatusPill>
-                    <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
-                      상세
-                      <ChevronRight size={14} />
-                    </span>
-                  </div>
+                  ) : (
+                    <StatusPill tone="slate">미상신</StatusPill>
+                  )}
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">
-                  {latestReview.submittedAt
+                  {latestReview?.submittedAt
                     ? new Date(latestReview.submittedAt).toLocaleDateString('ko-KR', {
                         month: 'short',
                         day: 'numeric',
@@ -147,11 +159,71 @@ export default function ReviewInboxPage() {
                       })
                     : '미상신'}
                 </TableCell>
+                <TableCell className="text-right">
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-primary"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      if (latestReview) {
+                        setSelectedReviewId(latestReview.reviewId);
+                        return;
+                      }
+                      setEmptyTaskId(meta.taskId);
+                    }}
+                  >
+                    상세 보기
+                    <ChevronRight size={14} />
+                  </button>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </section>
+
+      <AppModal
+        open={Boolean(emptyTask)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEmptyTaskId(null);
+          }
+        }}
+        title={emptyTask?.title ?? '검토 준비'}
+        description="이 업무에는 아직 검토 라운드가 없습니다. 첫 검토 상신 전 확인해야 할 맥락을 보여줍니다."
+        badges={
+          emptyTask ? (
+            <>
+              <StatusPill tone="slate">미상신</StatusPill>
+              <StatusPill tone="teal">검토 준비</StatusPill>
+            </>
+          ) : null
+        }
+        className="w-[min(720px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] sm:max-w-[720px]"
+        footer={
+          <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => setEmptyTaskId(null)}>
+            닫기
+          </Button>
+        }
+      >
+        {emptyTask ? (
+          <div className="space-y-4">
+            <div className="grid gap-3 border-b border-border/70 pb-4 lg:grid-cols-2">
+              <MetaLine label="업무 제목" value={emptyTask.title} />
+              <MetaLine label="현재 상태" value={emptyTask.latestReviewStatus === 'COMPLETED' ? '완료' : emptyTask.latestReviewStatus === 'IN_REVIEW' ? '검토중' : '진행중'} />
+            </div>
+            <div>
+              <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">업무 요약</div>
+              <div className="mt-3 rounded-2xl border border-border/70 bg-muted/10 px-4 py-4 text-sm leading-6 text-foreground">
+                {emptyTask.summary}
+              </div>
+            </div>
+            <div className="rounded-2xl border border-dashed border-border/70 bg-muted/10 px-4 py-4 text-sm leading-6 text-muted-foreground">
+              아직 검토 이력이 없어서 상세 검토 모달 대신 준비 상태를 보여줍니다. 실제 검토 도메인 API가 연결되면 이 지점은 첫 라운드 상신과 검토 초안 상태로 교체됩니다.
+            </div>
+          </div>
+        ) : null}
+      </AppModal>
 
       <ReviewDetailModal
         reviewId={selectedReviewId}
@@ -162,6 +234,15 @@ export default function ReviewInboxPage() {
           }
         }}
       />
+    </div>
+  );
+}
+
+function MetaLine({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-4 border-b border-border/50 pb-2 text-sm text-muted-foreground">
+      <span>{label}</span>
+      <span className="font-medium text-foreground">{value}</span>
     </div>
   );
 }

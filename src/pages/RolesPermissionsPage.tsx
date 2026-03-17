@@ -65,50 +65,47 @@ export default function RolesPermissionsPage() {
       </section>
 
       <div className="grid gap-12 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <section className="border-t border-border/70 pt-4">
-          <div className="mb-4">
-            <h2 className="text-base font-semibold tracking-tight text-foreground">역할 리스트</h2>
-            <p className="mt-1 text-sm text-muted-foreground">프로젝트 단위 RBAC 카탈로그</p>
-          </div>
-          <div className="space-y-3">
-            {roles.map((role) => (
-              <button
-                key={role.id}
-                type="button"
-                onClick={() => {
-                  setSelectedRoleId(role.id);
-                  setDetailRoleId(role.id);
-                }}
-                className={[
-                  'w-full border-b border-border/70 px-0 py-4 text-left transition',
-                  selectedRole?.id === role.id
-                    ? 'border-primary/40 bg-primary/5'
-                    : 'hover:border-border',
-                ].join(' ')}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="font-semibold text-gray-900">{role.name}</div>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="inline-flex h-7 items-center rounded-full px-2.5 text-xs font-semibold text-white"
-                      style={{ backgroundColor: role.color }}
+          <section className="border-t border-border/70 pt-5">
+            <div className="mb-4">
+              <h2 className="text-base font-semibold tracking-tight text-foreground">역할 리스트</h2>
+              <p className="mt-1 text-sm text-muted-foreground">프로젝트 단위 RBAC 카탈로그</p>
+            </div>
+            <div className="space-y-3">
+              {roles.map((role) => (
+                <div
+                  key={role.id}
+                  onClick={() => setSelectedRoleId(role.id)}
+                  className={[
+                    'border-b border-border/70 px-0 py-4 text-left transition cursor-pointer',
+                    selectedRole?.id === role.id
+                      ? 'border-primary/40 bg-primary/5'
+                      : 'hover:border-border',
+                  ].join(' ')}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="font-semibold text-gray-900">{role.name}</div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="h-8 rounded-lg px-3 text-xs font-semibold text-primary"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setSelectedRoleId(role.id);
+                        setDetailRoleId(role.id);
+                      }}
                     >
-                      정책 역할
-                    </span>
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary">
                       상세 보기
                       <ChevronRight size={14} />
-                    </span>
+                    </Button>
                   </div>
+                  <p className="mt-2 text-sm leading-6 text-gray-600">{role.description}</p>
                 </div>
-                <p className="mt-2 text-sm leading-6 text-gray-600">{role.description}</p>
-              </button>
-            ))}
-          </div>
-        </section>
+              ))}
+            </div>
+          </section>
 
         <div className="space-y-6">
-          <section className="border-t border-border/70 pt-4">
+          <section className="border-t border-border/70 pt-5">
             <div className="mb-5 flex items-start justify-between gap-6">
               <div>
                 <h2 className="text-base font-semibold tracking-tight text-foreground">{selectedRole?.name ?? '역할 상세'}</h2>
@@ -168,8 +165,8 @@ export default function RolesPermissionsPage() {
         }}
         title={detailRole?.name ?? ''}
         description={detailRole?.description}
-        className="w-[min(780px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] sm:max-w-[780px]"
-        bodyClassName="gap-6 px-5 py-5 lg:grid-cols-[minmax(0,1fr)_240px]"
+        className="w-[min(920px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-2.5rem)] sm:max-w-[920px]"
+        bodyClassName="max-h-[calc(100vh-12rem)] overflow-y-auto px-6 py-5"
         footerClassName="px-5 py-3"
         badges={
           detailRole ? (
@@ -206,7 +203,7 @@ export default function RolesPermissionsPage() {
                 ))}
               </div>
             </div>
-            <div className="grid gap-5 lg:grid-cols-2">
+            <div className="grid gap-6 lg:grid-cols-2">
               {detailCategories.map(({ category, items }) => (
                 <div key={category} className="border-t border-border/60 pt-4">
                   <div className="text-sm font-semibold text-foreground">{category}</div>
