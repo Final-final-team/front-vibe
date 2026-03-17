@@ -53,8 +53,8 @@ export default function ReviewInboxPage() {
 
   return (
     <div className="space-y-5">
-      <section className="flex flex-wrap items-end justify-between gap-3 border-b border-border/70 pb-4 pt-2">
-        <div className="flex flex-wrap items-center gap-5">
+      <section className="flex flex-wrap items-end justify-between gap-4 border-b border-border/70 pb-5 pt-3">
+        <div className="flex flex-wrap items-center gap-x-8 gap-y-4 md:gap-x-10">
           <InlineStat label="검토 대기" value={`${waitingQueue.length}건`} icon={<SendHorizontal size={15} />} />
           <InlineStat label="최근 승인" value={`${approved.length}건`} icon={<FileSearch size={15} />} />
           <InlineStat label="최근 반려" value={`${rejected.length}건`} icon={<FileSearch size={15} />} />
@@ -267,11 +267,11 @@ function InlineStat({
   icon: ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-2.5">
-      <div className="text-muted-foreground">{icon}</div>
+    <div className="flex min-w-[106px] items-center gap-3.5 pr-2">
+      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted/35 text-muted-foreground">{icon}</div>
       <div>
         <div className="text-[10px] font-semibold tracking-[0.08em] text-muted-foreground">{label}</div>
-        <div className="mt-0.5 text-lg font-semibold tracking-tight text-foreground">{value}</div>
+        <div className="mt-1 text-xl font-semibold leading-none tracking-tight text-foreground">{value}</div>
       </div>
     </div>
   );
