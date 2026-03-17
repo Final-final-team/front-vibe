@@ -22,6 +22,8 @@ type Props = {
   children: ReactNode;
   className?: string;
   bodyClassName?: string;
+  footerClassName?: string;
+  sideClassName?: string;
 };
 
 export default function AppModal({
@@ -35,6 +37,8 @@ export default function AppModal({
   children,
   className,
   bodyClassName,
+  footerClassName,
+  sideClassName,
 }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -72,10 +76,14 @@ export default function AppModal({
             )}
           >
             <div className="min-w-0">{children}</div>
-            {side ? <aside className="border-l border-border/70 pl-6">{side}</aside> : null}
+            {side ? <aside className={cn('border-l border-border/70 pl-6', sideClassName)}>{side}</aside> : null}
           </div>
 
-          {footer ? <div className="flex justify-end border-t border-border/70 bg-muted/15 px-6 py-4">{footer}</div> : null}
+          {footer ? (
+            <div className={cn('flex justify-end border-t border-border/70 bg-muted/15 px-6 py-4', footerClassName)}>
+              {footer}
+            </div>
+          ) : null}
         </div>
       </DialogContent>
     </Dialog>

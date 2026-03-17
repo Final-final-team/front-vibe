@@ -23,6 +23,14 @@ export default function RolesPermissionsPage() {
     [permissions],
   );
   const policyStatements = (selectedRole?.permissionKeys ?? []).map((permissionKey) => buildPolicyStatement(permissionKey));
+  const selectedRoleCategories = categories
+    .map((category) => ({
+      category,
+      count: permissions.filter(
+        (permission) => permission.category === category && selectedRole?.permissionKeys.includes(permission.key),
+      ).length,
+    }))
+    .filter((item) => item.count > 0);
   const detailCategories = useMemo(
     () =>
       categories.map((category) => ({
@@ -100,9 +108,14 @@ export default function RolesPermissionsPage() {
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-base font-semibold tracking-tight text-foreground">{selectedRole?.name ?? '역할 상세'}</h2>
-                <p className="mt-1 text-sm text-muted-foreground">이 화면은 역할이 가진 권한 묶음과 적용 범위를 설계하는 소스 오브 트루스입니다.</p>
+                <p className="mt-1 text-sm text-muted-foreground">권한 설계는 여기서 관리하고, 멤버 화면에서는 이 역할을 사람에게만 연결합니다.</p>
               </div>
-              <StatusPill tone="purple">프로젝트 전용 역할</StatusPill>
+              <div className="flex items-center gap-2">
+                <StatusPill tone="purple">프로젝트 전용 역할</StatusPill>
+                <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => selectedRole && setDetailRoleId(selectedRole.id)}>
+                  권한 세트 열기
+                </Button>
+              </div>
             </div>
             <div className="mb-6 grid gap-5 border-b border-border/70 pb-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
               <div>
@@ -134,40 +147,23 @@ export default function RolesPermissionsPage() {
                 </div>
               </div>
             </div>
-            <div className="grid gap-5 lg:grid-cols-2">
-              {categories.map((category) => {
-                const items = permissions.filter((permission) => permission.category === category);
-
-                return (
-                  <div key={category} className="border-t border-border/60 pt-4">
-                    <div className="text-sm font-semibold text-gray-900">{category}</div>
-                    <div className="mt-3 space-y-3">
-                      {items.map((permission) => {
-                        const enabled = selectedRole?.permissionKeys.includes(permission.key);
-                        return (
-                          <div
-                            key={permission.key}
-                            className={[
-                              'border-b border-border/60 px-0 py-3 text-sm transition',
-                              enabled
-                                ? 'text-gray-700'
-                                : 'text-gray-400',
-                            ].join(' ')}
-                          >
-                            <div className="flex items-center justify-between gap-3">
-                              <span className="font-medium">{permission.name}</span>
-                              <StatusPill tone={enabled ? 'blue' : 'slate'}>
-                                {enabled ? '허용' : '미할당'}
-                              </StatusPill>
-                            </div>
-                            <p className="mt-2 leading-6">{permission.description}</p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="grid gap-5 border-b border-border/70 pb-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+              <div>
+                <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">권한 카테고리 요약</div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {selectedRoleCategories.map(({ category, count }) => (
+                    <StatusPill key={category} tone="slate">
+                      {category} {count}개
+                    </StatusPill>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">운영 원칙</div>
+                <div className="mt-3 rounded-2xl border border-border/70 bg-muted/15 px-4 py-4 text-sm leading-6 text-muted-foreground">
+                  역할은 권한의 묶음입니다. 프로젝트 운영자는 <span className="font-semibold text-foreground">역할 / 권한</span> 화면에서 정책을 설계하고, <span className="font-semibold text-foreground">멤버</span> 화면에서는 사람에게 역할만 연결합니다.
+                </div>
+              </div>
             </div>
           </section>
 
