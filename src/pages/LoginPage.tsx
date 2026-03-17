@@ -78,7 +78,7 @@ export default function LoginPage() {
               임시 로컬 로그인으로 먼저 검증하고, 필요하면 기존 Google 로그인 경로도 계속 사용할 수 있습니다.
             </p>
             <Button asChild variant="outline" className="mt-4 rounded-2xl">
-              <a href="http://localhost:8080/oauth2/authorization/google">
+              <a href={`${appConfig.authBaseUrl}/oauth2/authorization/google`}>
                 <LogIn size={16} />
                 Google 로그인 사용
               </a>

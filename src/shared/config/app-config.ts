@@ -15,6 +15,7 @@ function parseBoolean(value: string | undefined, fallback: boolean) {
 }
 
 const publicApiBaseUrl = import.meta.env.VITE_PUBLIC_API_BASE_URL?.replace(/\/$/, '') ?? '';
+const authBaseUrl = import.meta.env.VITE_AUTH_BASE_URL?.replace(/\/$/, '') ?? 'http://localhost:8080';
 const useMock = parseBoolean(import.meta.env.VITE_USE_MOCK, true);
 const defaultProjectId = Number(import.meta.env.VITE_DEFAULT_PROJECT_ID ?? '10');
 
@@ -28,6 +29,7 @@ if (!Number.isInteger(defaultProjectId) || defaultProjectId <= 0) {
 
 export const appConfig = {
   publicApiBaseUrl,
+  authBaseUrl,
   useMock,
   defaultProjectId,
 } as const;
