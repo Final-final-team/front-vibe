@@ -28,7 +28,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
+  SidebarRail,
   SidebarSeparator,
+  SidebarTrigger,
 } from '../../components/ui/sidebar';
 import { Input } from '../../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
@@ -43,21 +45,23 @@ export default function WorkspaceLayout({ children }: Props) {
   const shell = getShellConfig(location.pathname);
   const { projects, currentProject, selectedProjectId, setSelectedProjectId } = useWorkspace();
   const taskView = searchParams.get('view') ?? 'table';
+  const showTaskViewExpansion = shell.domainPath === '/tasks';
 
   return (
     <SidebarProvider defaultOpen>
-      <Sidebar variant="inset" collapsible="none" className="border-r border-border/60">
+      <Sidebar variant="inset" collapsible="icon" className="border-r border-border/60">
         <SidebarHeader className="px-3 py-4">
-          <div className="flex items-center gap-3 px-1">
+          <div className="flex items-center gap-2 px-1">
+            <SidebarTrigger className="h-8 w-8 rounded-md text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground" />
             <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-sidebar-border bg-background text-primary shadow-sm">
               <Home size={18} />
             </div>
             <div className="min-w-0">
-            <div className="truncate text-sm font-semibold text-sidebar-foreground">front-vibe</div>
+              <div className="truncate text-sm font-semibold text-sidebar-foreground">front-vibe</div>
               <div className="text-xs text-sidebar-foreground/70">협업 워크스페이스</div>
             </div>
           </div>
-          <div className="relative mt-3">
+          <div className="relative mt-3 group-data-[collapsible=icon]:hidden">
             <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sidebar-foreground/55" />
             <Input
               placeholder="업무, 검토, 멤버 검색"
@@ -69,7 +73,7 @@ export default function WorkspaceLayout({ children }: Props) {
         <SidebarContent>
           <SidebarGroup>
             <SidebarGroupLabel>프로젝트</SidebarGroupLabel>
-            <SidebarGroupContent className="px-2">
+            <SidebarGroupContent className="px-2 group-data-[collapsible=icon]:hidden">
               <Select value={selectedProjectId ?? currentProject?.id ?? ''} onValueChange={setSelectedProjectId}>
                 <SelectTrigger className="h-9 rounded-lg border-sidebar-border bg-sidebar text-sidebar-foreground shadow-none">
                   <SelectValue placeholder="프로젝트 선택" />
@@ -112,25 +116,27 @@ export default function WorkspaceLayout({ children }: Props) {
             </SidebarGroupContent>
           </SidebarGroup>
 
-          <SidebarSeparator />
+          {showTaskViewExpansion ? (
+            <>
+              <SidebarSeparator />
 
-          <SidebarGroup>
-            <SidebarGroupLabel>뷰 확장</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {[
-                  { label: '칸반', icon: KanbanSquare, value: 'kanban' },
-                  { label: '캘린더', icon: CalendarClock, value: 'calendar' },
-                  { label: '차트', icon: ChartColumn, value: 'chart' },
-                  { label: '간트', icon: ChevronRight, value: 'gantt' },
-                ].map(({ label, icon: Icon, value }) => (
-                    <SidebarMenuItem key={String(label)}>
-                      <SidebarMenuButton
-                        asChild={shell.domainPath === '/tasks'}
-                        tooltip={String(label)}
-                        className={shell.domainPath === '/tasks' && taskView === value ? '' : shell.domainPath === '/tasks' ? 'opacity-90' : 'opacity-55'}
-                      >
-                        {shell.domainPath === '/tasks' ? (
+              <SidebarGroup>
+                <SidebarGroupLabel>뷰 확장</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {[
+                      { label: '칸반', icon: KanbanSquare, value: 'kanban' },
+                      { label: '캘린더', icon: CalendarClock, value: 'calendar' },
+                      { label: '차트', icon: ChartColumn, value: 'chart' },
+                      { label: '간트', icon: ChevronRight, value: 'gantt' },
+                    ].map(({ label, icon: Icon, value }) => (
+                      <SidebarMenuItem key={String(label)}>
+                        <SidebarMenuButton
+                          asChild
+                          tooltip={String(label)}
+                          isActive={taskView === value}
+                          className={taskView === value ? '' : 'opacity-85'}
+                        >
                           <button
                             type="button"
                             onClick={() => {
@@ -142,23 +148,19 @@ export default function WorkspaceLayout({ children }: Props) {
                             <Icon />
                             <span>{label}</span>
                           </button>
-                        ) : (
-                          <div>
-                            <Icon />
-                            <span>{label}</span>
-                          </div>
-                        )}
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            </>
+          ) : null}
         </SidebarContent>
 
         <SidebarFooter className="px-3 pb-4">
           {currentProject && (
-            <div className="border-t border-sidebar-border px-1 pt-3 text-xs text-sidebar-foreground/80">
+            <div className="border-t border-sidebar-border px-1 pt-3 text-xs text-sidebar-foreground/80 group-data-[collapsible=icon]:hidden">
               <div className="font-semibold text-sidebar-foreground">{currentProject.ownerName}</div>
               <div className="mt-1">업데이트 {formatDate(currentProject.updatedAt)}</div>
               <div className="mt-3 h-1.5 overflow-hidden bg-sidebar/70">
@@ -167,6 +169,7 @@ export default function WorkspaceLayout({ children }: Props) {
             </div>
           )}
         </SidebarFooter>
+        <SidebarRail />
       </Sidebar>
 
       <SidebarInset className="bg-[linear-gradient(180deg,#f7f8fb_0%,#fbfcfe_100%)]">
