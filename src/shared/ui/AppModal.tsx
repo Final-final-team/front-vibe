@@ -45,15 +45,15 @@ export default function AppModal({
       <DialogContent
         showCloseButton={false}
         className={cn(
-          'w-[min(1120px,calc(100vw-3rem))] max-w-[calc(100vw-3rem)] overflow-hidden rounded-[28px] border border-border/80 p-0 shadow-[0_28px_90px_rgba(15,23,42,0.18)] sm:max-w-[1120px]',
+          'w-[min(1120px,calc(100vw-3rem))] max-w-[calc(100vw-3rem)] overflow-hidden rounded-[30px] border border-border/80 p-0 shadow-[0_28px_90px_rgba(15,23,42,0.18)] sm:max-w-[1120px]',
           className,
         )}
       >
-        <div className="m-3 rounded-[22px] border border-border/70 bg-background">
+        <div className="m-3 overflow-hidden rounded-[24px] border border-border/70 bg-background">
           <div className="flex items-start justify-between gap-4 border-b border-border/70 px-5 py-4">
             <DialogHeader className="min-w-0">
               {badges ? <div className="mb-3 flex flex-wrap items-center gap-2">{badges}</div> : null}
-              <DialogTitle className="text-[26px] font-semibold tracking-tight">{title}</DialogTitle>
+              <DialogTitle className="break-keep text-[24px] font-semibold tracking-tight">{title}</DialogTitle>
               {description ? <DialogDescription className="mt-2 text-sm leading-6">{description}</DialogDescription> : null}
             </DialogHeader>
             <DialogClose asChild>

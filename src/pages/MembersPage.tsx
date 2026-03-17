@@ -281,6 +281,9 @@ export default function MembersPage() {
         }}
         title={assignmentMember ? `${assignmentMember.name} 역할 부여` : ''}
         description="멤버에게 직접 권한을 주지 않고 역할만 부여합니다. 권한 설계와 수정은 역할 / 권한 화면에서 관리합니다."
+        className="w-[min(680px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] sm:max-w-[680px]"
+        bodyClassName="px-5 py-5"
+        footerClassName="px-5 py-3"
         badges={
           assignmentMember ? (
             <>
@@ -306,7 +309,7 @@ export default function MembersPage() {
       >
         {assignmentMember ? (
           <div className="space-y-5">
-            <div className="grid gap-4 border-b border-border/70 pb-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+            <div className="grid gap-4 border-b border-border/70 pb-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
               <div>
                 <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">멤버 정보</div>
                 <div className="mt-3 space-y-3 text-sm text-muted-foreground">
@@ -358,7 +361,7 @@ export default function MembersPage() {
                       type="button"
                       onClick={() => toggleRole(role.id)}
                       className={[
-                        'w-full rounded-2xl border px-4 py-4 text-left transition',
+                        'w-full rounded-xl border px-4 py-4 text-left transition',
                         active
                           ? 'border-primary/30 bg-primary/5'
                           : 'border-border/70 hover:border-border',

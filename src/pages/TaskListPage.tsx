@@ -17,7 +17,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { ArrowRight, ChartColumn, GripVertical, Rows3, SendHorizontal, Users2 } from 'lucide-react';
+import { ArrowRight, ChartColumn, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, GripVertical, Rows3, SendHorizontal, Users2 } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
@@ -45,6 +45,11 @@ export default function TaskListPage() {
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [selectedReviewId, setSelectedReviewId] = useState<number | null>(null);
   const [taskOrderByMilestone, setTaskOrderByMilestone] = useState<Record<string, number[]>>({});
+  const [calendarCursor, setCalendarCursor] = useState(() => {
+    const baseDate = taskMeta[0]?.dueDate ?? new Date().toISOString();
+    const base = new Date(baseDate);
+    return new Date(base.getFullYear(), base.getMonth(), 1);
+  });
   const suppressClickUntilRef = useRef(0);
 
   const sensors = useSensors(
@@ -252,7 +257,25 @@ export default function TaskListPage() {
           ) : currentView === 'kanban' ? (
             <KanbanView items={taskItems} selectedTaskId={selectedTask?.id ?? null} onSelect={setSelectedTaskId} />
           ) : currentView === 'calendar' ? (
-            <CalendarView items={taskItems} onSelect={setSelectedTaskId} />
+            <CalendarView
+              items={taskItems}
+              cursor={calendarCursor}
+              onMoveMonth={(offset) => {
+                setCalendarCursor((current) => {
+                  const next = new Date(current);
+                  next.setMonth(current.getMonth() + offset, 1);
+                  return next;
+                });
+              }}
+              onMoveYear={(offset) => {
+                setCalendarCursor((current) => {
+                  const next = new Date(current);
+                  next.setFullYear(current.getFullYear() + offset, current.getMonth(), 1);
+                  return next;
+                });
+              }}
+              onSelect={setSelectedTaskId}
+            />
           ) : currentView === 'chart' ? (
             <ChartView items={taskItems} milestones={milestones} />
           ) : (
@@ -418,7 +441,7 @@ function KanbanView({
               <h2 className="text-base font-semibold leading-none text-foreground">{column.title}</h2>
               <span
                 className={[
-                  'inline-flex h-9 min-w-9 items-center justify-center rounded-md border px-3 text-lg font-semibold leading-none',
+                  'inline-flex h-8 min-w-8 items-center justify-center rounded-md border px-2.5 text-base font-semibold leading-none align-middle',
                   column.tone === 'green'
                     ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
                     : column.tone === 'amber'
@@ -464,12 +487,18 @@ function KanbanView({
 
 function CalendarView({
   items,
+  cursor,
+  onMoveMonth,
+  onMoveYear,
   onSelect,
 }: {
   items: TaskViewItem[];
+  cursor: Date;
+  onMoveMonth: (offset: number) => void;
+  onMoveYear: (offset: number) => void;
   onSelect: (taskId: number) => void;
 }) {
-  const targetMonth = new Date(items[0]?.dueDate ?? '2026-03-01T09:00:00Z');
+  const targetMonth = new Date(cursor);
   targetMonth.setDate(1);
   const startDay = targetMonth.getDay();
   const daysInMonth = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0).getDate();
@@ -483,7 +512,29 @@ function CalendarView({
 
   return (
     <div className="border-t border-border/70 pt-3">
-            <div className="grid grid-cols-7 gap-1.5">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-3">
+        <div>
+          <h2 className="text-base font-semibold text-foreground">
+            {targetMonth.getFullYear()}년 {targetMonth.getMonth() + 1}월
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">월 이동과 연도 이동으로 일정 범위를 탐색할 수 있습니다.</p>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Button type="button" variant="outline" size="icon-sm" className="rounded-md" onClick={() => onMoveYear(-1)}>
+            <ChevronsLeft size={14} />
+          </Button>
+          <Button type="button" variant="outline" size="icon-sm" className="rounded-md" onClick={() => onMoveMonth(-1)}>
+            <ChevronLeft size={14} />
+          </Button>
+          <Button type="button" variant="outline" size="icon-sm" className="rounded-md" onClick={() => onMoveMonth(1)}>
+            <ChevronRight size={14} />
+          </Button>
+          <Button type="button" variant="outline" size="icon-sm" className="rounded-md" onClick={() => onMoveYear(1)}>
+            <ChevronsRight size={14} />
+          </Button>
+        </div>
+      </div>
+      <div className="grid grid-cols-7 gap-1.5">
         {['일', '월', '화', '수', '목', '금', '토'].map((day) => (
           <div key={day} className="px-1.5 pb-1.5 text-[11px] font-semibold text-muted-foreground">
             {day}

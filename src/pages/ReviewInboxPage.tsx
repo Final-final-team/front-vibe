@@ -1,7 +1,7 @@
 import { useQueries } from '@tanstack/react-query';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { FileSearch, MessageSquareWarning, SendHorizontal } from 'lucide-react';
+import { ChevronRight, FileSearch, MessageSquareWarning, SendHorizontal } from 'lucide-react';
 import { Badge } from '../components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { fetchTaskReviews } from '../features/review/api';
@@ -130,7 +130,10 @@ export default function ReviewInboxPage() {
                     >
                       {latestReview.roundNo}차 · {getReviewStatusLabel(latestReview.status)}
                     </StatusPill>
-                    <span className="text-xs font-medium text-primary">행 선택 시 상세</span>
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
+                      상세
+                      <ChevronRight size={14} />
+                    </span>
                   </div>
                 </TableCell>
               </TableRow>

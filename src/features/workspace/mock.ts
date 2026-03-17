@@ -138,61 +138,61 @@ const permissions: PermissionDefinition[] = [
   {
     key: 'PROJECT_MEMBER_INVITE',
     name: '멤버 초대',
-    category: 'Membership',
+    category: '멤버십',
     description: '프로젝트 참여 초대를 보내고 상태를 관리합니다.',
   },
   {
     key: 'PROJECT_MEMBER_ROLE_ASSIGN',
     name: '멤버 역할 할당',
-    category: 'Membership',
+    category: '멤버십',
     description: '프로젝트 멤버에게 역할을 연결합니다.',
   },
   {
     key: 'ROLE_MANAGE',
     name: '역할 정의 관리',
-    category: 'RBAC',
+    category: '역할 정책',
     description: '역할 생성, 수정, 삭제를 수행합니다.',
   },
   {
     key: 'PERMISSION_BIND',
     name: '권한 바인딩',
-    category: 'RBAC',
+    category: '역할 정책',
     description: '역할에 권한을 추가하거나 제거합니다.',
   },
   {
     key: 'MILESTONE_MANAGE',
     name: '마일스톤 관리',
-    category: 'Delivery',
+    category: '일정 관리',
     description: '마일스톤 생성과 일정 조정을 수행합니다.',
   },
   {
     key: 'TASK_EDIT',
     name: '업무 편집',
-    category: 'Delivery',
+    category: '일정 관리',
     description: '업무 내용과 일정, 담당자를 수정합니다.',
   },
   {
     key: 'REVIEW_SUBMIT',
     name: '검토 상신',
-    category: 'Review',
+    category: '검토 운영',
     description: '업무를 검토 큐로 상신합니다.',
   },
   {
     key: 'REVIEW_APPROVE',
     name: '검토 승인',
-    category: 'Review',
+    category: '검토 운영',
     description: '상신된 검토를 승인합니다.',
   },
   {
     key: 'REVIEW_REJECT',
     name: '검토 반려',
-    category: 'Review',
+    category: '검토 운영',
     description: '상신된 검토를 반려하고 사유를 남깁니다.',
   },
   {
     key: 'REVIEW_ATTACHMENT_MANAGE',
     name: '검토 첨부 관리',
-    category: 'Review',
+    category: '검토 운영',
     description: '상신 상태에서 첨부를 추가하거나 삭제합니다.',
   },
   {
@@ -207,7 +207,7 @@ const rolesByProject: Record<string, ProjectRole[]> = {
   'spark-console': [
     {
       id: 'role-admin',
-      name: 'Project Admin',
+      name: '프로젝트 관리자',
       description: '프로젝트 전반의 멤버십과 권한, 검토 워크플로우를 운영합니다.',
       color: '#2563eb',
       memberIds: [101],
@@ -227,7 +227,7 @@ const rolesByProject: Record<string, ProjectRole[]> = {
     },
     {
       id: 'role-review-lead',
-      name: 'Review Lead',
+      name: '검토 리드',
       description: '검토 큐 우선순위와 최종 승인 라운드를 관리합니다.',
       color: '#7c3aed',
       memberIds: [201],
@@ -241,7 +241,7 @@ const rolesByProject: Record<string, ProjectRole[]> = {
     },
     {
       id: 'role-reviewer',
-      name: 'Reviewer',
+      name: '실무 검토자',
       description: '추가 검토자나 실무 검토자로 참여합니다.',
       color: '#db2777',
       memberIds: [301, 402],
@@ -249,7 +249,7 @@ const rolesByProject: Record<string, ProjectRole[]> = {
     },
     {
       id: 'role-observer',
-      name: 'Observer',
+      name: '옵저버',
       description: '읽기 전용으로 검토 현황과 산출물을 확인합니다.',
       color: '#0f766e',
       memberIds: [202, 401, 403],
@@ -259,7 +259,7 @@ const rolesByProject: Record<string, ProjectRole[]> = {
   'lighthouse-ops': [
     {
       id: 'role-admin-lite',
-      name: 'Ops Admin',
+      name: '운영 관리자',
       description: '운영 프로젝트 설정과 역할 구조를 관리합니다.',
       color: '#2563eb',
       memberIds: [501],
@@ -275,7 +275,7 @@ const rolesByProject: Record<string, ProjectRole[]> = {
     },
     {
       id: 'role-operator-lite',
-      name: 'Operator',
+      name: '운영 담당',
       description: '운영 태스크를 수행하고 마일스톤 진척을 관리합니다.',
       color: '#9333ea',
       memberIds: [502],
@@ -283,7 +283,7 @@ const rolesByProject: Record<string, ProjectRole[]> = {
     },
     {
       id: 'role-observer-lite',
-      name: 'Observer',
+      name: '옵저버',
       description: '운영 프로젝트 현황을 조회합니다.',
       color: '#0f766e',
       memberIds: [503],
