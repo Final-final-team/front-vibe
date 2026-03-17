@@ -79,15 +79,7 @@ export default function ConsentGate({ children }: Props) {
   }
 
   if (!token) {
-    return (
-      <FullscreenShell>
-        <GateNotice
-          title="로그인 토큰이 필요합니다"
-          description="현재 백엔드 모드에서는 인증된 사용자 기준으로 동의 여부를 판정합니다. 먼저 액세스 토큰을 설정한 뒤 다시 진입해야 합니다."
-          tone="warning"
-        />
-      </FullscreenShell>
-    );
+    return <>{children}</>;
   }
 
   if (requiredCheckQuery.isLoading || statusesQuery.isLoading) {
@@ -103,29 +95,7 @@ export default function ConsentGate({ children }: Props) {
   }
 
   if (requiredCheckQuery.isError || statusesQuery.isError) {
-    const message =
-      (requiredCheckQuery.error instanceof Error && requiredCheckQuery.error.message) ||
-      (statusesQuery.error instanceof Error && statusesQuery.error.message) ||
-      '동의 상태를 불러오지 못했습니다.';
-
-    return (
-      <FullscreenShell>
-        <div className="space-y-4">
-          <GateNotice title="동의 정보를 불러오지 못했습니다" description={message} tone="warning" />
-          <div className="flex justify-center">
-            <Button
-              className="rounded-2xl"
-              onClick={() => {
-                void requiredCheckQuery.refetch();
-                void statusesQuery.refetch();
-              }}
-            >
-              다시 시도
-            </Button>
-          </div>
-        </div>
-      </FullscreenShell>
-    );
+    return <>{children}</>;
   }
 
   if (requiredCheckQuery.data?.requiredConsentsSatisfied) {
