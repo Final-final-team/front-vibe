@@ -77,16 +77,19 @@ export default function MilestonesPage() {
 
           return (
             <section key={milestone.id} className="border-t border-border/70 pt-4">
-              <div className="mb-5 flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-base font-semibold tracking-tight text-foreground">{milestone.name}</h2>
+              <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-base font-semibold tracking-tight text-foreground">{milestone.name}</h2>
+                    <StatusPill tone="slate" className="h-8 px-3">{progress}%</StatusPill>
+                    <StatusPill tone={healthToneMap[milestone.health]} className="h-8 px-3">
+                      {healthLabelMap[milestone.health]}
+                    </StatusPill>
+                  </div>
                   <p className="mt-1 text-sm text-muted-foreground">{milestone.summary}</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <StatusPill tone={healthToneMap[milestone.health]}>
-                    {healthLabelMap[milestone.health]}
-                  </StatusPill>
-                  <StatusPill tone="slate">마감 {formatDate(milestone.dueDate)}</StatusPill>
+                <div className="flex items-center gap-2 self-start">
+                  <StatusPill tone="slate" className="h-8 px-3">마감 {formatDate(milestone.dueDate)}</StatusPill>
                 </div>
               </div>
               <div className="space-y-5">
