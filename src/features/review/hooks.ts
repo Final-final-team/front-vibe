@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   addAdditionalReviewer,
@@ -59,33 +60,36 @@ function mapTaskStatus(
 
 export function useTasks(projectId = appConfig.defaultProjectId) {
   const query = useProjectTasks(projectId);
+  const data = useMemo(() => {
+    if (appConfig.useMock) {
+      return getMockTasks()
+        .filter((task) => getMockProjectIdForTask(task.id) === projectId)
+        .map<ReviewTaskListItem>((task) => ({
+          ...task,
+          projectId,
+          status: task.latestReviewStatus,
+        }));
+    }
+
+    return (query.data?.items ?? []).map<ReviewTaskListItem>((task) => ({
+      id: task.id,
+      projectId: task.projectId,
+      title: task.title,
+      summary: `${task.title} 업무 상세는 task detail API 연결 전까지 목록 데이터로 대체합니다.`,
+      authorId: task.authorId,
+      priority: task.priority,
+      startDate: task.startDate ?? task.createdAt,
+      dueDate: task.dueDate ?? task.updatedAt,
+      createdAt: task.createdAt,
+      updatedAt: task.updatedAt,
+      latestReviewStatus: mapTaskStatus(task.status),
+      status: task.status,
+    }));
+  }, [projectId, query.data?.items]);
 
   return {
     ...query,
-    data: (
-      appConfig.useMock
-        ? getMockTasks()
-            .filter((task) => getMockProjectIdForTask(task.id) === projectId)
-            .map<ReviewTaskListItem>((task) => ({
-              ...task,
-              projectId,
-              status: task.latestReviewStatus,
-            }))
-        : (query.data?.items ?? []).map((task) => ({
-            id: task.id,
-            projectId: task.projectId,
-            title: task.title,
-            summary: `${task.title} 업무 상세는 task detail API 연결 전까지 목록 데이터로 대체합니다.`,
-            authorId: task.authorId,
-            priority: task.priority,
-            startDate: task.startDate ?? task.createdAt,
-            dueDate: task.dueDate ?? task.updatedAt,
-            createdAt: task.createdAt,
-            updatedAt: task.updatedAt,
-            latestReviewStatus: mapTaskStatus(task.status),
-            status: task.status,
-          }))
-    ) as ReviewTaskListItem[],
+    data,
   };
 }
 

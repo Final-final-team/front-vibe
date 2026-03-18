@@ -32,6 +32,9 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
+      allowedHosts: [
+        'rank-nonapplicative-fluidly.ngrok-free.dev',
+      ],
       proxy: devProxyTarget
         ? {
             '/api': {
@@ -48,7 +51,7 @@ export default defineConfig(({ mode }) => {
                 proxy.on('proxyRes', normalizeSetCookieHeader)
               },
             },
-            '/login': {
+            '/login/oauth2/code': {
               target: devProxyTarget,
               changeOrigin: true,
               configure(proxy) {

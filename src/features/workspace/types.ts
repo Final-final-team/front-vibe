@@ -54,6 +54,8 @@ export type ProjectRole = {
   name: string;
   description: string;
   color: string;
+  system: boolean;
+  leaderRole: boolean;
   memberIds: number[];
   permissionKeys: string[];
 };

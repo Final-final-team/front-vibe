@@ -55,7 +55,7 @@ export default function RolesPermissionsPage() {
 
   function openPermissionModal(roleId: string) {
     const role = roleById.get(roleId);
-    if (!role) return;
+    if (!role || role.system) return;
     setDraftPermissionKeys(getEffectivePermissionKeys(role.id, role.permissionKeys, permissionOverrides));
     setPermissionRoleId(role.id);
   }
@@ -67,7 +67,7 @@ export default function RolesPermissionsPage() {
   }
 
   function saveRolePermissions() {
-    if (!permissionRole) return;
+    if (!permissionRole || permissionRole.system) return;
     updatePermissionsMutation.mutate(
       { roleId: permissionRole.id, permissionKeys: draftPermissionKeys },
       {
@@ -106,7 +106,7 @@ export default function RolesPermissionsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="pt-6">
+      <section className="rounded-[30px] border border-border/70 bg-[var(--surface-panel)] px-6 py-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
         <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border/70 pb-4">
           <div>
             <h2 className="text-lg font-semibold tracking-tight text-foreground">역할 카탈로그</h2>
@@ -136,7 +136,7 @@ export default function RolesPermissionsPage() {
         {roles.map((role) => {
           const effectiveKeys = getEffectivePermissionKeys(role.id, role.permissionKeys, permissionOverrides);
           return (
-            <article key={role.id} className="border-b border-border/70 px-1 py-5">
+            <article key={role.id} className="rounded-[28px] border border-border/70 bg-white/78 px-5 py-5 shadow-[0_16px_44px_rgba(15,23,42,0.05)]">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
@@ -147,6 +147,8 @@ export default function RolesPermissionsPage() {
                   <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     <StatusPill tone="slate">{effectiveKeys.length}개 허용 권한</StatusPill>
                     <StatusPill tone="slate">{currentProject?.code ?? '-'} 범위</StatusPill>
+                    {role.system ? <StatusPill tone="amber">시스템 역할</StatusPill> : null}
+                    {role.leaderRole ? <StatusPill tone="blue">리더 역할</StatusPill> : null}
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -162,8 +164,14 @@ export default function RolesPermissionsPage() {
                     상세 보기
                     <ChevronRight size={14} />
                   </Button>
-                  <Button type="button" variant="ghost" className="h-8 rounded-lg px-3 text-sm font-medium text-primary" onClick={() => openPermissionModal(role.id)}>
-                    권한 관리
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="h-8 rounded-lg px-3 text-sm font-medium text-primary disabled:text-muted-foreground"
+                    onClick={() => openPermissionModal(role.id)}
+                    disabled={role.system}
+                  >
+                    {role.system ? '권한 고정' : '권한 관리'}
                   </Button>
                 </div>
               </div>
@@ -325,6 +333,7 @@ export default function RolesPermissionsPage() {
           permissionRole ? (
             <>
               <StatusPill tone="purple">최종관리자 전용</StatusPill>
+              {permissionRole.system ? <StatusPill tone="amber">시스템 역할</StatusPill> : null}
               <StatusPill tone="blue">{draftPermissionKeys.length}개 허용</StatusPill>
             </>
           ) : null
@@ -336,7 +345,12 @@ export default function RolesPermissionsPage() {
             <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => setPermissionRoleId(null)}>
               닫기
             </Button>
-            <Button type="button" className="rounded-xl px-4" onClick={saveRolePermissions} disabled={updatePermissionsMutation.isPending}>
+            <Button
+              type="button"
+              className="rounded-xl px-4"
+              onClick={saveRolePermissions}
+              disabled={updatePermissionsMutation.isPending || Boolean(permissionRole?.system)}
+            >
               {updatePermissionsMutation.isPending ? '저장 중' : '권한 저장'}
             </Button>
           </div>
@@ -344,11 +358,28 @@ export default function RolesPermissionsPage() {
       >
         {permissionRole ? (
           <div className="space-y-6">
+            {permissionRole.system ? (
+              <div className="rounded-[22px] border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-800">
+                시스템 역할은 백엔드 정책상 수정할 수 없습니다. 현재 허용 권한은 조회만 가능합니다.
+              </div>
+            ) : null}
             <div className="flex flex-wrap items-center justify-end gap-2">
-              <Button type="button" variant="outline" className="rounded-lg px-3" onClick={() => setDraftPermissionKeys(permissions.map((permission) => permission.key))}>
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-lg px-3"
+                onClick={() => setDraftPermissionKeys(permissions.map((permission) => permission.key))}
+                disabled={permissionRole.system}
+              >
                 전체 허용
               </Button>
-              <Button type="button" variant="outline" className="rounded-lg px-3" onClick={() => setDraftPermissionKeys([])}>
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-lg px-3"
+                onClick={() => setDraftPermissionKeys([])}
+                disabled={permissionRole.system}
+              >
                 전체 해제
               </Button>
             </div>
@@ -367,11 +398,16 @@ export default function RolesPermissionsPage() {
                         <button
                           key={permission.key}
                           type="button"
-                          onClick={() => togglePermission(permission.key)}
+                          onClick={() => {
+                            if (permissionRole.system) return;
+                            togglePermission(permission.key);
+                          }}
                           className={[
                             'flex w-full items-start justify-between gap-4 rounded-xl border px-4 py-4 text-left transition',
                             active ? 'border-primary/30 bg-primary/5' : 'border-border/70 hover:border-border',
+                            permissionRole.system ? 'cursor-not-allowed opacity-70' : '',
                           ].join(' ')}
+                          disabled={permissionRole.system}
                         >
                           <div className="min-w-0">
                             <div className="font-medium text-foreground">{permission.name}</div>

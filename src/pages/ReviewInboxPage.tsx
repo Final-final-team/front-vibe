@@ -4,21 +4,27 @@ import { ChevronRight, FileSearch, SendHorizontal } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
-import { fetchTaskReviews } from '../features/review/api';
+import { fetchReviewDetail, fetchTaskReviews } from '../features/review/api';
 import ReviewDetailModal from '../features/review/components/ReviewDetailModal';
 import { reviewKeys } from '../features/review/hooks';
 import { useProjectTasks } from '../features/tasks/hooks';
 import { useWorkspace } from '../features/workspace/use-workspace';
+import { appConfig } from '../shared/config/app-config';
 import StatusPill from '../shared/ui/StatusPill';
 import { formatDate } from '../shared/lib/format';
+import { getCurrentActor } from '../shared/lib/session';
+
+type InboxFilter = 'MINE' | 'ALL';
 
 export default function ReviewInboxPage() {
-  const { currentProject } = useWorkspace();
+  const { currentProject, currentUserId } = useWorkspace();
   const { projectId: projectIdParam } = useParams();
   const projectId = Number(projectIdParam ?? currentProject?.id ?? 0);
   const { data: taskPage, isLoading, error } = useProjectTasks(projectId);
   const tasks = useMemo(() => taskPage?.items ?? [], [taskPage?.items]);
   const [selectedReviewId, setSelectedReviewId] = useState<number | null>(null);
+  const [inboxFilter, setInboxFilter] = useState<InboxFilter>('MINE');
+  const actorId = appConfig.useMock ? getCurrentActor().actorId : currentUserId;
 
   const reviewQueries = useQueries({
     queries: tasks.map((task) => ({
@@ -42,14 +48,62 @@ export default function ReviewInboxPage() {
     [reviewQueries, tasks],
   );
 
-  const waitingQueue = inboxRows.filter((row) => row.task.status === 'IN_REVIEW');
-  const approved = inboxRows.filter((row) => row.latestReview?.status === 'APPROVED');
-  const rejected = inboxRows.filter((row) => row.latestReview?.status === 'REJECTED');
-  const noReviewCount = inboxRows.filter((row) => !row.latestReview).length;
+  const latestReviewDetailQueries = useQueries({
+    queries: inboxRows
+      .filter((row) => row.latestReview)
+      .map((row) => ({
+        queryKey: reviewKeys.detail(row.latestReview!.reviewId),
+        queryFn: () => fetchReviewDetail(row.latestReview!.reviewId),
+      })),
+  });
+
+  const latestReviewDetailsById = useMemo(
+    () =>
+      new Map(
+        inboxRows
+          .filter((row) => row.latestReview)
+          .map((row, index) => [row.latestReview!.reviewId, latestReviewDetailQueries[index]?.data] as const),
+      ),
+    [inboxRows, latestReviewDetailQueries],
+  );
+
+  const myInboxRows = useMemo(() => {
+    if (actorId == null) {
+      return inboxRows;
+    }
+
+    return inboxRows.filter((row) => {
+      if (!row.latestReview) {
+        return false;
+      }
+
+      const detail = latestReviewDetailsById.get(row.latestReview.reviewId);
+
+      if (!detail) {
+        return false;
+      }
+
+      return (
+        detail.submittedBy === actorId ||
+        detail.decidedBy === actorId ||
+        detail.cancelledBy === actorId ||
+        detail.references.some((reference) => reference.userId === actorId) ||
+        detail.additionalReviewers.some((reviewer) => reviewer.userId === actorId)
+      );
+    });
+  }, [actorId, inboxRows, latestReviewDetailsById]);
+
+  const visibleRows = inboxFilter === 'MINE' ? myInboxRows : inboxRows;
+
+  const waitingQueue = visibleRows.filter((row) => row.task.status === 'IN_REVIEW');
+  const approved = visibleRows.filter((row) => row.latestReview?.status === 'APPROVED');
+  const rejected = visibleRows.filter((row) => row.latestReview?.status === 'REJECTED');
+  const noReviewCount = visibleRows.filter((row) => !row.latestReview).length;
 
   return (
     <div className="space-y-5">
-      <section className="flex flex-wrap items-end justify-between gap-4 border-b border-border/70 pb-5 pt-3">
+      <section className="rounded-[30px] border border-border/70 bg-[var(--surface-panel)] px-6 py-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+        <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border/70 pb-5">
         <div className="flex flex-wrap items-center gap-x-8 gap-y-4 md:gap-x-10">
           <InlineStat label="검토 대기" value={`${waitingQueue.length}건`} icon={<SendHorizontal size={15} />} />
           <InlineStat label="최근 승인" value={`${approved.length}건`} icon={<FileSearch size={15} />} />
@@ -61,9 +115,10 @@ export default function ReviewInboxPage() {
             {currentProject?.code ?? `PRJ-${projectId}`}
           </Badge>
           <Badge variant="outline" className="rounded-md">
-            {inboxRows.length}건
+            {visibleRows.length}건
           </Badge>
-          <span>프로젝트 검토 큐</span>
+          <span>{inboxFilter === 'MINE' ? '내 검토 큐' : '프로젝트 검토 큐'}</span>
+        </div>
         </div>
       </section>
 
@@ -76,15 +131,25 @@ export default function ReviewInboxPage() {
           검토 보관함을 불러오는 중입니다.
         </div>
       ) : (
-        <section className="bg-background pt-4">
+        <section className="rounded-[30px] border border-border/70 bg-white/75 px-5 py-5 shadow-[0_16px_44px_rgba(15,23,42,0.05)]">
           <div className="flex items-end justify-between gap-3 border-b border-border/70 pb-4 pt-2">
             <div>
-              <h2 className="text-base font-semibold tracking-tight text-foreground">검토 보관함</h2>
+              <h2 className="text-base font-semibold tracking-tight text-foreground">
+                {inboxFilter === 'MINE' ? '내 검토 보관함' : '전체 검토 보관함'}
+              </h2>
               <p className="mt-1 text-xs text-muted-foreground">
-                백엔드 프로젝트 업무를 기준으로 최신 검토 라운드와 미상신 업무를 함께 확인합니다.
+                {inboxFilter === 'MINE'
+                  ? '나와 연결된 최신 검토 라운드만 먼저 모아보고, 필요하면 전체 프로젝트 검토로 확장합니다.'
+                  : '백엔드 프로젝트 업무를 기준으로 최신 검토 라운드와 미상신 업무를 함께 확인합니다.'}
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <FilterChip active={inboxFilter === 'MINE'} onClick={() => setInboxFilter('MINE')}>
+                내 검토 {myInboxRows.length}
+              </FilterChip>
+              <FilterChip active={inboxFilter === 'ALL'} onClick={() => setInboxFilter('ALL')}>
+                전체 검토 {inboxRows.length}
+              </FilterChip>
               <Badge variant="outline" className="rounded-md">대기 {waitingQueue.length}</Badge>
               <Badge variant="outline" className="rounded-md">승인 {approved.length}</Badge>
               <Badge variant="outline" className="rounded-md">반려 {rejected.length}</Badge>
@@ -102,10 +167,10 @@ export default function ReviewInboxPage() {
               <div className="text-right">상세</div>
             </div>
             <div className="hidden divide-y divide-border/70 lg:block">
-              {inboxRows.length > 0 ? inboxRows.map((row) => <InboxDesktopRow key={row.task.id} row={row} projectId={projectId} onOpenDetail={setSelectedReviewId} />) : <ReviewEmptyState projectId={projectId} />}
+              {visibleRows.length > 0 ? visibleRows.map((row) => <InboxDesktopRow key={row.task.id} row={row} projectId={projectId} onOpenDetail={setSelectedReviewId} />) : <ReviewEmptyState projectId={projectId} mine={inboxFilter === 'MINE'} />}
             </div>
             <div className="space-y-3 lg:hidden">
-              {inboxRows.length > 0 ? inboxRows.map((row) => <InboxMobileRow key={row.task.id} row={row} projectId={projectId} onOpenDetail={setSelectedReviewId} />) : <ReviewEmptyState projectId={projectId} />}
+              {visibleRows.length > 0 ? visibleRows.map((row) => <InboxMobileRow key={row.task.id} row={row} projectId={projectId} onOpenDetail={setSelectedReviewId} />) : <ReviewEmptyState projectId={projectId} mine={inboxFilter === 'MINE'} />}
             </div>
           </div>
         </section>
@@ -232,12 +297,14 @@ function InboxMobileRow({
   );
 }
 
-function ReviewEmptyState({ projectId }: { projectId: number }) {
+function ReviewEmptyState({ projectId, mine }: { projectId: number; mine: boolean }) {
   return (
     <div className="flex flex-col items-center justify-center gap-4 border border-dashed border-border/70 px-5 py-12 text-center">
-      <div className="text-base font-semibold text-foreground">검토가 아직 없습니다</div>
+      <div className="text-base font-semibold text-foreground">{mine ? '지금 나에게 온 검토가 없습니다' : '검토가 아직 없습니다'}</div>
       <p className="max-w-md text-sm leading-6 text-muted-foreground">
-        현재 프로젝트에 생성된 검토 라운드가 없습니다. 업무 화면에서 첫 상신을 시작하면 이 화면에서 최신 검토 흐름을 바로 관리할 수 있습니다.
+        {mine
+          ? '현재 사용자와 연결된 검토가 없습니다. 전체 검토 보기로 전환하거나, 업무 화면에서 새 검토 상신을 시작할 수 있습니다.'
+          : '현재 프로젝트에 생성된 검토 라운드가 없습니다. 업무 화면에서 첫 상신을 시작하면 이 화면에서 최신 검토 흐름을 바로 관리할 수 있습니다.'}
       </p>
       <Button asChild className="rounded-xl px-4">
         <Link to={`/projects/${projectId}/tasks`}>업무에서 첫 상신 시작</Link>
@@ -246,10 +313,35 @@ function ReviewEmptyState({ projectId }: { projectId: number }) {
   );
 }
 
+function FilterChip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        'rounded-full border px-3 py-1.5 text-xs font-semibold transition',
+        active
+          ? 'border-primary/30 bg-primary/8 text-primary shadow-sm'
+          : 'border-border/70 bg-white/70 text-muted-foreground hover:border-border hover:text-foreground',
+      ].join(' ')}
+    >
+      {children}
+    </button>
+  );
+}
+
 function InlineStat({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3">
-      <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/70 bg-background text-primary">
+      <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-border/70 bg-white/80 text-primary shadow-sm">
         {icon}
       </div>
       <div>

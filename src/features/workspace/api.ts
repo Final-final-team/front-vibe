@@ -1,5 +1,6 @@
 import { backendRequest } from '../../shared/lib/http';
 import type { PermissionDefinition, ProjectDetail, ProjectMember, ProjectRole, WorkspaceProject } from './types';
+import type { AuditLogItem } from './types';
 
 type BackendProjectSummary = {
   projectId: number;
@@ -45,6 +46,15 @@ type CreateProjectInput = {
 
 type CreateProjectResponse = {
   projectId: number;
+  projectMemberId: number;
+  myUserId: number;
+  name: string;
+  description: string | null;
+  imageUrl: string | null;
+  status: string;
+  membershipStatus: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 type BackendProjectMemberRole = {
@@ -163,6 +173,8 @@ export async function fetchProjectRoles(projectId: string) {
     name: role.name,
     description: role.description ?? role.code,
     color: colorForRole(role.roleId),
+    system: role.system,
+    leaderRole: role.leaderRole,
     memberIds: role.memberIds,
     permissionKeys: role.permissionKeys,
   }));
@@ -170,6 +182,31 @@ export async function fetchProjectRoles(projectId: string) {
 
 export async function fetchPermissionCatalog() {
   return backendRequest<PermissionDefinition[]>('/api/permissions/catalog');
+}
+
+type BackendProjectAuditLog = {
+  id: string;
+  projectId: number;
+  occurredAt: string;
+  actorName: string;
+  actionLabel: string;
+  targetLabel: string;
+  area: string;
+  summary: string;
+};
+
+export async function fetchProjectAuditLogs(projectId: string) {
+  const result = await backendRequest<BackendProjectAuditLog[]>(`/api/projects/${projectId}/audit-logs`);
+  return result.map<AuditLogItem>((item) => ({
+    id: item.id,
+    projectId: String(item.projectId),
+    occurredAt: item.occurredAt,
+    actorName: item.actorName,
+    actionLabel: item.actionLabel,
+    targetLabel: item.targetLabel,
+    area: item.area,
+    summary: item.summary,
+  }));
 }
 
 export async function assignProjectMemberRole(projectId: string, projectMemberId: number, roleId: string) {

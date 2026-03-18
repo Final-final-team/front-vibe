@@ -36,7 +36,9 @@ export default function MilestonesPage() {
   }, []);
 
   const selectedMilestone =
-    milestones.find((milestone) => milestone.id === selectedMilestoneId) ?? milestones[0] ?? null;
+    selectedMilestoneId == null
+      ? null
+      : milestones.find((milestone) => milestone.id === selectedMilestoneId) ?? null;
 
   const cards = milestones.map((milestone) => {
     const relatedTasks = taskMeta.filter((task) => task.milestoneId === milestone.id);

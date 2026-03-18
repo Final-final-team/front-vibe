@@ -18,9 +18,5 @@ export default function DefaultEntryRedirectPage() {
     );
   }
 
-  if (!bootstrapQuery.data?.hasProject) {
-    return <Navigate to="/onboarding/project" replace />;
-  }
-
   return <Navigate to="/projects" replace />;
 }

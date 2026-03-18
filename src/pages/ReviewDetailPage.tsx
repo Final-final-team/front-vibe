@@ -26,6 +26,7 @@ import {
   useUpdateComment,
   useUploadAttachment,
 } from '../features/review/hooks';
+import { useProjectMembers } from '../features/workspace/hooks';
 import { appConfig } from '../shared/config/app-config';
 import { getCurrentActor } from '../shared/lib/session';
 import { formatDate } from '../shared/lib/format';
@@ -45,6 +46,8 @@ export default function ReviewDetailPage() {
   const { data: tasks = [] } = useTasks();
   const review = detailQuery.data;
   const task = tasks.find((item) => item.id === review?.taskId);
+  const reviewProjectId = String(task?.projectId ?? appConfig.defaultProjectId);
+  const { data: projectMembers = [] } = useProjectMembers(reviewProjectId);
 
   const approveMutation = useApproveReview(reviewId);
   const rejectMutation = useRejectReview(reviewId);
@@ -249,6 +252,7 @@ export default function ReviewDetailPage() {
             references={review.references}
             additionalReviewers={review.additionalReviewers}
             canManage={canManageReferences || canManageAdditionalReviewers}
+            memberOptions={projectMembers.filter((member) => member.inviteStatus === 'ACTIVE')}
             onAddReference={(userId) =>
               runAction(() =>
                 addReferenceMutation.mutateAsync({ lockVersion: review.lockVersion, userId }),

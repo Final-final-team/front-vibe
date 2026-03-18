@@ -6,7 +6,6 @@ import { fetchProjectBootstrap } from '../features/workspace/api';
 import { workspaceKeys } from '../features/workspace/hooks';
 
 const defaultProjectsTarget = '/projects';
-const onboardingTarget = '/onboarding/project';
 
 export default function AuthCallbackPage() {
   const navigate = useNavigate();
@@ -18,8 +17,8 @@ export default function AuthCallbackPage() {
     void queryClient.fetchQuery({
       queryKey: workspaceKeys.bootstrap,
       queryFn: fetchProjectBootstrap,
-    }).then((bootstrap) => {
-      navigate(bootstrap.hasProject ? defaultProjectsTarget : onboardingTarget, { replace: true });
+    }).then(() => {
+      navigate(defaultProjectsTarget, { replace: true });
     }).catch(() => {
       navigate(defaultProjectsTarget, { replace: true });
     });

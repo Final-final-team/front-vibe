@@ -3,6 +3,7 @@ import {
   ChartColumn,
   ChevronRight,
   Home,
+  History,
   KanbanSquare,
   LayoutTemplate,
   Layers3,
@@ -116,6 +117,7 @@ export default function WorkspaceLayout({ children }: Props) {
                       { to: `${projectBasePath}/members`, domainKey: 'members', label: '멤버', icon: Users },
                       { to: `${projectBasePath}/roles`, domainKey: 'roles', label: '역할 / 권한', icon: ShieldCheck },
                       { to: `${projectBasePath}/milestones`, domainKey: 'milestones', label: '마일스톤', icon: Layers3 },
+                      { to: `${projectBasePath}/audit-logs`, domainKey: 'audit-logs', label: '감사 로그', icon: History },
                     ].map((item) => (
                       <SidebarMenuItem key={item.to}>
                         <SidebarMenuButton asChild isActive={shell.domainPath === item.domainKey} tooltip={item.label}>
@@ -207,9 +209,9 @@ export default function WorkspaceLayout({ children }: Props) {
         </SidebarFooter>
       </Sidebar>
 
-      <SidebarInset className="bg-[linear-gradient(180deg,#f7f8fb_0%,#fbfcfe_100%)]">
+      <SidebarInset className="bg-[var(--surface-shell)]">
         <div className="flex min-h-screen flex-col">
-          <div className="border-b border-border/70 bg-background/94 backdrop-blur">
+          <div className="border-b border-border/70 bg-white/78 backdrop-blur">
             <Header
               title={shell.title}
               subtitle={shell.subtitle}
@@ -425,6 +427,19 @@ function getShellConfig(pathname: string) {
       primaryTo: `/projects/${appConfig.defaultProjectId}/tasks`,
       contextLabel: 'milestones',
       filterLabels: ['위험', '진행률'],
+    };
+  }
+
+  if (pathname.includes('/audit-logs')) {
+    return {
+      domain: 'audit-logs',
+      domainPath: 'audit-logs',
+      title: '감사 로그',
+      subtitle: '역할 변경과 검토 이력을 프로젝트 단위로 묶어서 확인합니다.',
+      primaryLabel: '업무로 이동',
+      primaryTo: `/projects/${appConfig.defaultProjectId}/tasks`,
+      contextLabel: 'audit',
+      filterLabels: ['행위자', '액션'],
     };
   }
 

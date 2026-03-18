@@ -5,6 +5,7 @@ import {
   assignProjectMemberRole,
   createProjectRole,
   createProject,
+  fetchProjectAuditLogs,
   fetchPermissionCatalog,
   fetchProjectBootstrap,
   fetchProjectDetail,
@@ -219,6 +220,8 @@ const mockRolesByProject: Record<string, ProjectRole[]> = {
       name: '프로젝트 관리자',
       description: '멤버십, 역할, 검토 운영 전반을 관리합니다.',
       color: '#2563eb',
+      system: true,
+      leaderRole: true,
       memberIds: [101],
       permissionKeys: [
         'PROJECT_MEMBER_INVITE',
@@ -237,6 +240,8 @@ const mockRolesByProject: Record<string, ProjectRole[]> = {
       name: '검토 리드',
       description: '검토 승인/반려와 큐 운영을 담당합니다.',
       color: '#7c3aed',
+      system: true,
+      leaderRole: true,
       memberIds: [201],
       permissionKeys: ['TASK_EDIT', 'TASK_ASSIGN', 'REVIEW_APPROVE', 'REVIEW_REJECT', 'AUDIT_LOG_VIEW'],
     },
@@ -245,6 +250,8 @@ const mockRolesByProject: Record<string, ProjectRole[]> = {
       name: '옵저버',
       description: '읽기 전용으로 현황과 이력을 확인합니다.',
       color: '#0f766e',
+      system: true,
+      leaderRole: false,
       memberIds: [202, 401],
       permissionKeys: ['AUDIT_LOG_VIEW'],
     },
@@ -255,6 +262,8 @@ const mockRolesByProject: Record<string, ProjectRole[]> = {
       name: '운영 관리자',
       description: '운영 프로젝트 설정과 역할 구조를 관리합니다.',
       color: '#2563eb',
+      system: true,
+      leaderRole: true,
       memberIds: [501],
       permissionKeys: ['PROJECT_MEMBER_INVITE', 'ROLE_MANAGE', 'TASK_EDIT', 'TASK_ASSIGN', 'AUDIT_LOG_VIEW'],
     },
@@ -263,6 +272,8 @@ const mockRolesByProject: Record<string, ProjectRole[]> = {
       name: '운영 담당',
       description: '운영 태스크 수행과 현황 점검을 담당합니다.',
       color: '#9333ea',
+      system: true,
+      leaderRole: false,
       memberIds: [502],
       permissionKeys: ['TASK_EDIT'],
     },
@@ -273,6 +284,8 @@ const mockRolesByProject: Record<string, ProjectRole[]> = {
       name: '랩 관리자',
       description: '실험 과제와 검토 흐름을 관리합니다.',
       color: '#1d4ed8',
+      system: true,
+      leaderRole: true,
       memberIds: [601],
       permissionKeys: ['PROJECT_MEMBER_INVITE', 'ROLE_MANAGE', 'PERMISSION_BIND', 'TASK_EDIT', 'TASK_ASSIGN'],
     },
@@ -281,6 +294,8 @@ const mockRolesByProject: Record<string, ProjectRole[]> = {
       name: '에디터',
       description: '실험 과제를 작성하고 수정합니다.',
       color: '#ea580c',
+      system: false,
+      leaderRole: false,
       memberIds: [602],
       permissionKeys: ['TASK_EDIT'],
     },
@@ -588,7 +603,15 @@ export function usePermissions() {
 export function useProjectAuditLogs(projectId: string | null) {
   return useQuery({
     queryKey: workspaceKeys.auditLogs(projectId ?? 'none'),
-    queryFn: async () => (projectId ? mockAuditLogsByProject[projectId] ?? [] : []),
+    queryFn: async () => {
+      if (!projectId) {
+        return [];
+      }
+      if (appConfig.useMock) {
+        return mockAuditLogsByProject[projectId] ?? [];
+      }
+      return fetchProjectAuditLogs(projectId);
+    },
     enabled: Boolean(projectId),
   });
 }

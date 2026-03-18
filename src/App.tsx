@@ -7,13 +7,13 @@ import WorkspaceLayout from './shared/layout/WorkspaceLayout';
 export default function App() {
   return (
     <AuthGate>
-      <WorkspaceProvider>
-        <ConsentGate>
+      <ConsentGate>
+        <WorkspaceProvider>
           <WorkspaceLayout>
             <Outlet />
           </WorkspaceLayout>
-        </ConsentGate>
-      </WorkspaceProvider>
+        </WorkspaceProvider>
+      </ConsentGate>
     </AuthGate>
   );
 }

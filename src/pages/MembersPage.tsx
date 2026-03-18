@@ -89,7 +89,8 @@ export default function MembersPage() {
 
   return (
     <div className="space-y-6">
-      <section className="flex flex-wrap items-end justify-between gap-4 border-b border-border/70 pb-5 pt-3">
+      <section className="rounded-[30px] border border-border/70 bg-[var(--surface-panel)] px-6 py-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+        <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border/70 pb-5">
         <div className="flex flex-wrap items-center gap-x-8 gap-y-4 md:gap-x-10">
           <InlineStat label="활성 멤버" value={`${activeCount}명`} icon={<Users size={15} />} />
           <InlineStat label="대기 초대" value={`${invitedCount}건`} icon={<MailPlus size={15} />} />
@@ -101,10 +102,11 @@ export default function MembersPage() {
             멤버 초대
           </Button>
         </div>
+        </div>
       </section>
 
       <div className="space-y-8">
-        <section className="pt-3">
+        <section className="rounded-[30px] border border-border/70 bg-white/75 px-5 py-5 shadow-[0_16px_44px_rgba(15,23,42,0.05)]">
           <div className="mb-5 flex items-end justify-between gap-4 border-b border-border/60 pb-4">
             <div>
               <h2 className="text-base font-semibold tracking-tight text-foreground">프로젝트 멤버</h2>
@@ -189,7 +191,7 @@ export default function MembersPage() {
           </div>
           <div className="hidden overflow-x-auto md:block">
             <div className="min-w-[980px]">
-              <div className="grid grid-cols-[2fr_0.9fr_1.1fr_1.7fr_1fr_0.9fr] border-b border-gray-200 pb-3 text-xs font-semibold uppercase tracking-[0.14em] text-gray-400">
+              <div className="grid grid-cols-[2fr_0.9fr_1.1fr_1.7fr_1fr_0.9fr] border-b border-border/70 pb-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                 <div>멤버</div>
                 <div>상태</div>
                 <div>소속 팀</div>
@@ -197,30 +199,30 @@ export default function MembersPage() {
                 <div>최근 활동</div>
                 <div className="text-right">관리</div>
               </div>
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-border/70">
                 {filteredMembers.map((member) => (
                   <button
                     key={member.id}
                     type="button"
                     onClick={() => setProfileMemberId(member.id)}
-                    className="grid w-full grid-cols-[2fr_0.9fr_1.1fr_1.7fr_1fr_0.9fr] gap-4 py-4 text-left text-sm transition hover:bg-muted/10"
+                    className="grid w-full grid-cols-[2fr_0.9fr_1.1fr_1.7fr_1fr_0.9fr] gap-4 rounded-2xl py-4 text-left text-sm transition hover:bg-[var(--surface-panel)]/70"
                   >
                     <div>
-                      <div className="font-semibold text-gray-900">{member.name}</div>
-                      <div className="mt-1 text-gray-500">{member.email}</div>
+                      <div className="font-semibold text-foreground">{member.name}</div>
+                      <div className="mt-1 text-muted-foreground">{member.email}</div>
                       <div className="mt-2 text-xs font-medium text-primary/80">프로필 보기</div>
                     </div>
                     <div className="flex items-center">
                       <StatusPill tone={inviteToneMap[member.inviteStatus]}>{inviteLabelMap[member.inviteStatus]}</StatusPill>
                     </div>
-                    <div className="flex items-center text-gray-600">{member.team}</div>
+                    <div className="flex items-center text-foreground/80">{member.team}</div>
                     <div className="flex flex-wrap gap-2">
                       {member.roleIds.map((roleId) => {
                         const role = roles.find((item) => item.id === roleId);
                         return <RoleToken key={roleId} label={role?.name ?? roleId} color={role?.color} />;
                       })}
                     </div>
-                    <div className="flex items-center text-gray-500">
+                    <div className="flex items-center text-muted-foreground">
                       {member.lastActiveAt ? formatDate(member.lastActiveAt) : '아직 미참여'}
                     </div>
                     <div className="flex items-center justify-end">

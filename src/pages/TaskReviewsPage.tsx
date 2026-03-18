@@ -1,5 +1,8 @@
 import { AlertCircle, FilePenLine, SendHorizontal } from 'lucide-react';
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { Button } from '../components/ui/button';
+import ReviewComposerModal from '../features/review/components/ReviewComposerModal';
 import ReviewSummaryTable from '../features/review/components/ReviewSummaryTable';
 import { useTaskReviews, useTasks } from '../features/review/hooks';
 import PageHero from '../shared/ui/PageHero';
@@ -10,6 +13,7 @@ export default function TaskReviewsPage() {
   const taskId = Number(taskIdParam);
   const projectId = Number(projectIdParam);
   const hasValidTaskId = Number.isFinite(taskId) && taskId > 0;
+  const [reviewComposerOpen, setReviewComposerOpen] = useState(false);
   const { data: tasks = [] } = useTasks();
   const task = tasks.find((item) => item.id === taskId);
   const { data: reviewPage, isLoading, error } = useTaskReviews(hasValidTaskId ? taskId : -1);
@@ -23,13 +27,10 @@ export default function TaskReviewsPage() {
         description="목록은 `GET /api/v1/tasks/{taskId}/reviews`의 페이지 응답에 1:1 매핑됩니다."
         actions={
           <>
-            <Link
-              to={`/projects/${projectId}/tasks/${taskId}/reviews/new`}
-              className="inline-flex items-center gap-2 rounded-2xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_12px_28px_rgba(37,99,235,0.18)]"
-            >
+            <Button className="rounded-2xl" onClick={() => setReviewComposerOpen(true)}>
               <SendHorizontal size={16} />
               검토 상신
-            </Link>
+            </Button>
             <Link
               to={`/projects/${projectId}/tasks`}
               className="inline-flex items-center gap-2 rounded-2xl border border-border/70 bg-background px-4 py-2.5 text-sm font-semibold text-foreground transition hover:border-primary/20 hover:text-primary"
@@ -71,13 +72,10 @@ export default function TaskReviewsPage() {
             <div className="rounded-[28px] border border-dashed border-border/70 bg-background px-6 py-12 text-center text-sm text-muted-foreground">
               <div>아직 review 라운드가 없습니다.</div>
               <div className="mt-3">
-                <Link
-                  to={`/projects/${projectId}/tasks/${taskId}/reviews/new`}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_12px_28px_rgba(37,99,235,0.18)]"
-                >
+                <Button className="rounded-2xl" onClick={() => setReviewComposerOpen(true)}>
                   <SendHorizontal size={15} />
                   첫 검토 상신하기
-                </Link>
+                </Button>
               </div>
             </div>
           ) : (
@@ -85,6 +83,13 @@ export default function TaskReviewsPage() {
           )}
         </>
       )}
+
+      <ReviewComposerModal
+        open={reviewComposerOpen}
+        onOpenChange={setReviewComposerOpen}
+        taskId={hasValidTaskId ? taskId : null}
+        taskTitle={task?.title ?? null}
+      />
     </div>
   );
 }

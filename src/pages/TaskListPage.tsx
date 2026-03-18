@@ -38,6 +38,7 @@ import { formatDate } from '../shared/lib/format';
 import { BackendApiError, toBackendApiError } from '../shared/lib/http';
 import { fetchTaskReviews } from '../features/review/api';
 import ReviewDetailModal from '../features/review/components/ReviewDetailModal';
+import ReviewComposerModal from '../features/review/components/ReviewComposerModal';
 import { reviewKeys, useTaskReviews, useTasks } from '../features/review/hooks';
 import {
   useAssignTask,
@@ -88,6 +89,8 @@ export default function TaskListPage() {
   const currentView = getCurrentView(searchParams.get('view'));
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [selectedReviewId, setSelectedReviewId] = useState<number | null>(null);
+  const [reviewComposerOpen, setReviewComposerOpen] = useState(false);
+  const [reviewComposerTask, setReviewComposerTask] = useState<{ id: number; title: string } | null>(null);
   const [forceCompleteConfirmOpen, setForceCompleteConfirmOpen] = useState(false);
   const [createTaskOpen, setCreateTaskOpen] = useState(false);
   const [taskOrderByMilestone, setTaskOrderByMilestone] = useState<Record<string, number[]>>({});
@@ -273,6 +276,11 @@ export default function TaskListPage() {
     cancelTaskStartMutation.isPending ||
     forceCompleteTaskMutation.isPending;
 
+  function openReviewComposer(task: { id: number; title: string }) {
+    setReviewComposerTask(task);
+    setReviewComposerOpen(true);
+  }
+
   useEffect(() => {
     if (!selectedTask) {
       setEditingField(null);
@@ -289,13 +297,28 @@ export default function TaskListPage() {
       authorId: selectedTask.assigneeId,
     };
 
-    setTaskDraft({
+    const nextDraft = {
       title: source.title ?? '',
       description: source.description ?? '',
       startDate: source.startDate ? toDateInputValue(source.startDate) : '',
       dueDate: source.dueDate ? toDateInputValue(source.dueDate) : '',
       priority: source.priority,
       assigneeUserId: source.authorId || null,
+    };
+
+    setTaskDraft((current) => {
+      if (
+        current.title === nextDraft.title &&
+        current.description === nextDraft.description &&
+        current.startDate === nextDraft.startDate &&
+        current.dueDate === nextDraft.dueDate &&
+        current.priority === nextDraft.priority &&
+        current.assigneeUserId === nextDraft.assigneeUserId
+      ) {
+        return current;
+      }
+
+      return nextDraft;
     });
     setDetailErrorMessage(null);
   }, [selectedTask, selectedTaskDetail]);
@@ -564,7 +587,6 @@ export default function TaskListPage() {
                             {milestoneTasks.map((task) => (
                               <TaskMobileCard
                                 key={task.id}
-                                projectId={projectId}
                                 task={task}
                                 onSelect={() => setSelectedTaskId(task.id)}
                                 onOpenReview={() => {
@@ -574,6 +596,9 @@ export default function TaskListPage() {
                                     return;
                                   }
                                   setSelectedTaskId(task.id);
+                                }}
+                                onSubmitReview={() => {
+                                  openReviewComposer({ id: task.id, title: task.title });
                                 }}
                               />
                             ))}
@@ -629,7 +654,6 @@ export default function TaskListPage() {
                                 {milestoneTasks.map((task) => (
                                   <SortableTaskRow
                                     key={task.id}
-                                    projectId={projectId}
                                     task={task}
                                     selected={selectedTask?.id === task.id}
                                     onSelect={() => {
@@ -643,6 +667,9 @@ export default function TaskListPage() {
                                         return;
                                       }
                                       setSelectedTaskId(task.id);
+                                    }}
+                                    onSubmitReview={() => {
+                                      openReviewComposer({ id: task.id, title: task.title });
                                     }}
                                   />
                                 ))}
@@ -666,7 +693,6 @@ export default function TaskListPage() {
                     {scopedTaskItems.map((task) => (
                       <TaskMobileCard
                         key={task.id}
-                        projectId={projectId}
                         task={task}
                         onSelect={() => setSelectedTaskId(task.id)}
                         onOpenReview={() => {
@@ -676,6 +702,9 @@ export default function TaskListPage() {
                             return;
                           }
                           setSelectedTaskId(task.id);
+                        }}
+                        onSubmitReview={() => {
+                          openReviewComposer({ id: task.id, title: task.title });
                         }}
                         showMilestone
                       />
@@ -698,7 +727,6 @@ export default function TaskListPage() {
                         {scopedTaskItems.map((task) => (
                           <SortableTaskRow
                             key={task.id}
-                            projectId={projectId}
                             task={task}
                             selected={selectedTask?.id === task.id}
                             onSelect={() => {
@@ -712,6 +740,9 @@ export default function TaskListPage() {
                                 return;
                               }
                               setSelectedTaskId(task.id);
+                            }}
+                            onSubmitReview={() => {
+                              openReviewComposer({ id: task.id, title: task.title });
                             }}
                             showMilestone
                           />
@@ -777,6 +808,7 @@ export default function TaskListPage() {
           if (!open) {
             setSelectedTaskId(null);
             setForceCompleteConfirmOpen(false);
+            setReviewComposerOpen(false);
           }
         }}
         title={taskDraft.title || selectedTask?.title || ''}
@@ -993,8 +1025,13 @@ export default function TaskListPage() {
                         강제 완료
                       </Button>
                     ) : null}
-                    <Button asChild variant="outline" className="rounded-md">
-                      <Link to={`/projects/${projectId}/tasks/${selectedTask.id}/reviews/new`}>새 검토 상신</Link>
+                    <Button
+                      type="button"
+                      className="rounded-md"
+                      onClick={() => openReviewComposer({ id: selectedTask.id, title: selectedTask.title })}
+                    >
+                      <SendHorizontal size={15} />
+                      검토 상신하기
                     </Button>
                   </div>
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -1036,6 +1073,16 @@ export default function TaskListPage() {
                     ) : (
                       <div className="rounded-md border border-dashed border-border/70 px-3 py-4 text-sm leading-6 text-muted-foreground">
                         아직 검토가 생성되지 않았습니다. 먼저 업무 내용을 정리한 뒤 새 검토 상신으로 첫 라운드를 시작하세요.
+                        <div className="mt-3">
+                          <Button
+                            type="button"
+                            className="rounded-md"
+                            onClick={() => openReviewComposer({ id: selectedTask.id, title: selectedTask.title })}
+                          >
+                            <SendHorizontal size={15} />
+                            첫 검토 상신하기
+                          </Button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -1085,6 +1132,22 @@ export default function TaskListPage() {
           if (!open) {
             setSelectedReviewId(null);
           }
+        }}
+      />
+
+      <ReviewComposerModal
+        open={reviewComposerOpen}
+        onOpenChange={(open) => {
+          setReviewComposerOpen(open);
+          if (!open) {
+            setReviewComposerTask(null);
+          }
+        }}
+        taskId={reviewComposerTask?.id ?? null}
+        taskTitle={reviewComposerTask?.title ?? null}
+        onSubmitted={(reviewId) => {
+          setReviewComposerTask(null);
+          setSelectedReviewId(reviewId);
         }}
       />
 
@@ -1601,18 +1664,18 @@ function GanttView({
 }
 
 function SortableTaskRow({
-  projectId,
   task,
   selected,
   onSelect,
   onOpenReview,
+  onSubmitReview,
   showMilestone = false,
 }: {
-  projectId: number;
   task: TaskViewItem;
   selected: boolean;
   onSelect: () => void;
   onOpenReview: () => void;
+  onSubmitReview: () => void;
   showMilestone?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -1669,14 +1732,18 @@ function SortableTaskRow({
           >
             검토 보기
           </Link>
-          <Link
-            to={`/projects/${projectId}/tasks/${task.id}/reviews/new`}
+          <button
+            type="button"
             className="text-sm font-semibold text-foreground/70 hover:text-foreground"
             onPointerDown={(event) => event.stopPropagation()}
-            onClick={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onSubmitReview();
+            }}
           >
             상신
-          </Link>
+          </button>
         </div>
       </TableCell>
     </tr>
@@ -1684,16 +1751,16 @@ function SortableTaskRow({
 }
 
 function TaskMobileCard({
-  projectId,
   task,
   onSelect,
   onOpenReview,
+  onSubmitReview,
   showMilestone = false,
 }: {
-  projectId: number;
   task: TaskViewItem;
   onSelect: () => void;
   onOpenReview: () => void;
+  onSubmitReview: () => void;
   showMilestone?: boolean;
 }) {
   return (
@@ -1736,15 +1803,16 @@ function TaskMobileCard({
         >
           검토 보기
         </Button>
-        <Button asChild variant="outline" className="h-8 rounded-lg px-3 text-xs">
-          <Link
-            to={`/projects/${projectId}/tasks/${task.id}/reviews/new`}
-            onClick={(event) => {
-              event.stopPropagation();
-            }}
-          >
-            상신
-          </Link>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-8 rounded-lg px-3 text-xs"
+          onClick={(event) => {
+            event.stopPropagation();
+            onSubmitReview();
+          }}
+        >
+          상신
         </Button>
       </div>
     </button>
