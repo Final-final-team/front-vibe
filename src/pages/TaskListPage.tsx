@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useQueries } from '@tanstack/react-query';
 import {
@@ -14,14 +14,18 @@ import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } 
 import { CSS } from '@dnd-kit/utilities';
 import {
   ArrowRight,
+  AlertTriangle,
   ChartColumn,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  CirclePlay,
+  Pencil,
   GripVertical,
   Rows3,
   SendHorizontal,
+  SquareDashedMousePointer,
   Users2,
 } from 'lucide-react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
@@ -35,7 +39,22 @@ import { BackendApiError, toBackendApiError } from '../shared/lib/http';
 import { fetchTaskReviews } from '../features/review/api';
 import ReviewDetailModal from '../features/review/components/ReviewDetailModal';
 import { reviewKeys, useTaskReviews, useTasks } from '../features/review/hooks';
-import { useAssignTask, useAssignTaskToMe, useCreateTask } from '../features/tasks/hooks';
+import {
+  useAssignTask,
+  useAssignTaskToMe,
+  useCancelTaskStart,
+  useCreateTask,
+  useForceCompleteTask,
+  useStartTask,
+  useTaskDetail,
+  useUnassignTask,
+  useUnassignTaskFromMe,
+  useUpdateTaskDescription,
+  useUpdateTaskDueDate,
+  useUpdateTaskPriority,
+  useUpdateTaskStartDate,
+  useUpdateTaskTitle,
+} from '../features/tasks/hooks';
 import {
   buildTaskViewItems,
   getPriorityLabel,
@@ -47,13 +66,14 @@ import {
 } from '../features/tasks/view-model';
 import { useProjectMembers, useProjectMilestones, useProjectRoles, useProjectTaskMeta } from '../features/workspace/hooks';
 import { useWorkspace } from '../features/workspace/use-workspace';
-import type { ProjectMilestone } from '../features/workspace/types';
+import type { PriorityLevel, ProjectMilestone } from '../features/workspace/types';
 import AppModal from '../shared/ui/AppModal';
 import StatusPill from '../shared/ui/StatusPill';
 
 const VIEW_VALUES = ['table', 'kanban', 'calendar', 'chart', 'gantt'] as const;
 type TaskView = (typeof VIEW_VALUES)[number];
 type TaskAssignmentMode = 'unassigned' | 'me' | 'member';
+type EditableTaskField = 'title' | 'description' | 'startDate' | 'dueDate' | 'priority' | null;
 
 export default function TaskListPage() {
   const { projectId: projectIdParam } = useParams();
@@ -68,9 +88,20 @@ export default function TaskListPage() {
   const currentView = getCurrentView(searchParams.get('view'));
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [selectedReviewId, setSelectedReviewId] = useState<number | null>(null);
+  const [forceCompleteConfirmOpen, setForceCompleteConfirmOpen] = useState(false);
   const [createTaskOpen, setCreateTaskOpen] = useState(false);
   const [taskOrderByMilestone, setTaskOrderByMilestone] = useState<Record<string, number[]>>({});
   const [taskScope, setTaskScope] = useState<'milestone' | 'timeline' | 'mine'>('milestone');
+  const [editingField, setEditingField] = useState<EditableTaskField>(null);
+  const [detailErrorMessage, setDetailErrorMessage] = useState<string | null>(null);
+  const [taskDraft, setTaskDraft] = useState({
+    title: '',
+    description: '',
+    startDate: '',
+    dueDate: '',
+    priority: 'MEDIUM' as PriorityLevel,
+    assigneeUserId: null as number | null,
+  });
   const [createTaskForm, setCreateTaskForm] = useState({
     title: '',
     description: '',
@@ -96,6 +127,16 @@ export default function TaskListPage() {
   const createTaskMutation = useCreateTask(projectId);
   const assignTaskMutation = useAssignTask(projectId);
   const assignTaskToMeMutation = useAssignTaskToMe(projectId);
+  const unassignTaskMutation = useUnassignTask(projectId);
+  const unassignTaskFromMeMutation = useUnassignTaskFromMe(projectId);
+  const startTaskMutation = useStartTask(projectId);
+  const cancelTaskStartMutation = useCancelTaskStart(projectId);
+  const forceCompleteTaskMutation = useForceCompleteTask(projectId);
+  const updateTaskTitleMutation = useUpdateTaskTitle(projectId);
+  const updateTaskDescriptionMutation = useUpdateTaskDescription(projectId);
+  const updateTaskStartDateMutation = useUpdateTaskStartDate(projectId);
+  const updateTaskDueDateMutation = useUpdateTaskDueDate(projectId);
+  const updateTaskPriorityMutation = useUpdateTaskPriority(projectId);
   const activeMembers = useMemo(
     () => projectMembers.filter((member) => member.inviteStatus === 'ACTIVE'),
     [projectMembers],
@@ -164,8 +205,8 @@ export default function TaskListPage() {
   }, [fallbackTaskMeta, milestones]);
 
   const taskItems = useMemo(
-    () => buildTaskViewItems({ tasks, taskMeta: displayTaskMeta, milestones: displayMilestones }),
-    [displayMilestones, displayTaskMeta, tasks],
+    () => buildTaskViewItems({ tasks, taskMeta: displayTaskMeta, milestones: displayMilestones, members: activeMembers }),
+    [activeMembers, displayMilestones, displayTaskMeta, tasks],
   );
 
   const scopedTaskItems = useMemo(() => {
@@ -204,6 +245,8 @@ export default function TaskListPage() {
   );
 
   const selectedTask = taskItems.find((task) => task.id === selectedTaskId) ?? null;
+  const selectedTaskDetailQuery = useTaskDetail(projectId, selectedTaskId ?? 0, Boolean(selectedTaskId));
+  const selectedTaskDetail = selectedTaskDetailQuery.data ?? null;
   const selectedTaskReviewsQuery = useTaskReviews(selectedTaskId ?? 0, Boolean(selectedTaskId));
   const selectedTaskReviews = selectedTaskReviewsQuery.data?.items ?? [];
   const latestSelectedReview = selectedTaskReviews[0] ?? null;
@@ -212,6 +255,50 @@ export default function TaskListPage() {
   const reviewCount = groupedByStatus.IN_REVIEW.length;
   const completedCount = groupedByStatus.COMPLETED.length;
   const activeAssignees = new Set(scopedTaskItems.map((task) => task.assigneeName)).size;
+  const currentAssignee = useMemo(() => {
+    if (!selectedTaskDetail) return selectedTask ? activeMembers.find((member) => member.userId === selectedTask.assigneeId) ?? null : null;
+    return activeMembers.find((member) => member.userId === selectedTaskDetail.authorId) ?? null;
+  }, [activeMembers, selectedTask, selectedTaskDetail]);
+  const detailBusy =
+    updateTaskTitleMutation.isPending ||
+    updateTaskDescriptionMutation.isPending ||
+    updateTaskStartDateMutation.isPending ||
+    updateTaskDueDateMutation.isPending ||
+    updateTaskPriorityMutation.isPending ||
+    assignTaskMutation.isPending ||
+    assignTaskToMeMutation.isPending ||
+    unassignTaskMutation.isPending ||
+    unassignTaskFromMeMutation.isPending ||
+    startTaskMutation.isPending ||
+    cancelTaskStartMutation.isPending ||
+    forceCompleteTaskMutation.isPending;
+
+  useEffect(() => {
+    if (!selectedTask) {
+      setEditingField(null);
+      setDetailErrorMessage(null);
+      return;
+    }
+
+    const source = selectedTaskDetail ?? {
+      title: selectedTask.title,
+      description: selectedTask.summary,
+      startDate: selectedTask.startDate,
+      dueDate: selectedTask.dueDate,
+      priority: selectedTask.priority,
+      authorId: selectedTask.assigneeId,
+    };
+
+    setTaskDraft({
+      title: source.title ?? '',
+      description: source.description ?? '',
+      startDate: source.startDate ? toDateInputValue(source.startDate) : '',
+      dueDate: source.dueDate ? toDateInputValue(source.dueDate) : '',
+      priority: source.priority,
+      assigneeUserId: source.authorId || null,
+    });
+    setDetailErrorMessage(null);
+  }, [selectedTask, selectedTaskDetail]);
 
   function resetCreateTaskForm() {
     setCreateTaskForm({
@@ -261,6 +348,107 @@ export default function TaskListPage() {
             : apiError.message,
       );
     }
+  }
+
+  async function runTaskMutation(action: () => Promise<unknown>) {
+    setDetailErrorMessage(null);
+
+    try {
+      await action();
+      setEditingField(null);
+    } catch (error) {
+      const apiError = error instanceof BackendApiError ? error : toBackendApiError(error);
+      setDetailErrorMessage(apiError.message);
+    }
+  }
+
+  async function handleSaveField(field: EditableTaskField) {
+    if (!selectedTaskId) return;
+
+    if (field === 'title') {
+      await runTaskMutation(() =>
+        updateTaskTitleMutation.mutateAsync({ taskId: selectedTaskId, input: { value: taskDraft.title.trim() } }),
+      );
+      return;
+    }
+
+    if (field === 'description') {
+      await runTaskMutation(() =>
+        updateTaskDescriptionMutation.mutateAsync({
+          taskId: selectedTaskId,
+          input: { value: taskDraft.description.trim() },
+        }),
+      );
+      return;
+    }
+
+    if (field === 'startDate') {
+      await runTaskMutation(() =>
+        updateTaskStartDateMutation.mutateAsync({
+          taskId: selectedTaskId,
+          input: { date: taskDraft.startDate ? new Date(taskDraft.startDate).toISOString() : null },
+        }),
+      );
+      return;
+    }
+
+    if (field === 'dueDate') {
+      await runTaskMutation(() =>
+        updateTaskDueDateMutation.mutateAsync({
+          taskId: selectedTaskId,
+          input: { date: taskDraft.dueDate ? new Date(taskDraft.dueDate).toISOString() : null },
+        }),
+      );
+      return;
+    }
+
+    if (field === 'priority') {
+      await runTaskMutation(() =>
+        updateTaskPriorityMutation.mutateAsync({
+          taskId: selectedTaskId,
+          input: { priority: taskDraft.priority },
+        }),
+      );
+    }
+  }
+
+  async function handleAssignToMe() {
+    if (!selectedTaskId) return;
+    await runTaskMutation(() => assignTaskToMeMutation.mutateAsync({ taskId: selectedTaskId }));
+  }
+
+  async function handleAssignSelectedMember() {
+    if (!selectedTaskId || taskDraft.assigneeUserId == null) return;
+    const userId = taskDraft.assigneeUserId;
+    await runTaskMutation(() =>
+      assignTaskMutation.mutateAsync({ taskId: selectedTaskId, input: { userId } }),
+    );
+  }
+
+  async function handleUnassign() {
+    if (!selectedTaskId) return;
+    const targetAction =
+      currentUserId != null && selectedTaskDetail?.authorId === currentUserId
+        ? () => unassignTaskFromMeMutation.mutateAsync({ taskId: selectedTaskId })
+        : () => unassignTaskMutation.mutateAsync({ taskId: selectedTaskId });
+    await runTaskMutation(targetAction);
+  }
+
+  async function handleStateAction(action: 'start' | 'cancel-start' | 'force-complete') {
+    if (!selectedTaskId) return;
+
+    if (action === 'start') {
+      await runTaskMutation(() => startTaskMutation.mutateAsync({ taskId: selectedTaskId }));
+      return;
+    }
+
+    if (action === 'cancel-start') {
+      await runTaskMutation(() => cancelTaskStartMutation.mutateAsync({ taskId: selectedTaskId }));
+      return;
+    }
+
+    await runTaskMutation(() => forceCompleteTaskMutation.mutateAsync({ taskId: selectedTaskId }));
+    setForceCompleteConfirmOpen(false);
   }
 
   function getMilestoneTasks(milestoneId: string) {
@@ -588,110 +776,306 @@ export default function TaskListPage() {
         onOpenChange={(open) => {
           if (!open) {
             setSelectedTaskId(null);
+            setForceCompleteConfirmOpen(false);
           }
         }}
-        title={selectedTask?.title ?? ''}
-        description={selectedTask ? `${selectedTask.milestoneName} · ${selectedTask.assigneeName}` : undefined}
+        title={taskDraft.title || selectedTask?.title || ''}
+        description={
+          selectedTask
+            ? `${selectedTask.milestoneName} · ${currentAssignee?.name ?? (selectedTaskDetail?.authorId === 0 ? '담당 없음' : selectedTask.assigneeName)}`
+            : undefined
+        }
         badges={
           selectedTask ? (
             <>
               <StatusPill tone="teal">{selectedTask.domain}</StatusPill>
-              <StatusPill tone="purple">{selectedTask.assigneeName}</StatusPill>
+              <StatusPill tone="purple">
+                {currentAssignee?.name ?? (selectedTaskDetail?.authorId === 0 ? '담당 없음' : selectedTask.assigneeName)}
+              </StatusPill>
               <StatusPill tone="slate">{selectedTask.milestoneName}</StatusPill>
             </>
           ) : null
         }
-        side={
-          selectedTask ? (
-            <div className="space-y-4">
-              <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground">바로가기</div>
-              <div className="flex flex-col gap-2">
-                {latestSelectedReview ? (
-                  <Button type="button" className="h-9 justify-between rounded-md px-3" onClick={() => setSelectedReviewId(latestSelectedReview.reviewId)}>
-                    최신 검토 상세
-                    <ArrowRight size={16} />
-                  </Button>
-                ) : null}
-                <Button asChild variant="outline" className="h-9 rounded-md px-3">
-                  <Link to={`/projects/${projectId}/tasks/${selectedTask.id}/reviews/new`}>새 검토 상신</Link>
-                </Button>
-              </div>
-              <div>
-                <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground">연결 검토 라운드</div>
-                <div className="mt-3 space-y-2">
-                  {selectedTaskReviews.length > 0 ? (
-                    selectedTaskReviews.slice(0, 3).map((review) => (
-                      <button
-                        key={review.reviewId}
-                        type="button"
-                        onClick={() => setSelectedReviewId(review.reviewId)}
-                        className="flex w-full items-center justify-between rounded-xl border border-border/70 px-3 py-3 text-left text-sm transition hover:border-primary/30"
-                      >
-                        <span className="font-medium text-foreground">{review.roundNo}차 검토</span>
-                        <StatusPill tone={getReviewTone(review.status)}>{getReviewStatusLabel(review.status)}</StatusPill>
-                      </button>
-                    ))
-                  ) : (
-                    <div className="rounded-xl border border-dashed border-border/70 px-3 py-3 text-sm text-muted-foreground">
-                      아직 생성된 검토 라운드가 없습니다.
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          ) : null
-        }
         footer={
-          <Button type="button" variant="outline" size="lg" className="min-w-24 rounded-xl px-4" onClick={() => setSelectedTaskId(null)}>
-            닫기
-          </Button>
+          <div className="flex w-full items-center justify-between gap-3">
+            <div className="text-sm text-muted-foreground">
+              {detailBusy ? '변경 내용을 저장하는 중입니다.' : '필드별로 바로 저장되고 목록과 상세가 함께 갱신됩니다.'}
+            </div>
+            <Button type="button" variant="outline" size="lg" className="min-w-24 rounded-xl px-4" onClick={() => setSelectedTaskId(null)}>
+              닫기
+            </Button>
+          </div>
         }
+        size="xl"
       >
         {selectedTask ? (
-          <div className="space-y-4">
-            <div className="grid gap-3 border-b border-border/70 pb-4 lg:grid-cols-2">
-              <MetaRow label="기한" value={formatDueDateShort(selectedTask.dueDate)} />
-              <MetaRow label="시작" value={formatDueDateShort(selectedTask.startDate)} />
-              <MetaRow label="우선순위" value={getPriorityLabel(selectedTask.priority)} />
-              <MetaRow label="현재 상태" value={getStatusLabel(selectedTask.status)} />
-              <MetaRow label="최근 갱신" value={formatDate(selectedTask.updatedAt)} />
-              <MetaRow label="업무 영역" value={selectedTask.domain} />
-              <MetaRow label="마일스톤" value={selectedTask.milestoneName} />
-              <MetaRow label="담당자" value={selectedTask.assigneeName} />
-              <MetaRow label="연결 검토" value={`${selectedTaskReviews.length}건`} />
-            </div>
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-              <div className="space-y-2">
-                <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground">업무 메모</div>
-                <p className="break-keep text-sm leading-6 text-muted-foreground">{selectedTask.summary}</p>
-                <div className="rounded-2xl border border-border/70 bg-muted/10 px-4 py-4 text-sm leading-6 text-muted-foreground">
-                  이 업무는 <span className="font-semibold text-foreground">{selectedTask.domain}</span> 영역에 속하고, 현재{' '}
-                  <span className="font-semibold text-foreground">{selectedTask.milestoneName}</span> 마일스톤 안에서 운영됩니다.
-                </div>
+          <div className="space-y-6">
+            <section className="grid gap-3 border-b border-border/70 pb-5 md:grid-cols-4">
+              <SummaryBlock label="현재 상태" value={getStatusLabel(selectedTaskDetail?.status ?? selectedTask.status)} tone={getStatusTone(selectedTaskDetail?.status ?? selectedTask.status)} />
+              <SummaryBlock label="담당자" value={currentAssignee?.name ?? (selectedTaskDetail?.authorId === 0 ? '담당 없음' : selectedTask.assigneeName)} />
+              <SummaryBlock label="마일스톤" value={selectedTask.milestoneName} />
+              <SummaryBlock
+                label="다음 행동"
+                value={getNextActionLabel(selectedTaskDetail?.status ?? selectedTask.status, Boolean(latestSelectedReview))}
+                icon={<SquareDashedMousePointer size={14} />}
+              />
+            </section>
+
+            {detailErrorMessage ? (
+              <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                {detailErrorMessage}
               </div>
-              <div className="space-y-2">
-                <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground">최신 검토 요약</div>
-                <div className="rounded-2xl border border-border/70 bg-muted/10 px-4 py-4 text-sm leading-6 text-muted-foreground">
-                  {latestSelectedReview ? (
-                    <>
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="font-medium text-foreground">{latestSelectedReview.roundNo}차 검토</span>
-                        <StatusPill tone={getReviewTone(latestSelectedReview.status)}>{getReviewStatusLabel(latestSelectedReview.status)}</StatusPill>
-                      </div>
-                      <div className="mt-3 space-y-2">
-                        <MetaRow label="상신 시각" value={formatDueDateShort(latestSelectedReview.submittedAt)} />
-                        <MetaRow label="처리 시각" value={formatDueDateShort(latestSelectedReview.decidedAt)} />
-                        <MetaRow label="잠금 버전" value={`v${latestSelectedReview.lockVersion}`} />
-                      </div>
-                    </>
-                  ) : (
-                    '아직 검토가 생성되지 않았습니다. 새 검토 상신으로 첫 라운드를 시작할 수 있습니다.'
-                  )}
+            ) : null}
+
+            <section className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+              <div className="space-y-6">
+                <TaskEditableField
+                  label="업무 제목"
+                  editing={editingField === 'title'}
+                  onEdit={() => setEditingField('title')}
+                  onCancel={() => setEditingField(null)}
+                  onSave={() => void handleSaveField('title')}
+                  disabled={detailBusy}
+                  view={<span className="text-base font-semibold text-foreground">{taskDraft.title || selectedTask.title}</span>}
+                >
+                  <Input
+                    value={taskDraft.title}
+                    onChange={(event) => setTaskDraft((current) => ({ ...current, title: event.target.value }))}
+                    placeholder="업무 제목을 입력하세요"
+                  />
+                </TaskEditableField>
+
+                <TaskEditableField
+                  label="업무 설명"
+                  editing={editingField === 'description'}
+                  onEdit={() => setEditingField('description')}
+                  onCancel={() => setEditingField(null)}
+                  onSave={() => void handleSaveField('description')}
+                  disabled={detailBusy}
+                  view={<p className="break-keep text-sm leading-6 text-muted-foreground">{taskDraft.description || '설명이 아직 없습니다.'}</p>}
+                >
+                  <textarea
+                    value={taskDraft.description}
+                    onChange={(event) => setTaskDraft((current) => ({ ...current, description: event.target.value }))}
+                    placeholder="업무 목적과 기대 결과를 적어주세요."
+                    className="min-h-32 w-full rounded-xl border border-border/70 bg-background px-3 py-3 text-sm leading-6 outline-none transition focus:border-primary/30"
+                  />
+                </TaskEditableField>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <TaskEditableField
+                    label="시작일"
+                    editing={editingField === 'startDate'}
+                    onEdit={() => setEditingField('startDate')}
+                    onCancel={() => setEditingField(null)}
+                    onSave={() => void handleSaveField('startDate')}
+                    disabled={detailBusy}
+                    view={<span className="text-sm font-medium text-foreground">{formatDueDateShort(selectedTaskDetail?.startDate ?? selectedTask.startDate)}</span>}
+                  >
+                    <Input
+                      type="date"
+                      value={taskDraft.startDate}
+                      onChange={(event) => setTaskDraft((current) => ({ ...current, startDate: event.target.value }))}
+                    />
+                  </TaskEditableField>
+
+                  <TaskEditableField
+                    label="마감일"
+                    editing={editingField === 'dueDate'}
+                    onEdit={() => setEditingField('dueDate')}
+                    onCancel={() => setEditingField(null)}
+                    onSave={() => void handleSaveField('dueDate')}
+                    disabled={detailBusy}
+                    view={<span className="text-sm font-medium text-foreground">{formatDueDateShort(selectedTaskDetail?.dueDate ?? selectedTask.dueDate)}</span>}
+                  >
+                    <Input
+                      type="date"
+                      value={taskDraft.dueDate}
+                      onChange={(event) => setTaskDraft((current) => ({ ...current, dueDate: event.target.value }))}
+                    />
+                  </TaskEditableField>
                 </div>
+
+                <TaskEditableField
+                  label="우선순위"
+                  editing={editingField === 'priority'}
+                  onEdit={() => setEditingField('priority')}
+                  onCancel={() => setEditingField(null)}
+                  onSave={() => void handleSaveField('priority')}
+                  disabled={detailBusy}
+                  view={<StatusPill tone={getPriorityTone(taskDraft.priority)}>{getPriorityLabel(taskDraft.priority)}</StatusPill>}
+                >
+                  <select
+                    value={taskDraft.priority}
+                    onChange={(event) =>
+                      setTaskDraft((current) => ({ ...current, priority: event.target.value as PriorityLevel }))
+                    }
+                    className="h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-primary/30"
+                  >
+                    <option value="HIGHEST">매우 높음</option>
+                    <option value="HIGH">높음</option>
+                    <option value="MEDIUM">보통</option>
+                    <option value="LOW">낮음</option>
+                    <option value="LOWEST">매우 낮음</option>
+                  </select>
+                </TaskEditableField>
               </div>
-            </div>
+
+              <div className="space-y-6">
+                <section className="rounded-2xl border border-border/70 bg-muted/[0.04] px-4 py-4">
+                  <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground">담당자 제어</div>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <StatusPill tone="purple">
+                      {currentAssignee?.name ?? (selectedTaskDetail?.authorId === 0 ? '담당 없음' : selectedTask.assigneeName)}
+                    </StatusPill>
+                    <StatusPill tone="slate">{selectedTask.domain}</StatusPill>
+                  </div>
+                  <div className="mt-4 space-y-3">
+                    <div className="flex flex-wrap gap-2">
+                      <Button type="button" variant="outline" className="rounded-md" onClick={() => void handleAssignToMe()} disabled={detailBusy}>
+                        나에게 할당
+                      </Button>
+                      <Button type="button" variant="outline" className="rounded-md" onClick={() => void handleUnassign()} disabled={detailBusy || selectedTaskDetail?.authorId === 0}>
+                        담당 해제
+                      </Button>
+                    </div>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <select
+                        value={taskDraft.assigneeUserId ?? ''}
+                        onChange={(event) =>
+                          setTaskDraft((current) => ({
+                            ...current,
+                            assigneeUserId: event.target.value ? Number(event.target.value) : null,
+                          }))
+                        }
+                        className="h-10 min-w-0 flex-1 rounded-md border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-primary/30"
+                        disabled={!canAssignOthers}
+                      >
+                        <option value="">다른 멤버 선택</option>
+                        {memberAssignableOptions.map((member) => (
+                          <option key={member.id} value={member.userId}>
+                            {member.name} · {member.team}
+                          </option>
+                        ))}
+                      </select>
+                      <Button
+                        type="button"
+                        className="rounded-md"
+                        onClick={() => void handleAssignSelectedMember()}
+                        disabled={detailBusy || !canAssignOthers || taskDraft.assigneeUserId == null}
+                      >
+                        멤버 지정
+                      </Button>
+                    </div>
+                    <p className="text-xs leading-5 text-muted-foreground">
+                      담당자 변경은 상세 모달에서 바로 반영되고, 목록과 상세가 함께 다시 불러와집니다.
+                    </p>
+                  </div>
+                </section>
+
+                <section className="rounded-2xl border border-border/70 bg-muted/[0.04] px-4 py-4">
+                  <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground">작업 액션</div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {(selectedTaskDetail?.status ?? selectedTask.status) === 'PENDING' ? (
+                      <Button type="button" className="rounded-md" onClick={() => void handleStateAction('start')} disabled={detailBusy}>
+                        <CirclePlay size={15} />
+                        업무 시작
+                      </Button>
+                    ) : null}
+                    {(selectedTaskDetail?.status ?? selectedTask.status) === 'IN_PROGRESS' ? (
+                      <Button type="button" variant="outline" className="rounded-md" onClick={() => void handleStateAction('cancel-start')} disabled={detailBusy}>
+                        시작 취소
+                      </Button>
+                    ) : null}
+                    {(selectedTaskDetail?.status ?? selectedTask.status) === 'IN_REVIEW' ? (
+                      <Button type="button" variant="outline" className="rounded-md border-amber-300 text-amber-700 hover:bg-amber-50" onClick={() => setForceCompleteConfirmOpen(true)} disabled={detailBusy}>
+                        <AlertTriangle size={15} />
+                        강제 완료
+                      </Button>
+                    ) : null}
+                    <Button asChild variant="outline" className="rounded-md">
+                      <Link to={`/projects/${projectId}/tasks/${selectedTask.id}/reviews/new`}>새 검토 상신</Link>
+                    </Button>
+                  </div>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <MetaRow label="현재 상태" value={getStatusLabel(selectedTaskDetail?.status ?? selectedTask.status)} />
+                    <MetaRow label="최근 갱신" value={formatDate(selectedTaskDetail?.updatedAt ?? selectedTask.updatedAt)} />
+                    <MetaRow label="업무 영역" value={selectedTask.domain} />
+                    <MetaRow label="연결 검토" value={`${selectedTaskReviews.length}건`} />
+                  </div>
+                </section>
+
+                <section className="rounded-2xl border border-border/70 bg-muted/[0.04] px-4 py-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground">검토 연결</div>
+                    {latestSelectedReview ? (
+                      <Button type="button" variant="outline" className="rounded-md" onClick={() => setSelectedReviewId(latestSelectedReview.reviewId)}>
+                        최신 검토 상세
+                        <ArrowRight size={15} />
+                      </Button>
+                    ) : null}
+                  </div>
+                  <div className="mt-3 space-y-2">
+                    {selectedTaskReviews.length > 0 ? (
+                      selectedTaskReviews.slice(0, 3).map((review) => (
+                        <button
+                          key={review.reviewId}
+                          type="button"
+                          onClick={() => setSelectedReviewId(review.reviewId)}
+                          className="flex w-full items-center justify-between rounded-md border border-border/70 px-3 py-3 text-left text-sm transition hover:border-primary/30"
+                        >
+                          <div>
+                            <div className="font-medium text-foreground">{review.roundNo}차 검토</div>
+                            <div className="mt-1 text-xs text-muted-foreground">
+                              상신 {formatDueDateShort(review.submittedAt)} · 처리 {formatDueDateShort(review.decidedAt)}
+                            </div>
+                          </div>
+                          <StatusPill tone={getReviewTone(review.status)}>{getReviewStatusLabel(review.status)}</StatusPill>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="rounded-md border border-dashed border-border/70 px-3 py-4 text-sm leading-6 text-muted-foreground">
+                        아직 검토가 생성되지 않았습니다. 먼저 업무 내용을 정리한 뒤 새 검토 상신으로 첫 라운드를 시작하세요.
+                      </div>
+                    )}
+                  </div>
+                </section>
+              </div>
+            </section>
           </div>
         ) : null}
+      </AppModal>
+
+      <AppModal
+        open={forceCompleteConfirmOpen}
+        onOpenChange={setForceCompleteConfirmOpen}
+        title="강제 완료 확인"
+        description="검토중 업무를 강제로 완료 처리하면 이후 목록과 검토 흐름에 즉시 반영됩니다."
+        size="sm"
+        footer={
+          <div className="flex w-full justify-end gap-3">
+            <Button type="button" variant="outline" onClick={() => setForceCompleteConfirmOpen(false)}>
+              취소
+            </Button>
+            <Button
+              type="button"
+              className="rounded-md bg-amber-600 text-white hover:bg-amber-700"
+              onClick={() => void handleStateAction('force-complete')}
+              disabled={detailBusy}
+            >
+              강제 완료 실행
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-3 text-sm leading-6 text-muted-foreground">
+          <p>
+            현재 업무를 완료로 전환하면 목록 상태와 진행률이 즉시 갱신됩니다. 검토가 아직 진행 중이라면 운영상 예외 처리로 기록됩니다.
+          </p>
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800">
+            파괴적 액션이므로, 실제 운영에서는 승인 이력과 함께 기록된다는 전제로 사용해야 합니다.
+          </div>
+        </div>
       </AppModal>
 
       <ReviewDetailModal
@@ -1379,6 +1763,74 @@ function InlineStat({ label, value, icon }: { label: string; value: string; icon
   );
 }
 
+function SummaryBlock({
+  label,
+  value,
+  tone = 'slate',
+  icon,
+}: {
+  label: string;
+  value: string;
+  tone?: 'slate' | 'blue' | 'amber' | 'green';
+  icon?: ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl border border-border/70 bg-muted/[0.04] px-4 py-4">
+      <div className="flex items-center gap-2 text-[11px] font-semibold tracking-[0.1em] text-muted-foreground">
+        {icon}
+        {label}
+      </div>
+      <div className="mt-3">
+        <StatusPill tone={tone}>{value}</StatusPill>
+      </div>
+    </div>
+  );
+}
+
+function TaskEditableField({
+  label,
+  editing,
+  onEdit,
+  onCancel,
+  onSave,
+  view,
+  children,
+  disabled,
+}: {
+  label: string;
+  editing: boolean;
+  onEdit: () => void;
+  onCancel: () => void;
+  onSave: () => void;
+  view: ReactNode;
+  children: ReactNode;
+  disabled?: boolean;
+}) {
+  return (
+    <section className="rounded-2xl border border-border/70 px-4 py-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground">{label}</div>
+        {editing ? (
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="ghost" className="h-8 rounded-md px-2 text-xs" onClick={onCancel} disabled={disabled}>
+              취소
+            </Button>
+            <Button type="button" className="h-8 rounded-md px-3 text-xs" onClick={onSave} disabled={disabled}>
+              저장
+            </Button>
+          </div>
+        ) : (
+          <Button type="button" variant="ghost" className="h-8 rounded-md px-2 text-xs" onClick={onEdit} disabled={disabled}>
+            <Pencil size={14} />
+            수정
+          </Button>
+        )}
+      </div>
+      <div className="mt-3">{editing ? children : view}</div>
+    </section>
+  );
+}
+
 function ScopeButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
   return (
     <button
@@ -1446,11 +1898,25 @@ function MetaRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function toDateInputValue(value: string | null) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toISOString().slice(0, 10);
+}
+
 function formatDueDateShort(value: string | null) {
   if (!value) return '-';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '-';
   return `${date.getMonth() + 1}/${date.getDate()} ${`${date.getHours()}`.padStart(2, '0')}:${`${date.getMinutes()}`.padStart(2, '0')}`;
+}
+
+function getNextActionLabel(status: string, hasReview: boolean) {
+  if (status === 'PENDING') return '업무 시작';
+  if (status === 'IN_PROGRESS') return hasReview ? '검토 상신 준비' : '업무 설명 정리';
+  if (status === 'IN_REVIEW') return '검토 결과 확인';
+  return '후속 업무 검토';
 }
 
 function formatListDueDate(value: string | null) {

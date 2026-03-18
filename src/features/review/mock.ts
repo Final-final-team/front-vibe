@@ -385,7 +385,6 @@ export function createMockError(code: string, message: string, status: number): 
 }
 
 export function getMockTasks() {
-  updateTaskStatuses();
   return deepCopy(tasksCatalog);
 }
 
@@ -431,6 +430,114 @@ export async function assignMockTask(taskId: number, userId: number) {
   task.authorId = userId;
   task.updatedAt = now();
 
+  return deepCopy(task);
+}
+
+export async function updateMockTaskTitle(taskId: number, title: string) {
+  const task = tasksCatalog.find((item) => item.id === taskId);
+
+  if (!task) {
+    throw createMockError('TASK_NOT_FOUND', 'Task was not found.', 404);
+  }
+
+  task.title = title;
+  task.updatedAt = now();
+  return deepCopy(task);
+}
+
+export async function updateMockTaskDescription(taskId: number, description: string) {
+  const task = tasksCatalog.find((item) => item.id === taskId);
+
+  if (!task) {
+    throw createMockError('TASK_NOT_FOUND', 'Task was not found.', 404);
+  }
+
+  task.summary = description;
+  task.updatedAt = now();
+  return deepCopy(task);
+}
+
+export async function updateMockTaskStartDate(taskId: number, startDate: string | null) {
+  const task = tasksCatalog.find((item) => item.id === taskId);
+
+  if (!task) {
+    throw createMockError('TASK_NOT_FOUND', 'Task was not found.', 404);
+  }
+
+  task.startDate = startDate ?? task.startDate;
+  task.updatedAt = now();
+  return deepCopy(task);
+}
+
+export async function updateMockTaskDueDate(taskId: number, dueDate: string | null) {
+  const task = tasksCatalog.find((item) => item.id === taskId);
+
+  if (!task) {
+    throw createMockError('TASK_NOT_FOUND', 'Task was not found.', 404);
+  }
+
+  task.dueDate = dueDate ?? task.dueDate;
+  task.updatedAt = now();
+  return deepCopy(task);
+}
+
+export async function updateMockTaskPriority(taskId: number, priority: PriorityLevel) {
+  const task = tasksCatalog.find((item) => item.id === taskId);
+
+  if (!task) {
+    throw createMockError('TASK_NOT_FOUND', 'Task was not found.', 404);
+  }
+
+  task.priority = priority;
+  task.updatedAt = now();
+  return deepCopy(task);
+}
+
+export async function unassignMockTask(taskId: number) {
+  const task = tasksCatalog.find((item) => item.id === taskId);
+
+  if (!task) {
+    throw createMockError('TASK_NOT_FOUND', 'Task was not found.', 404);
+  }
+
+  task.authorId = 0;
+  task.updatedAt = now();
+  return deepCopy(task);
+}
+
+export async function startMockTask(taskId: number) {
+  const task = tasksCatalog.find((item) => item.id === taskId);
+
+  if (!task) {
+    throw createMockError('TASK_NOT_FOUND', 'Task was not found.', 404);
+  }
+
+  task.latestReviewStatus = 'IN_PROGRESS';
+  task.updatedAt = now();
+  return deepCopy(task);
+}
+
+export async function cancelMockTaskStart(taskId: number) {
+  const task = tasksCatalog.find((item) => item.id === taskId);
+
+  if (!task) {
+    throw createMockError('TASK_NOT_FOUND', 'Task was not found.', 404);
+  }
+
+  task.latestReviewStatus = 'PENDING';
+  task.updatedAt = now();
+  return deepCopy(task);
+}
+
+export async function forceCompleteMockTask(taskId: number) {
+  const task = tasksCatalog.find((item) => item.id === taskId);
+
+  if (!task) {
+    throw createMockError('TASK_NOT_FOUND', 'Task was not found.', 404);
+  }
+
+  task.latestReviewStatus = 'COMPLETED';
+  task.updatedAt = now();
   return deepCopy(task);
 }
 

@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -9,8 +10,9 @@
   color: #17212b;
   background: linear-gradient(180deg, #f3f5f7 0%, #f7f8fa 100%);
   font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
-    sans-serif;
+    "Noto Sans KR", "Geist Variable", "Pretendard Variable", "SUIT Variable",
+    -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
   --background: oklch(0.982 0.003 210);
   --foreground: oklch(0.23 0.015 225);
   --card: oklch(0.995 0.001 210);
@@ -111,7 +113,7 @@ select {
 }
 
 @theme inline {
-  --font-sans: 'Geist Variable', sans-serif;
+  --font-sans: "Noto Sans KR", "Geist Variable", "Pretendard Variable", "SUIT Variable", sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -162,6 +164,17 @@ select {
   }
   body {
     @apply bg-background text-foreground;
+    letter-spacing: -0.01em;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  [data-page-title="true"],
+  [data-section-title="true"] {
+    font-family: "Noto Sans KR", "Geist Variable", "Pretendard Variable", "SUIT Variable", sans-serif;
+    letter-spacing: -0.03em;
   }
 }
 

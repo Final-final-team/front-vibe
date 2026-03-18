@@ -31,6 +31,18 @@ export type TaskAssignInput = {
   userId: number;
 };
 
+export type TaskUpdateTextInput = {
+  value: string;
+};
+
+export type TaskUpdateDateInput = {
+  date: string | null;
+};
+
+export type TaskUpdatePriorityInput = {
+  priority: PriorityLevel;
+};
+
 export type TaskPageResult<T> = {
   items: T[];
   page: number;

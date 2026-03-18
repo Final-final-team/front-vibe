@@ -1,5 +1,5 @@
 import type { ReviewTask, TaskStatus } from '../review/types';
-import type { PriorityLevel, ProjectMilestone, ProjectTaskMeta } from '../workspace/types';
+import type { PriorityLevel, ProjectMember, ProjectMilestone, ProjectTaskMeta } from '../workspace/types';
 
 export type TaskViewItem = {
   id: number;
@@ -24,10 +24,12 @@ export function buildTaskViewItems({
   tasks,
   taskMeta,
   milestones,
+  members = [],
 }: {
   tasks: ReviewTask[];
   taskMeta: ProjectTaskMeta[];
   milestones: ProjectMilestone[];
+  members?: ProjectMember[];
 }): TaskViewItem[] {
   return taskMeta
     .map((meta) => {
@@ -43,8 +45,10 @@ export function buildTaskViewItems({
         title: task.title,
         summary: task.summary,
         status: task.latestReviewStatus,
-        assigneeId: meta.assigneeId,
-        assigneeName: meta.assigneeName,
+        assigneeId: task.authorId || meta.assigneeId,
+        assigneeName:
+          members.find((member) => member.userId === task.authorId)?.name ??
+          (task.authorId === 0 ? '담당 없음' : meta.assigneeName),
         priority: task.priority ?? meta.priority,
         dueDate: task.dueDate || meta.dueDate,
         startDate: task.startDate || deriveStartDate(task.dueDate || meta.dueDate, task.priority ?? meta.priority),

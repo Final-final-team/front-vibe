@@ -1,7 +1,30 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { appConfig } from '../../shared/config/app-config';
-import { assignTask, assignTaskToMe, createTask, fetchProjectTasks, fetchTaskDetail } from './api';
-import type { TaskAssignInput, TaskCreateInput, TaskStatus } from './types';
+import {
+  assignTask,
+  assignTaskToMe,
+  cancelTaskStart,
+  createTask,
+  fetchProjectTasks,
+  fetchTaskDetail,
+  forceCompleteTask,
+  startTask,
+  unassignTask,
+  unassignTaskFromMe,
+  updateTaskDescription,
+  updateTaskDueDate,
+  updateTaskPriority,
+  updateTaskStartDate,
+  updateTaskTitle,
+} from './api';
+import type {
+  TaskAssignInput,
+  TaskCreateInput,
+  TaskStatus,
+  TaskUpdateDateInput,
+  TaskUpdatePriorityInput,
+  TaskUpdateTextInput,
+} from './types';
 
 export const taskKeys = {
   lists: (projectId: number, statuses?: TaskStatus[]) =>
@@ -57,5 +80,95 @@ export function useAssignTaskToMe(projectId = appConfig.defaultProjectId) {
       void queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'tasks'] });
       void queryClient.invalidateQueries({ queryKey: taskKeys.detail(projectId, variables.taskId) });
     },
+  });
+}
+
+function invalidateTask(queryClient: ReturnType<typeof useQueryClient>, projectId: number, taskId: number) {
+  void queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'tasks'] });
+  void queryClient.invalidateQueries({ queryKey: taskKeys.detail(projectId, taskId) });
+}
+
+export function useUpdateTaskTitle(projectId = appConfig.defaultProjectId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ taskId, input }: { taskId: number; input: TaskUpdateTextInput }) =>
+      updateTaskTitle(projectId, taskId, input),
+    onSuccess: (_, variables) => invalidateTask(queryClient, projectId, variables.taskId),
+  });
+}
+
+export function useUpdateTaskDescription(projectId = appConfig.defaultProjectId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ taskId, input }: { taskId: number; input: TaskUpdateTextInput }) =>
+      updateTaskDescription(projectId, taskId, input),
+    onSuccess: (_, variables) => invalidateTask(queryClient, projectId, variables.taskId),
+  });
+}
+
+export function useUpdateTaskStartDate(projectId = appConfig.defaultProjectId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ taskId, input }: { taskId: number; input: TaskUpdateDateInput }) =>
+      updateTaskStartDate(projectId, taskId, input),
+    onSuccess: (_, variables) => invalidateTask(queryClient, projectId, variables.taskId),
+  });
+}
+
+export function useUpdateTaskDueDate(projectId = appConfig.defaultProjectId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ taskId, input }: { taskId: number; input: TaskUpdateDateInput }) =>
+      updateTaskDueDate(projectId, taskId, input),
+    onSuccess: (_, variables) => invalidateTask(queryClient, projectId, variables.taskId),
+  });
+}
+
+export function useUpdateTaskPriority(projectId = appConfig.defaultProjectId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ taskId, input }: { taskId: number; input: TaskUpdatePriorityInput }) =>
+      updateTaskPriority(projectId, taskId, input),
+    onSuccess: (_, variables) => invalidateTask(queryClient, projectId, variables.taskId),
+  });
+}
+
+export function useUnassignTask(projectId = appConfig.defaultProjectId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ taskId }: { taskId: number }) => unassignTask(projectId, taskId),
+    onSuccess: (_, variables) => invalidateTask(queryClient, projectId, variables.taskId),
+  });
+}
+
+export function useUnassignTaskFromMe(projectId = appConfig.defaultProjectId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ taskId }: { taskId: number }) => unassignTaskFromMe(projectId, taskId),
+    onSuccess: (_, variables) => invalidateTask(queryClient, projectId, variables.taskId),
+  });
+}
+
+export function useStartTask(projectId = appConfig.defaultProjectId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ taskId }: { taskId: number }) => startTask(projectId, taskId),
+    onSuccess: (_, variables) => invalidateTask(queryClient, projectId, variables.taskId),
+  });
+}
+
+export function useCancelTaskStart(projectId = appConfig.defaultProjectId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ taskId }: { taskId: number }) => cancelTaskStart(projectId, taskId),
+    onSuccess: (_, variables) => invalidateTask(queryClient, projectId, variables.taskId),
+  });
+}
+
+export function useForceCompleteTask(projectId = appConfig.defaultProjectId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ taskId }: { taskId: number }) => forceCompleteTask(projectId, taskId),
+    onSuccess: (_, variables) => invalidateTask(queryClient, projectId, variables.taskId),
   });
 }
