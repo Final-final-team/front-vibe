@@ -276,7 +276,6 @@ export default function RolesPermissionsPage() {
           <div className="space-y-6">
             <div className="grid gap-3 border-b border-border/70 pb-4">
               <MetaRow label="적용 범위" value={`project/${currentProject?.code ?? 'default'}/*`} />
-              <MetaRow label="연결 멤버 수" value={`${detailRole.memberIds.length}명`} />
               <MetaRow label="허용 권한 수" value={`${detailKeys.length}개`} />
             </div>
             <div>

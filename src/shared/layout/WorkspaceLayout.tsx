@@ -5,7 +5,11 @@ import {
   Home,
   KanbanSquare,
   LayoutTemplate,
+  Layers3,
   Search,
+  ScrollText,
+  ShieldCheck,
+  Users,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { NavLink, useLocation, useSearchParams } from 'react-router-dom';
@@ -107,10 +111,13 @@ export default function WorkspaceLayout({ children }: Props) {
                 <SidebarGroupContent>
                   <SidebarMenu>
                     {[
+                      { to: '/projects', domainKey: 'projects', label: '프로젝트 허브', icon: Home },
                       { to: `${projectBasePath}/tasks`, domainKey: 'tasks', label: '업무', icon: LayoutTemplate, count: currentProject?.openTaskCount },
                       { to: `${projectBasePath}/reviews`, domainKey: 'reviews', label: '검토', icon: CalendarClock, count: currentProject?.reviewQueueCount },
-                      { to: `${projectBasePath}/members`, domainKey: 'members', label: '멤버', icon: Home },
-                      { to: `${projectBasePath}/roles`, domainKey: 'roles', label: '권한', icon: ChevronRight },
+                      { to: `${projectBasePath}/members`, domainKey: 'members', label: '멤버', icon: Users },
+                      { to: `${projectBasePath}/roles`, domainKey: 'roles', label: '역할 / 권한', icon: ShieldCheck },
+                      { to: `${projectBasePath}/milestones`, domainKey: 'milestones', label: '마일스톤', icon: Layers3 },
+                      { to: `${projectBasePath}/logs`, domainKey: 'logs', label: '감사 로그', icon: ScrollText },
                     ].map((item) => (
                       <SidebarMenuItem key={item.to}>
                         <SidebarMenuButton asChild isActive={shell.domainPath === item.domainKey} tooltip={item.label}>
