@@ -1,6 +1,5 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import App from '../App';
-import AuditLogsPage from '../pages/AuditLogsPage';
 import AuthCallbackPage from '../pages/AuthCallbackPage';
 import DefaultEntryRedirectPage from '../pages/DefaultEntryRedirectPage';
 import LoginPage from '../pages/LoginPage';
@@ -34,11 +33,9 @@ export const router = createBrowserRouter([
       { path: '/tasks', element: <DefaultEntryRedirectPage /> },
       { path: '/reviews', element: <DefaultEntryRedirectPage /> },
       { path: '/onboarding/project', element: <ProjectOnboardingPage /> },
-      { path: '/logs', element: <Navigate to={`${defaultProjectPath}/logs`} replace /> },
       { path: '/members', element: <Navigate to={`${defaultProjectPath}/members`} replace /> },
       { path: '/roles', element: <Navigate to={`${defaultProjectPath}/roles`} replace /> },
       { path: '/milestones', element: <Navigate to={`${defaultProjectPath}/milestones`} replace /> },
-      { path: '/projects/:projectId/logs', element: <AuditLogsPage /> },
       { path: '/projects/:projectId/members', element: <MembersPage /> },
       { path: '/projects/:projectId/roles', element: <RolesPermissionsPage /> },
       { path: '/projects/:projectId/milestones', element: <MilestonesPage /> },

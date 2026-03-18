@@ -7,7 +7,6 @@ import {
   LayoutTemplate,
   Layers3,
   Search,
-  ScrollText,
   ShieldCheck,
   Users,
 } from 'lucide-react';
@@ -117,7 +116,6 @@ export default function WorkspaceLayout({ children }: Props) {
                       { to: `${projectBasePath}/members`, domainKey: 'members', label: '멤버', icon: Users },
                       { to: `${projectBasePath}/roles`, domainKey: 'roles', label: '역할 / 권한', icon: ShieldCheck },
                       { to: `${projectBasePath}/milestones`, domainKey: 'milestones', label: '마일스톤', icon: Layers3 },
-                      { to: `${projectBasePath}/logs`, domainKey: 'logs', label: '감사 로그', icon: ScrollText },
                     ].map((item) => (
                       <SidebarMenuItem key={item.to}>
                         <SidebarMenuButton asChild isActive={shell.domainPath === item.domainKey} tooltip={item.label}>
@@ -404,19 +402,6 @@ function getShellConfig(pathname: string) {
     };
   }
 
-  if (pathname.includes('/logs')) {
-    return {
-      domain: 'logs',
-      domainPath: 'logs',
-      title: '감사 로그',
-      subtitle: '프로젝트 레벨 감사 로그 API 연결 전까지는 연동 준비 상태를 안내합니다.',
-      primaryLabel: '검토로 이동',
-      primaryTo: `/projects/${appConfig.defaultProjectId}/reviews`,
-      contextLabel: 'logs',
-      filterLabels: ['백엔드 미지원'],
-    };
-  }
-
   if (pathname.includes('/roles')) {
     return {
       domain: 'roles',
@@ -435,11 +420,11 @@ function getShellConfig(pathname: string) {
       domain: 'milestones',
       domainPath: 'milestones',
       title: '마일스톤',
-      subtitle: '마일스톤 API 연결 전까지는 연동 범위와 후속 작업을 안내합니다.',
+      subtitle: '마일스톤 단위로 진행률, 위험, 연결 업무를 확인합니다.',
       primaryLabel: '업무로 이동',
       primaryTo: `/projects/${appConfig.defaultProjectId}/tasks`,
       contextLabel: 'milestones',
-      filterLabels: ['백엔드 미지원'],
+      filterLabels: ['위험', '진행률'],
     };
   }
 

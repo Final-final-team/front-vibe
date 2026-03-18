@@ -44,10 +44,6 @@ export default function RolesPermissionsPage() {
   const permissionRole = roleById.get(permissionRoleId ?? '') ?? null;
   const detailKeys = detailRole ? getEffectivePermissionKeys(detailRole.id, detailRole.permissionKeys, permissionOverrides) : [];
   const detailPermissionDefinitions = permissions.filter((permission) => detailKeys.includes(permission.key));
-  const groupedCatalog = categories.map((category) => ({
-    category,
-    items: permissions.filter((permission) => permission.category === category),
-  }));
   const createRoleError = createRoleMutation.error
     ? (createRoleMutation.error instanceof BackendApiError ? createRoleMutation.error : toBackendApiError(createRoleMutation.error))
     : null;
@@ -109,13 +105,13 @@ export default function RolesPermissionsPage() {
   }
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-6">
       <section className="pt-6">
-        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border/70 pb-4">
           <div>
             <h2 className="text-lg font-semibold tracking-tight text-foreground">역할 카탈로그</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              메인 화면에서는 역할 이름과 책임만 보고, 세부 정책과 권한 관리는 모두 모달에서 처리합니다.
+              이 화면은 역할 이름과 책임만 빠르게 보고, 상세 정책과 권한 편집은 모두 모달에서 처리합니다.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -129,29 +125,31 @@ export default function RolesPermissionsPage() {
           </div>
         </div>
 
-        <div className="grid gap-3 xl:grid-cols-2">
-          {roles.map((role) => {
-            const effectiveKeys = getEffectivePermissionKeys(role.id, role.permissionKeys, permissionOverrides);
-            const categoryCount = categories.filter((category) =>
-              permissions.some((permission) => permission.category === category && effectiveKeys.includes(permission.key)),
-            ).length;
+        <div className="mt-5 flex flex-wrap items-center gap-6 text-sm">
+          <InlineKpi label="역할" value={`${roles.length}개`} />
+          <InlineKpi label="권한 카테고리" value={`${categories.length}개`} />
+          <InlineKpi label="프로젝트 범위" value={currentProject?.code ?? '-'} />
+        </div>
+      </section>
 
-            return (
-              <div key={role.id} className="border-b border-border/70 px-1 py-5">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="inline-flex h-2.5 w-2.5 rounded-full" style={{ backgroundColor: role.color }} />
-                      <h3 className="text-lg font-semibold text-foreground">{role.name}</h3>
-                    </div>
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{role.description}</p>
-                    <div className="mt-3 text-xs text-muted-foreground">
-                      {effectiveKeys.length}개 권한 · {categoryCount}개 카테고리
-                    </div>
+      <section className="grid gap-4 md:grid-cols-2">
+        {roles.map((role) => {
+          const effectiveKeys = getEffectivePermissionKeys(role.id, role.permissionKeys, permissionOverrides);
+          return (
+            <article key={role.id} className="border-b border-border/70 px-1 py-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex h-2.5 w-2.5 rounded-full" style={{ backgroundColor: role.color }} />
+                    <h3 className="text-lg font-semibold text-foreground">{role.name}</h3>
                   </div>
-                  <StatusPill tone="slate">{currentProject?.code ?? '-'}</StatusPill>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{role.description}</p>
+                  <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <StatusPill tone="slate">{effectiveKeys.length}개 허용 권한</StatusPill>
+                    <StatusPill tone="slate">{currentProject?.code ?? '-'} 범위</StatusPill>
+                  </div>
                 </div>
-                <div className="mt-4 flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Button
                     type="button"
                     variant="ghost"
@@ -164,26 +162,21 @@ export default function RolesPermissionsPage() {
                     상세 보기
                     <ChevronRight size={14} />
                   </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="h-8 rounded-lg px-3 text-sm font-medium text-primary"
-                    onClick={() => openPermissionModal(role.id)}
-                  >
+                  <Button type="button" variant="ghost" className="h-8 rounded-lg px-3 text-sm font-medium text-primary" onClick={() => openPermissionModal(role.id)}>
                     권한 관리
                   </Button>
                 </div>
               </div>
-            );
-          })}
-        </div>
+            </article>
+          );
+        })}
       </section>
 
       <AppModal
         open={createRoleOpen}
         onOpenChange={setCreateRoleOpen}
         title="새 역할 추가"
-        description="새 역할은 이름, 설명, 기본 식별 색상만 먼저 만들고 세부 권한은 이후 권한 관리에서 연결합니다."
+        description="역할 이름과 책임만 먼저 만들고 세부 권한은 이후 권한 관리에서 연결합니다."
         badges={
           <>
             <StatusPill tone="purple">역할 생성</StatusPill>
@@ -352,48 +345,46 @@ export default function RolesPermissionsPage() {
         {permissionRole ? (
           <div className="space-y-6">
             <div className="flex flex-wrap items-center justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-lg px-3"
-                onClick={() => setDraftPermissionKeys(permissions.map((permission) => permission.key))}
-              >
+              <Button type="button" variant="outline" className="rounded-lg px-3" onClick={() => setDraftPermissionKeys(permissions.map((permission) => permission.key))}>
                 전체 허용
               </Button>
               <Button type="button" variant="outline" className="rounded-lg px-3" onClick={() => setDraftPermissionKeys([])}>
                 전체 해제
               </Button>
             </div>
-            {groupedCatalog.map(({ category, items }) => (
-              <section key={category} className="border-t border-border/60 pt-4 first:border-t-0 first:pt-0">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <h3 className="text-base font-semibold text-foreground">{category}</h3>
-                  <StatusPill tone="slate">{items.filter((item) => draftPermissionKeys.includes(item.key)).length}개 허용</StatusPill>
-                </div>
-                <div className="space-y-2">
-                  {items.map((permission) => {
-                    const active = draftPermissionKeys.includes(permission.key);
-                    return (
-                      <button
-                        key={permission.key}
-                        type="button"
-                        onClick={() => togglePermission(permission.key)}
-                        className={[
-                          'flex w-full items-start justify-between gap-4 rounded-2xl border px-4 py-4 text-left transition',
-                          active ? 'border-primary/30 bg-primary/5' : 'border-border/70 hover:border-border',
-                        ].join(' ')}
-                      >
-                        <div className="min-w-0">
-                          <div className="font-medium text-foreground">{permission.name}</div>
-                          <p className="mt-2 text-sm leading-6 text-muted-foreground">{permission.description}</p>
-                        </div>
-                        <StatusPill tone={active ? 'blue' : 'slate'}>{active ? '허용' : '미허용'}</StatusPill>
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-            ))}
+            {categories.map((category) => {
+              const items = permissions.filter((permission) => permission.category === category);
+              return (
+                <section key={category} className="border-t border-border/60 pt-4 first:border-t-0 first:pt-0">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <h3 className="text-base font-semibold text-foreground">{category}</h3>
+                    <StatusPill tone="slate">{items.filter((item) => draftPermissionKeys.includes(item.key)).length}개 허용</StatusPill>
+                  </div>
+                  <div className="space-y-2">
+                    {items.map((permission) => {
+                      const active = draftPermissionKeys.includes(permission.key);
+                      return (
+                        <button
+                          key={permission.key}
+                          type="button"
+                          onClick={() => togglePermission(permission.key)}
+                          className={[
+                            'flex w-full items-start justify-between gap-4 rounded-xl border px-4 py-4 text-left transition',
+                            active ? 'border-primary/30 bg-primary/5' : 'border-border/70 hover:border-border',
+                          ].join(' ')}
+                        >
+                          <div className="min-w-0">
+                            <div className="font-medium text-foreground">{permission.name}</div>
+                            <p className="mt-2 text-sm leading-6 text-muted-foreground">{permission.description}</p>
+                          </div>
+                          <StatusPill tone={active ? 'blue' : 'slate'}>{active ? '허용' : '미허용'}</StatusPill>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+              );
+            })}
             {updatePermissionsError ? (
               <div className="rounded-[22px] border border-destructive/30 bg-destructive/5 px-4 py-4 text-sm leading-6 text-destructive">
                 권한 저장에 실패했습니다. {updatePermissionsError.message}
@@ -447,6 +438,15 @@ function buildPolicyStatement(permissionKey: string) {
   const resourceLabel = resource?.toLowerCase() ?? 'project';
   const actionLabel = actions.join(':').toLowerCase();
   return `${resourceLabel}:${actionLabel || 'read'} on project/*`;
+}
+
+function InlineKpi({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="text-sm text-muted-foreground">
+      <span>{label}</span>
+      <span className="ml-2 font-semibold text-foreground">{value}</span>
+    </div>
+  );
 }
 
 function MetaRow({ label, value }: { label: string; value: string }) {

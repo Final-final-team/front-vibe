@@ -6,6 +6,7 @@
 - `vercel-ops-security-guide.md`: Vercel 운영 및 보안 가이드
 - `codex-frontend-ui-quality-guide.md`: Codex 프론트엔드 UI/UX 품질 가이드
 - `task-command-next-pass.md`: 다음 단계 업무 커맨드 UX 연결 메모
+- `backend-integration-gaps.md`: 아직 백엔드 연동이 없어 메인 UI에서 제외한 항목 정리
 
 ## WHY Index
 

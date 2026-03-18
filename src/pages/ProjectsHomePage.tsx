@@ -4,7 +4,6 @@ import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { useWorkspace } from '../features/workspace/use-workspace';
 import { formatDate } from '../shared/lib/format';
-import PageHero from '../shared/ui/PageHero';
 
 export default function ProjectsHomePage() {
   const navigate = useNavigate();
@@ -12,76 +11,73 @@ export default function ProjectsHomePage() {
 
   return (
     <div className="space-y-6">
-      <PageHero
-        eyebrow={<Badge className="rounded-full bg-primary/12 px-3 py-1 text-primary hover:bg-primary/12">Workspace Home</Badge>}
-        title="프로젝트 허브"
-        description="집 아이콘을 누르면 가장 먼저 보는 메인 화면입니다. 프로젝트 카드에서 작업공간을 고르고, 그다음 업무 보드나 검토 보관함으로 들어갑니다."
-        stats={
-          <div className="grid gap-3 sm:grid-cols-3">
-            <SummaryCard title="프로젝트" value={`${projects.length}개`} icon={<Layers3 size={16} />} />
-            <SummaryCard
+      <section className="pt-6">
+        <div className="border-b border-border/70 pb-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <Badge className="rounded-full bg-primary/10 px-3 py-1 text-primary hover:bg-primary/10">프로젝트 허브</Badge>
+            <span className="text-sm text-muted-foreground">가장 먼저 보는 메인 화면입니다. 프로젝트를 고른 뒤 업무와 검토로 들어갑니다.</span>
+          </div>
+          <div className="mt-5 flex flex-wrap items-center gap-6 text-sm">
+            <SummaryInline title="프로젝트" value={`${projects.length}개`} icon={<Layers3 size={16} />} />
+            <SummaryInline
               title="열린 업무"
               value={`${projects.reduce((sum, project) => sum + project.openTaskCount, 0)}건`}
               icon={<FolderKanban size={16} />}
             />
-            <SummaryCard
+            <SummaryInline
               title="참여 멤버"
               value={`${projects.reduce((sum, project) => sum + project.memberCount, 0)}명`}
               icon={<Users size={16} />}
             />
           </div>
-        }
-      />
+        </div>
+      </section>
 
-      <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {projects.map((project) => (
-          <article
-            key={project.id}
-            className="group rounded-[28px] border border-border/70 bg-background px-5 py-5 shadow-[0_14px_40px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_22px_55px_rgba(37,99,235,0.12)]"
-          >
+          <article key={project.id} className="border-b border-border/70 px-1 py-5">
             <div className="flex items-start justify-between gap-3">
-              <div>
+              <div className="min-w-0">
                 <div className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{project.code}</div>
-                <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground">{project.name}</h3>
+                <h3 className="mt-2 text-lg font-semibold tracking-tight text-foreground">{project.name}</h3>
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">{project.description}</p>
                 {currentProjectDetail?.projectId === project.id ? (
                   <div className="mt-3 flex flex-wrap items-center gap-2">
                     <Badge variant="outline" className="rounded-full border-primary/20 bg-primary/[0.06] text-primary">
                       현재 작업공간
                     </Badge>
                     <Badge variant="outline" className="rounded-full">
-                      멤버십 {getMembershipLabel(currentProjectDetail.membershipStatus)}
+                      {getMembershipLabel(currentProjectDetail.membershipStatus)}
                     </Badge>
                     <Badge variant="outline" className="rounded-full">
-                      상태 {getProjectStatusLabel(currentProjectDetail.status)}
+                      {getProjectStatusLabel(currentProjectDetail.status)}
                     </Badge>
                   </div>
                 ) : null}
               </div>
-              <div className="rounded-full border border-border/70 bg-muted/30 px-3 py-1 text-xs font-semibold text-muted-foreground">
+              <div className="rounded-full border border-border/70 px-3 py-1 text-xs font-semibold text-muted-foreground">
                 진행률 {project.progress}%
               </div>
             </div>
 
-            <p className="mt-4 min-h-12 text-sm leading-7 text-muted-foreground">{project.description}</p>
-
-            <div className="mt-5 grid grid-cols-3 gap-3">
+            <div className="mt-4 grid grid-cols-3 gap-3">
               <MetricCard label="멤버" value={`${project.memberCount}명`} />
               <MetricCard label="열린 업무" value={`${project.openTaskCount}건`} />
               <MetricCard label="검토 큐" value={`${project.reviewQueueCount}건`} />
             </div>
 
-            <div className="mt-5 h-2 overflow-hidden rounded-full bg-muted/70">
+            <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-muted/60">
               <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${project.progress}%` }} />
             </div>
 
-            <div className="mt-5 flex items-center justify-between text-xs text-muted-foreground">
+            <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
               <span>{project.ownerName}</span>
               <span>업데이트 {formatDate(project.updatedAt)}</span>
             </div>
 
-            <div className="mt-6 flex items-center gap-2">
+            <div className="mt-5 flex items-center gap-2">
               <Button
-                className="flex-1 rounded-2xl"
+                className="flex-1 rounded-xl"
                 onClick={() => {
                   setSelectedProjectId(project.id);
                   navigate(`/projects/${project.id}/tasks`);
@@ -91,7 +87,7 @@ export default function ProjectsHomePage() {
               </Button>
               <Button
                 variant="outline"
-                className="rounded-2xl"
+                className="rounded-xl"
                 onClick={() => {
                   setSelectedProjectId(project.id);
                   navigate(`/projects/${project.id}/reviews`);
@@ -108,21 +104,19 @@ export default function ProjectsHomePage() {
   );
 }
 
-function SummaryCard({ title, value, icon }: { title: string; value: string; icon: React.ReactNode }) {
+function SummaryInline({ title, value, icon }: { title: string; value: string; icon: React.ReactNode }) {
   return (
-    <div className="rounded-[22px] border border-border/70 bg-background/85 px-4 py-4">
-      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-        {icon}
-        {title}
-      </div>
-      <div className="mt-3 text-2xl font-semibold tracking-tight text-foreground">{value}</div>
+    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <span className="text-foreground/70">{icon}</span>
+      <span>{title}</span>
+      <span className="font-semibold text-foreground">{value}</span>
     </div>
   );
 }
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[18px] border border-border/70 bg-muted/20 px-3 py-3">
+    <div className="rounded-xl border border-border/60 bg-muted/15 px-3 py-3">
       <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
       <div className="mt-1 text-sm font-semibold text-foreground">{value}</div>
     </div>
