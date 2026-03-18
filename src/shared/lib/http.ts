@@ -60,6 +60,10 @@ export function buildBackendHeaders({
     resolved.set('Content-Type', 'application/json');
   }
 
+  if (!resolved.has('ngrok-skip-browser-warning')) {
+    resolved.set('ngrok-skip-browser-warning', 'true');
+  }
+
   if (isMutationMethod(method)) {
     const csrfToken = readCookie('XSRF-TOKEN');
 
