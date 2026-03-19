@@ -1,4 +1,5 @@
 import type { PriorityLevel } from '../workspace/types';
+import type { TaskAssignee } from '../tasks/types';
 
 export type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'IN_REVIEW' | 'COMPLETED';
 export type ReviewStatus = 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
@@ -89,6 +90,7 @@ export type ReviewHistoryItem = {
 export type ReviewCreateInput = {
   content: string;
   referenceUserIds: number[];
+  additionalReviewerUserIds: number[];
   attachments: Array<{
     objectKey: string;
     originalName: string;
@@ -119,6 +121,7 @@ export type ReviewTask = {
   title: string;
   summary: string;
   authorId: number;
+  assignees: TaskAssignee[];
   priority: PriorityLevel;
   startDate: string;
   dueDate: string;

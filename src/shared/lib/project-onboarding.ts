@@ -5,6 +5,7 @@ export type ProjectOnboardingDraft = {
 };
 
 const PROJECT_ONBOARDING_KEY = 'wm_project_onboarding';
+const HUB_TUTORIAL_KEY = 'wm_hub_tutorial_completed';
 
 function readStorage() {
   if (typeof window === 'undefined') {
@@ -66,4 +67,20 @@ export function completeProjectOnboarding(input: {
       completedAt: new Date().toISOString(),
     } satisfies ProjectOnboardingDraft),
   );
+}
+
+export function hasCompletedHubTutorial() {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  return window.localStorage.getItem(HUB_TUTORIAL_KEY) === 'done';
+}
+
+export function completeHubTutorial() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.localStorage.setItem(HUB_TUTORIAL_KEY, 'done');
 }

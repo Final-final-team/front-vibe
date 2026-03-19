@@ -11,6 +11,7 @@ import {
   fetchProjectDetail,
   fetchProjectMembers,
   fetchProjectRoles,
+  inviteProjectMember,
   revokeProjectMemberRole,
   updateProjectRolePermissions,
 } from './api';
@@ -670,6 +671,51 @@ export function useApplyProjectMemberRoles(projectId: string | null) {
         queryClient.invalidateQueries({ queryKey: workspaceKeys.members(projectId) }),
         queryClient.invalidateQueries({ queryKey: workspaceKeys.roles(projectId) }),
       ]);
+    },
+  });
+}
+
+export function useInviteProjectMember(projectId: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ targetEmail }: { targetEmail: string }) => {
+      if (!projectId) {
+        throw new Error('projectId is required');
+      }
+
+      if (appConfig.useMock) {
+        const members = mockMembersByProject[projectId] ?? [];
+        const normalizedEmail = targetEmail.trim().toLowerCase();
+        const existing = members.find((member) => member.email.toLowerCase() === normalizedEmail);
+
+        if (existing) {
+          return existing;
+        }
+
+        const nextMember: ProjectMember = {
+          id: Date.now(),
+          userId: Date.now(),
+          name: normalizedEmail.split('@')[0] || '초대 대상',
+          email: normalizedEmail,
+          team: '초대 대상',
+          inviteStatus: 'INVITED',
+          roleIds: [],
+          lastActiveAt: null,
+        };
+
+        mockMembersByProject[projectId] = [nextMember, ...members];
+        return nextMember;
+      }
+
+      return inviteProjectMember(projectId, targetEmail.trim());
+    },
+    onSuccess: async () => {
+      if (!projectId) {
+        return;
+      }
+
+      await queryClient.invalidateQueries({ queryKey: workspaceKeys.members(projectId) });
     },
   });
 }

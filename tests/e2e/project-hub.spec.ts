@@ -3,8 +3,13 @@ import { expect, test } from 'playwright/test';
 test('project hub renders with hero and workspace cards', async ({ page }) => {
   await page.goto('/projects');
 
-  await expect(page.getByText('프로젝트를 고르고 바로 업무와 검토 흐름으로 들어가는 메인 허브')).toBeVisible();
-  await expect(page.getByText('Workspace Collection')).toBeVisible();
-  await expect(page.getByRole('button', { name: '업무 보드 바로 열기' })).toBeVisible();
-  await expect(page.getByRole('button', { name: '업무 보드 열기' }).first()).toBeVisible();
+  const tutorialDismiss = page.getByRole('button', { name: '다시 보지 않기' });
+  if (await tutorialDismiss.isVisible().catch(() => false)) {
+    await tutorialDismiss.click();
+  }
+
+  await expect(page.getByRole('heading', { name: '오늘 해야 할 프로젝트를 바로 선택하세요' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '지금 들어갈 프로젝트' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '지금 바로 시작' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '업무 시작' }).first()).toBeVisible();
 });

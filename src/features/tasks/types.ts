@@ -2,6 +2,11 @@ import type { PriorityLevel } from '../workspace/types';
 
 export type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'IN_REVIEW' | 'COMPLETED';
 
+export type TaskAssignee = {
+  userId: number;
+  name: string;
+};
+
 export type TaskSummary = {
   id: number;
   projectId: number;
@@ -11,6 +16,7 @@ export type TaskSummary = {
   startDate: string | null;
   dueDate: string | null;
   authorId: number;
+  assignees: TaskAssignee[];
   createdAt: string;
   updatedAt: string;
 };

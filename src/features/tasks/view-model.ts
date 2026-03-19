@@ -6,11 +6,14 @@ export type TaskViewItem = {
   title: string;
   summary: string;
   status: TaskStatus;
+  creatorId: number;
+  creatorName: string;
+  assignees: Array<{ userId: number; name: string }>;
   assigneeId: number;
   assigneeName: string;
   priority: PriorityLevel;
-  dueDate: string;
-  startDate: string;
+  dueDate: string | null;
+  startDate: string | null;
   createdAt: string;
   updatedAt: string;
   domain: string;
@@ -31,27 +34,39 @@ export function buildTaskViewItems({
   milestones: ProjectMilestone[];
   members?: ProjectMember[];
 }): TaskViewItem[] {
-  return taskMeta
-    .map((meta) => {
+  const items: TaskViewItem[] = [];
+
+  taskMeta.forEach((meta) => {
       const task = tasks.find((item) => item.id === meta.taskId);
       const milestone = milestones.find((item) => item.id === meta.milestoneId);
 
       if (!task || !milestone) {
-        return null;
+        return;
       }
 
-      return {
+      const resolvedAssignees =
+        task.assignees.length > 0
+          ? task.assignees
+          : meta.assigneeId > 0
+            ? [{ userId: meta.assigneeId, name: meta.assigneeName }]
+            : [];
+      const primaryAssignee = resolvedAssignees[0] ?? null;
+
+      items.push({
         id: meta.taskId,
         title: task.title,
         summary: task.summary,
         status: task.latestReviewStatus,
-        assigneeId: task.authorId || meta.assigneeId,
-        assigneeName:
+        creatorId: task.authorId,
+        creatorName:
           members.find((member) => member.userId === task.authorId)?.name ??
-          (task.authorId === 0 ? '담당 없음' : meta.assigneeName),
+          (task.authorId === 0 ? '작성자 정보 없음' : `작성자 #${task.authorId}`),
+        assignees: resolvedAssignees,
+        assigneeId: primaryAssignee?.userId ?? 0,
+        assigneeName: resolvedAssignees.length > 0 ? resolvedAssignees.map((assignee) => assignee.name).join(', ') : '담당 없음',
         priority: task.priority ?? meta.priority,
         dueDate: task.dueDate || meta.dueDate,
-        startDate: task.startDate || deriveStartDate(task.dueDate || meta.dueDate, task.priority ?? meta.priority),
+        startDate: task.startDate || null,
         createdAt: task.createdAt,
         updatedAt: task.updatedAt,
         domain: meta.domain,
@@ -59,10 +74,10 @@ export function buildTaskViewItems({
         milestoneName: milestone.name,
         milestoneHealth: milestone.health,
         progress: getStatusProgress(task.latestReviewStatus),
-      } satisfies TaskViewItem;
-    })
-    .filter((item): item is TaskViewItem => item !== null)
-    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+      });
+    });
+
+  return items.sort((a, b) => getSortableTime(a.dueDate) - getSortableTime(b.dueDate));
 }
 
 export function groupTasksByStatus(items: TaskViewItem[]) {
@@ -130,22 +145,6 @@ export function getPriorityTone(priority: PriorityLevel) {
   }
 }
 
-function deriveStartDate(dueDate: string, priority: PriorityLevel) {
-  const date = new Date(dueDate);
-  const offsetDays =
-    priority === 'HIGHEST'
-      ? 7
-      : priority === 'HIGH'
-        ? 5
-        : priority === 'MEDIUM'
-          ? 3
-          : priority === 'LOW'
-            ? 2
-            : 1;
-  date.setDate(date.getDate() - offsetDays);
-  return date.toISOString();
-}
-
 function getStatusProgress(status: TaskStatus) {
   switch (status) {
     case 'PENDING':
@@ -157,4 +156,13 @@ function getStatusProgress(status: TaskStatus) {
     default:
       return 36;
   }
+}
+
+function getSortableTime(value: string | null) {
+  if (!value) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+
+  const timestamp = new Date(value).getTime();
+  return Number.isNaN(timestamp) ? Number.MAX_SAFE_INTEGER : timestamp;
 }

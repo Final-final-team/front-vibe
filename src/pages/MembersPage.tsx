@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { MailPlus, ShieldCheck, UserCheck, Users } from 'lucide-react';
-import { usePermissions, useProjectMembers, useProjectRoles, useApplyProjectMemberRoles } from '../features/workspace/hooks';
+import { usePermissions, useProjectMembers, useProjectRoles, useApplyProjectMemberRoles, useInviteProjectMember } from '../features/workspace/hooks';
 import { useWorkspace } from '../features/workspace/use-workspace';
 import { formatDate } from '../shared/lib/format';
 import AppModal from '../shared/ui/AppModal';
@@ -32,15 +32,19 @@ export default function MembersPage() {
   const { data: roles = [] } = useProjectRoles(currentProject?.id ?? null);
   const { data: permissions = [] } = usePermissions();
   const applyRolesMutation = useApplyProjectMemberRoles(currentProject?.id ?? null);
+  const inviteMemberMutation = useInviteProjectMember(currentProject?.id ?? null);
   const [invitePlanOpen, setInvitePlanOpen] = useState(false);
   const [profileMemberId, setProfileMemberId] = useState<number | null>(null);
   const [assignmentMemberId, setAssignmentMemberId] = useState<number | null>(null);
   const [draftRoleIds, setDraftRoleIds] = useState<string[]>([]);
   const [memberKeyword, setMemberKeyword] = useState('');
   const [memberFilter, setMemberFilter] = useState<MemberFilter>('ALL');
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteSuccessMessage, setInviteSuccessMessage] = useState<string | null>(null);
 
   const profileMember = members.find((member) => member.id === profileMemberId) ?? null;
   const assignmentMember = members.find((member) => member.id === assignmentMemberId) ?? null;
+  const assignableRoles = roles.filter((role) => !role.system);
 
   const invitedCount = members.filter((member) => member.inviteStatus === 'INVITED').length;
   const activeCount = members.filter((member) => member.inviteStatus === 'ACTIVE').length;
@@ -73,18 +77,27 @@ export default function MembersPage() {
       return acc;
     }, {});
 
-  const effectiveRoleIds = draftRoleIds.length > 0 ? draftRoleIds : assignmentMember?.roleIds ?? [];
+  const currentAssignableRoleIds =
+    assignmentMember?.roleIds.filter((roleId) => assignableRoles.some((role) => role.id === roleId)) ?? [];
+  const effectiveRoleIds = draftRoleIds.length > 0 ? draftRoleIds : currentAssignableRoleIds;
   const effectiveRoles = roles.filter((role) => effectiveRoleIds.includes(role.id));
   const applyRoleError = applyRolesMutation.error
     ? (applyRolesMutation.error instanceof BackendApiError
         ? applyRolesMutation.error
         : toBackendApiError(applyRolesMutation.error))
     : null;
+  const inviteError = inviteMemberMutation.error
+    ? (inviteMemberMutation.error instanceof BackendApiError
+        ? inviteMemberMutation.error
+        : toBackendApiError(inviteMemberMutation.error))
+    : null;
 
   function toggleRole(roleId: string) {
-    setDraftRoleIds((current) =>
-      current.includes(roleId) ? current.filter((item) => item !== roleId) : [...current, roleId],
-    );
+    setDraftRoleIds((current) => (current[0] === roleId ? [] : [roleId]));
+  }
+
+  function getAssignableRoleIds(roleIds: string[]) {
+    return roleIds.filter((roleId) => assignableRoles.some((role) => role.id === roleId));
   }
 
   return (
@@ -164,10 +177,10 @@ export default function MembersPage() {
                     </div>
                     <StatusPill tone={inviteToneMap[member.inviteStatus]}>{inviteLabelMap[member.inviteStatus]}</StatusPill>
                   </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
+                  <div className="mt-3 flex flex-wrap gap-1.5">
                     {member.roleIds.map((roleId) => {
                       const role = roles.find((item) => item.id === roleId);
-                      return <RoleToken key={roleId} label={role?.name ?? roleId} color={role?.color} />;
+                      return <RoleToken key={roleId} label={role?.name ?? roleId} />;
                     })}
                   </div>
                   <div className="mt-3 text-xs text-muted-foreground">
@@ -180,7 +193,7 @@ export default function MembersPage() {
                     className="h-9 rounded-xl px-4"
                     onClick={() => {
                       setAssignmentMemberId(member.id);
-                      setDraftRoleIds(member.roleIds);
+                      setDraftRoleIds(getAssignableRoleIds(member.roleIds));
                     }}
                   >
                     역할 부여
@@ -216,10 +229,10 @@ export default function MembersPage() {
                       <StatusPill tone={inviteToneMap[member.inviteStatus]}>{inviteLabelMap[member.inviteStatus]}</StatusPill>
                     </div>
                     <div className="flex items-center text-foreground/80">{member.team}</div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-1.5">
                       {member.roleIds.map((roleId) => {
                         const role = roles.find((item) => item.id === roleId);
-                        return <RoleToken key={roleId} label={role?.name ?? roleId} color={role?.color} />;
+                        return <RoleToken key={roleId} label={role?.name ?? roleId} />;
                       })}
                     </div>
                     <div className="flex items-center text-muted-foreground">
@@ -233,7 +246,7 @@ export default function MembersPage() {
                         onClick={(event) => {
                           event.stopPropagation();
                           setAssignmentMemberId(member.id);
-                          setDraftRoleIds(member.roleIds);
+                          setDraftRoleIds(getAssignableRoleIds(member.roleIds));
                         }}
                       >
                         역할 부여
@@ -294,9 +307,9 @@ export default function MembersPage() {
               </div>
               <div>
                 <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">현재 연결 역할</div>
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-3 flex flex-wrap gap-1.5">
                   {profileRoles.map((role) => (
-                    <RoleToken key={role.id} label={role.name} color={role.color} />
+                    <RoleToken key={role.id} label={role.name} />
                   ))}
                 </div>
                 <div className="mt-4 text-xs text-muted-foreground">허용 권한 {profilePermissionKeys.length}개</div>
@@ -325,23 +338,71 @@ export default function MembersPage() {
 
       <AppModal
         open={invitePlanOpen}
-        onOpenChange={setInvitePlanOpen}
-        title="멤버 초대 기능 준비 중"
-        description="초대 발송, 토큰 검증, 수락/만료 처리 플로우는 사용자/이메일 체계가 정리된 뒤 연결합니다."
+        onOpenChange={(open) => {
+          setInvitePlanOpen(open);
+          if (!open) {
+            setInviteEmail('');
+            setInviteSuccessMessage(null);
+          }
+        }}
+        title="멤버 초대/추가"
+        description="이메일만 입력하면 백엔드가 같은 이메일의 사용자를 찾아 프로젝트 멤버로 추가합니다."
         badges={
           <>
             <StatusPill tone="blue">초대 플로우</StatusPill>
-            <StatusPill tone="slate">추후 구현 예정</StatusPill>
+            <StatusPill tone="slate">백엔드 연동</StatusPill>
           </>
         }
         footer={
-          <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => setInvitePlanOpen(false)}>
-            닫기
-          </Button>
+          <div className="flex w-full items-center justify-end gap-3">
+            <Button type="button" variant="outline" className="rounded-xl px-4" onClick={() => setInvitePlanOpen(false)}>
+              닫기
+            </Button>
+            <Button
+              type="button"
+              className="rounded-xl px-4"
+              disabled={inviteMemberMutation.isPending || !inviteEmail.trim()}
+              onClick={() => {
+                setInviteSuccessMessage(null);
+                inviteMemberMutation.mutate(
+                  { targetEmail: inviteEmail.trim() },
+                  {
+                    onSuccess: () => {
+                      setInviteSuccessMessage(`${inviteEmail.trim()} 를 프로젝트 멤버로 추가했습니다.`);
+                      setInviteEmail('');
+                    },
+                  },
+                );
+              }}
+            >
+              {inviteMemberMutation.isPending ? '추가 중' : '멤버 추가'}
+            </Button>
+          </div>
         }
       >
-        <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-4 text-sm leading-6 text-muted-foreground">
-          이 버튼은 이후 초대 모달, 이메일 발송, 만료/거절 재초대 흐름까지 연결될 예정입니다. 지금 단계에서는 멤버 현황과 상태 모델만 먼저 검증합니다.
+        <div className="space-y-4">
+          <div>
+            <div className="mb-2 text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">초대 대상 이메일</div>
+            <Input
+              value={inviteEmail}
+              onChange={(event) => setInviteEmail(event.target.value)}
+              placeholder="예: someone@company.com"
+              type="email"
+            />
+          </div>
+          <div className="rounded-2xl border border-border/70 bg-muted/20 px-4 py-4 text-sm leading-6 text-muted-foreground">
+            등록된 사용자 이메일을 입력하면 해당 계정을 찾아 프로젝트에 바로 추가합니다. 아직 가입되지 않은 이메일은 초대할 수 없습니다.
+          </div>
+          {inviteSuccessMessage ? (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm leading-6 text-emerald-700">
+              {inviteSuccessMessage}
+            </div>
+          ) : null}
+          {inviteError ? (
+            <div className="rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-4 text-sm leading-6 text-destructive">
+              멤버 추가에 실패했습니다. {inviteError.message}
+            </div>
+          ) : null}
         </div>
       </AppModal>
 
@@ -383,7 +444,7 @@ export default function MembersPage() {
                   applyRolesMutation.mutate(
                     {
                       projectMemberId: assignmentMember.id,
-                      currentRoleIds: assignmentMember.roleIds,
+                      currentRoleIds: currentAssignableRoleIds,
                       nextRoleIds: draftRoleIds,
                     },
                     {
@@ -425,10 +486,10 @@ export default function MembersPage() {
               </div>
               <div>
                 <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">현재 연결 역할</div>
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-3 flex flex-wrap gap-1.5">
                   {assignmentMember.roleIds.map((roleId) => {
                     const role = roles.find((item) => item.id === roleId);
-                    return <RoleToken key={roleId} label={role?.name ?? roleId} color={role?.color} />;
+                    return <RoleToken key={roleId} label={role?.name ?? roleId} />;
                   })}
                 </div>
               </div>
@@ -437,11 +498,11 @@ export default function MembersPage() {
             <div>
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">역할 카탈로그</div>
-                <div className="text-xs text-muted-foreground">{draftRoleIds.length}개 선택</div>
+                <div className="text-xs text-muted-foreground">{draftRoleIds.length > 0 ? '1개 선택' : '선택 없음'}</div>
               </div>
-              <div className="space-y-2">
-                {roles.map((role) => {
-                  const active = draftRoleIds.includes(role.id);
+              <div className="grid gap-2 sm:grid-cols-2">
+                {assignableRoles.map((role) => {
+                  const active = effectiveRoleIds.includes(role.id);
 
                   return (
                     <button
@@ -449,19 +510,38 @@ export default function MembersPage() {
                       type="button"
                       onClick={() => toggleRole(role.id)}
                       className={[
-                        'w-full rounded-xl border px-3 py-3 text-left transition',
-                        active ? 'border-primary/30 bg-primary/5' : 'border-border/70 hover:border-border',
+                        'w-full rounded-xl border px-3 py-2 text-left transition',
+                        active ? 'border-slate-900 bg-slate-50 shadow-[0_6px_16px_rgba(15,23,42,0.06)]' : 'border-border/70 bg-background hover:border-slate-300 hover:bg-muted/20',
                       ].join(' ')}
                     >
-                      <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-semibold text-foreground">{role.name}</span>
-                            <StatusPill tone={active ? 'blue' : 'slate'}>{active ? '선택됨' : '미선택'}</StatusPill>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={[
+                                'mt-0.5 inline-flex h-2 w-2 rounded-full',
+                                active ? 'bg-slate-900' : 'bg-muted-foreground/35',
+                              ].join(' ')}
+                            />
+                            <span className="truncate text-sm font-semibold leading-none text-foreground">{role.name}</span>
                           </div>
-                          <p className="mt-1 text-sm leading-6 text-muted-foreground">{role.description}</p>
+                          <div className="mt-1.5 flex items-center gap-1.5">
+                            <span className="rounded-md border border-border/70 px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                              {role.permissionKeys.length}개 권한
+                            </span>
+                            {role.description ? (
+                              <span className="truncate text-[11px] text-muted-foreground">{role.description}</span>
+                            ) : null}
+                          </div>
                         </div>
-                        <div className="text-xs font-semibold text-muted-foreground">{role.permissionKeys.length}개 권한</div>
+                        <span
+                          className={[
+                            'shrink-0 rounded-md px-2 py-1 text-[10px] font-semibold',
+                            active ? 'bg-slate-900 text-white' : 'bg-muted text-muted-foreground',
+                          ].join(' ')}
+                        >
+                          {active ? '적용' : '선택'}
+                        </span>
                       </div>
                     </button>
                   );
@@ -481,15 +561,11 @@ export default function MembersPage() {
   );
 }
 
-function RoleToken({ label, color }: { label: string; color?: string }) {
+function RoleToken({ label }: { label: string }) {
   return (
     <span
-      className="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium"
-      style={{
-        borderColor: color ?? '#d1d5db',
-        color: color ?? '#475569',
-        backgroundColor: `${color ?? '#f8fafc'}12`,
-      }}
+      className="inline-flex items-center rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-semibold leading-none tracking-[0.01em] text-slate-600"
+      style={undefined}
     >
       {label}
     </span>

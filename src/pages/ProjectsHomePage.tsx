@@ -1,5 +1,5 @@
-import { ArrowRight, FolderKanban, FolderPlus, Layers3, LoaderCircle, Sparkles, Target, Users } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { ArrowRight, CirclePlay, FolderKanban, FolderPlus, Layers3, LoaderCircle, Sparkles, Target, Users } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Badge } from '../components/ui/badge';
@@ -9,6 +9,9 @@ import { createProject, workspaceKeys } from '../features/workspace/hooks';
 import { useWorkspace } from '../features/workspace/use-workspace';
 import { BackendApiError, toBackendApiError } from '../shared/lib/http';
 import { formatDate } from '../shared/lib/format';
+import BrandLockup from '../shared/ui/BrandLockup';
+import HubTutorialModal from '../features/workspace/components/HubTutorialModal';
+import { completeHubTutorial, hasCompletedHubTutorial } from '../shared/lib/project-onboarding';
 
 export default function ProjectsHomePage() {
   const navigate = useNavigate();
@@ -16,6 +19,7 @@ export default function ProjectsHomePage() {
   const { projects, currentProjectDetail, setSelectedProjectId } = useWorkspace();
   const [projectName, setProjectName] = useState('우리 팀 프로젝트');
   const [projectSummary, setProjectSummary] = useState('업무와 검토를 한 곳에서 관리할 기본 작업공간');
+  const [tutorialOpen, setTutorialOpen] = useState(false);
   const createProjectMutation = useMutation({
     mutationFn: createProject,
     onSuccess: async ({ projectId }) => {
@@ -50,26 +54,62 @@ export default function ProjectsHomePage() {
   }, [projects]);
   const featuredProject = projects[0] ?? null;
 
+  useEffect(() => {
+    if (!hasCompletedHubTutorial()) {
+      setTutorialOpen(true);
+    }
+  }, []);
+
+  function closeTutorialPermanently() {
+    completeHubTutorial();
+    setTutorialOpen(false);
+  }
+
   return (
     <div className="space-y-8 pb-8 pt-6">
+      <HubTutorialModal open={tutorialOpen} onOpenChange={setTutorialOpen} onComplete={closeTutorialPermanently} />
+
       <section className="overflow-hidden rounded-[34px] border border-slate-200/80 bg-[linear-gradient(135deg,#f8fbff_0%,#eef4ff_34%,#fff7ed_100%)] shadow-[0_28px_90px_rgba(15,23,42,0.08)]">
         <div className="grid gap-8 px-7 py-7 lg:grid-cols-[1.2fr_0.8fr] lg:px-9 lg:py-9">
           <div className="space-y-6">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge className="rounded-full bg-slate-900 px-3 py-1 text-white hover:bg-slate-900">Project Hub</Badge>
-              <Badge variant="outline" className="rounded-full border-white/70 bg-white/70 px-3 py-1 text-slate-700">
-                Main Workspace Entry
+            <div className="flex flex-wrap items-center gap-3">
+              <BrandLockup caption="Project : HEY-A-JI" />
+              <Badge variant="outline" className="rounded-full border-lime-200 bg-lime-50 px-3 py-1 text-lime-700">
+                오늘의 작업 시작점
               </Badge>
             </div>
 
             <div className="space-y-4">
               <h1 className="max-w-3xl text-[34px] font-semibold tracking-tight text-slate-950 lg:text-[42px]">
-                프로젝트를 고르고 바로 업무와 검토 흐름으로 들어가는 메인 허브
+                오늘 해야 할 프로젝트를 바로 선택하세요
               </h1>
-              <p className="max-w-2xl text-[15px] leading-8 text-slate-600">
-                지금 허브는 단순 목록이 아니라 현재 워크스페이스 상태를 읽고, 우선 들어갈 프로젝트를 바로 결정하는 출발점이어야 합니다. 진행률, 열린
-                업무, 멤버 밀도를 먼저 보여주고 아래 카드에서 각 프로젝트로 진입합니다.
+              <p className="max-w-[44rem] text-[15px] leading-8 text-slate-600">
+                <span className="block">업무, 검토, 멤버 현황을 먼저 보고 지금 가장 먼저 들어갈 작업 공간을 고를 수 있습니다.</span>
+                <span className="block">설명보다 선택이 먼저인 시작 화면으로 정리했습니다.</span>
               </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                className="rounded-2xl bg-slate-950 px-5 text-white hover:bg-slate-800"
+                onClick={() => {
+                  if (!featuredProject) return;
+                  setSelectedProjectId(featuredProject.id);
+                  navigate(`/projects/${featuredProject.id}/tasks`);
+                }}
+                disabled={!featuredProject}
+              >
+                가장 바쁜 프로젝트 열기
+                <ArrowRight size={16} />
+              </Button>
+              <Button
+                variant="outline"
+                className="rounded-2xl px-5"
+                onClick={() => setTutorialOpen(true)}
+              >
+                사용법 보기
+                <CirclePlay size={16} />
+              </Button>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
@@ -97,7 +137,7 @@ export default function ProjectsHomePage() {
           <div className="relative overflow-hidden rounded-[30px] border border-white/80 bg-white/75 p-6 shadow-[0_20px_70px_rgba(15,23,42,0.08)] backdrop-blur">
             <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.16),transparent_70%)]" />
             <div className="relative">
-              <div className="text-[12px] font-semibold uppercase tracking-[0.2em] text-slate-500">Featured Workspace</div>
+              <div className="text-[12px] font-semibold uppercase tracking-[0.2em] text-slate-500">Recommended now</div>
               {featuredProject ? (
                 <>
                   <div className="mt-4 flex items-start justify-between gap-3">
@@ -109,7 +149,9 @@ export default function ProjectsHomePage() {
                       진행률 {featuredProject.progress}%
                     </div>
                   </div>
-                  <p className="mt-4 text-sm leading-7 text-slate-600">{featuredProject.description}</p>
+                  <p className="mt-4 text-sm leading-7 text-slate-600">
+                    {featuredProject.description || '업무와 검토가 가장 먼저 모이는 대표 작업 공간입니다.'}
+                  </p>
                   <div className="mt-5 grid grid-cols-3 gap-3">
                     <MiniMetric label="멤버" value={`${featuredProject.memberCount}명`} />
                     <MiniMetric label="열린 업무" value={`${featuredProject.openTaskCount}건`} />
@@ -132,13 +174,13 @@ export default function ProjectsHomePage() {
                       navigate(`/projects/${featuredProject.id}/tasks`);
                     }}
                   >
-                    업무 보드 바로 열기
+                    지금 바로 시작
                     <ArrowRight size={16} />
                   </Button>
                 </>
               ) : (
                 <div className="mt-4 rounded-[24px] border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-sm leading-7 text-slate-500">
-                  아직 생성된 프로젝트가 없습니다. 아래에서 첫 프로젝트를 만들면 허브가 바로 활성화됩니다.
+                  아직 시작된 프로젝트가 없습니다. 아래에서 첫 프로젝트를 만들면 바로 업무 화면으로 이어집니다.
                 </div>
               )}
             </div>
@@ -150,8 +192,8 @@ export default function ProjectsHomePage() {
         <section className="space-y-5">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <div className="text-[12px] font-semibold uppercase tracking-[0.2em] text-slate-500">Workspace Collection</div>
-              <h2 className="mt-2 text-[28px] font-semibold tracking-tight text-slate-950">프로젝트 선택</h2>
+              <div className="text-[12px] font-semibold uppercase tracking-[0.2em] text-slate-500">Workspace lineup</div>
+              <h2 className="mt-2 text-[28px] font-semibold tracking-tight text-slate-950">지금 들어갈 프로젝트</h2>
             </div>
             <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background px-3 py-2 text-sm text-muted-foreground">
               <Users size={15} />
@@ -160,7 +202,7 @@ export default function ProjectsHomePage() {
           </div>
 
           <section className="grid gap-4 xl:grid-cols-2">
-            {projects.map((project, index) => {
+            {projects.map((project) => {
               const isCurrent = currentProjectDetail?.projectId === project.id;
 
               return (
@@ -176,12 +218,16 @@ export default function ProjectsHomePage() {
                           <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600">
                             {project.code}
                           </span>
-                          <span className="rounded-full border border-slate-200 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                            #{String(index + 1).padStart(2, '0')}
-                          </span>
+                          {project.reviewQueueCount > 0 ? (
+                            <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-700">
+                              검토 {project.reviewQueueCount}건
+                            </span>
+                          ) : null}
                         </div>
                         <h3 className="mt-4 text-[24px] font-semibold tracking-tight text-slate-950">{project.name}</h3>
-                        <p className="mt-3 max-w-xl text-sm leading-7 text-slate-600">{project.description}</p>
+                        <p className="mt-3 max-w-xl text-sm leading-7 text-slate-600">
+                          {project.description || '업무와 검토를 이어서 처리할 수 있는 기본 작업 공간입니다.'}
+                        </p>
                       </div>
 
                       <div className="shrink-0 rounded-[18px] border border-slate-200 bg-slate-50 px-3 py-2 text-right">
@@ -221,7 +267,7 @@ export default function ProjectsHomePage() {
 
                     <div className="mt-4 flex items-center justify-between text-xs text-slate-500">
                       <span>{project.ownerName}</span>
-                      <span>업데이트 {formatDate(project.updatedAt)}</span>
+                      <span>최근 업데이트 {formatDate(project.updatedAt)}</span>
                     </div>
 
                     <div className="mt-6 flex flex-wrap items-center gap-2">
@@ -233,7 +279,7 @@ export default function ProjectsHomePage() {
                           navigate(`/projects/${project.id}/tasks`);
                         }}
                       >
-                        업무 보드 열기
+                        업무 시작
                       </Button>
                       <Button
                         size="lg"
@@ -244,7 +290,7 @@ export default function ProjectsHomePage() {
                           navigate(`/projects/${project.id}/reviews`);
                         }}
                       >
-                        검토 보기
+                        검토 확인
                         <ArrowRight size={16} />
                       </Button>
                     </div>
@@ -254,56 +300,62 @@ export default function ProjectsHomePage() {
             })}
           </section>
         </section>
-      ) : (
-        <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="rounded-[32px] border border-slate-200/80 bg-[linear-gradient(160deg,#ffffff,#f7f9fc)] px-8 py-8 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
-            <Badge className="rounded-full bg-slate-950 px-3 py-1 text-white hover:bg-slate-950">First Project</Badge>
-            <h2 className="mt-5 text-3xl font-semibold tracking-tight text-slate-950">아직 비어 있는 허브를 첫 프로젝트로 바로 채웁니다</h2>
-            <p className="mt-4 text-sm leading-8 text-slate-600">
-              최초 로그인 사용자는 별도 온보딩 화면으로 빠지지 않고 여기서 바로 프로젝트를 만듭니다. 생성이 끝나면 곧바로 업무 보드로 이동합니다.
-            </p>
-            <div className="mt-7 space-y-4 text-sm leading-7 text-slate-600">
-              <FeatureLine text="허브 안에서 바로 첫 프로젝트를 만들고 이후부터는 여기서 작업공간을 전환합니다." />
-              <FeatureLine text="프로젝트 생성 이후 업무와 검토 흐름으로 바로 이어지도록 진입 비용을 줄였습니다." />
-            </div>
+      ) : null}
+
+      <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="rounded-[32px] border border-slate-200/80 bg-[linear-gradient(160deg,#ffffff,#f7f9fc)] px-8 py-8 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+          <BrandLockup caption={projects.length > 0 ? 'Create next' : 'Start with'} />
+          <h2 className="mt-5 text-3xl font-semibold tracking-tight text-slate-950">
+            {projects.length > 0 ? '새 프로젝트를 추가로 만들 수 있습니다' : '첫 프로젝트를 만들고 바로 일을 시작하세요'}
+          </h2>
+          <p className="mt-4 text-sm leading-8 text-slate-600">
+            {projects.length > 0
+              ? '이미 참여 중인 프로젝트가 있어도, 새 작업 공간을 추가로 만들고 바로 업무 보드로 이동할 수 있습니다.'
+              : '처음 들어온 사용자도 별도 설명 페이지 없이 여기서 바로 프로젝트를 만들고, 생성 직후 업무 보드로 이동할 수 있습니다.'}
+          </p>
+          <div className="mt-7 space-y-4 text-sm leading-7 text-slate-600">
+            <FeatureLine text="프로젝트를 만들면 담당, 업무, 검토 흐름이 바로 연결됩니다." />
+            <FeatureLine text="운영용, 실험용, 팀별 공간을 나눠서 추가할 수 있습니다." />
           </div>
+        </div>
 
-          <div className="rounded-[32px] border border-slate-200/80 bg-white px-7 py-8 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
-            <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Create Workspace
-            </div>
-            <h3 className="mt-5 text-[28px] font-semibold tracking-tight text-slate-950">첫 프로젝트 만들기</h3>
-            <form
-              className="mt-6 space-y-4"
-              onSubmit={(event) => {
-                event.preventDefault();
-                createProjectMutation.mutate({
-                  name: projectName.trim(),
-                  description: projectSummary.trim(),
-                });
-              }}
-            >
-              <Field label="프로젝트 이름">
-                <Input value={projectName} onChange={(event) => setProjectName(event.target.value)} placeholder="예: 운영 자동화 보드" />
-              </Field>
-              <Field label="프로젝트 설명">
-                <Input value={projectSummary} onChange={(event) => setProjectSummary(event.target.value)} placeholder="예: 업무와 검토를 한 곳에서 추적" />
-              </Field>
-
-              {apiError ? (
-                <div className="rounded-[22px] border border-destructive/30 bg-destructive/5 px-4 py-4 text-sm leading-6 text-destructive">
-                  프로젝트 생성에 실패했습니다. {apiError.message}
-                </div>
-              ) : null}
-
-              <Button type="submit" size="lg" className="mt-2 h-12 w-full rounded-2xl bg-slate-950 text-white hover:bg-slate-800" disabled={createProjectMutation.isPending}>
-                {createProjectMutation.isPending ? <LoaderCircle className="animate-spin" size={16} /> : <FolderPlus size={16} />}
-                {createProjectMutation.isPending ? '프로젝트 생성 중' : '프로젝트 생성하고 시작'}
-              </Button>
-            </form>
+        <div className="rounded-[32px] border border-slate-200/80 bg-white px-7 py-8 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+          <div className="inline-flex items-center rounded-full border border-lime-200 bg-lime-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-lime-700">
+            {projects.length > 0 ? 'Create another space' : 'Create your first space'}
           </div>
-        </section>
-      )}
+          <h3 className="mt-5 text-[28px] font-semibold tracking-tight text-slate-950">
+            {projects.length > 0 ? '새 프로젝트 만들기' : '첫 프로젝트 만들기'}
+          </h3>
+          <form
+            className="mt-6 space-y-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              createProjectMutation.mutate({
+                name: projectName.trim(),
+                description: projectSummary.trim(),
+              });
+            }}
+          >
+            <Field label="프로젝트 이름">
+              <Input value={projectName} onChange={(event) => setProjectName(event.target.value)} placeholder="예: 운영 자동화 보드" />
+            </Field>
+            <Field label="프로젝트 설명">
+              <Input value={projectSummary} onChange={(event) => setProjectSummary(event.target.value)} placeholder="예: 업무와 검토를 한 곳에서 추적" />
+            </Field>
+
+            {apiError ? (
+              <div className="rounded-[22px] border border-destructive/30 bg-destructive/5 px-4 py-4 text-sm leading-6 text-destructive">
+                프로젝트 생성에 실패했습니다. {apiError.message}
+              </div>
+            ) : null}
+
+            <Button type="submit" size="lg" className="mt-2 h-12 w-full rounded-2xl bg-slate-950 text-white hover:bg-slate-800" disabled={createProjectMutation.isPending}>
+              {createProjectMutation.isPending ? <LoaderCircle className="animate-spin" size={16} /> : <FolderPlus size={16} />}
+              {createProjectMutation.isPending ? '프로젝트 생성 중' : '프로젝트 생성하고 시작'}
+            </Button>
+          </form>
+        </div>
+      </section>
     </div>
   );
 }
@@ -361,7 +413,7 @@ function ProjectMetric({ label, value }: { label: string; value: string }) {
 function FeatureLine({ text }: { text: string }) {
   return (
     <div className="flex items-start gap-3">
-      <div className="mt-1 flex h-7 w-7 items-center justify-center rounded-full bg-slate-950 text-white">
+      <div className="mt-1 flex h-7 w-7 items-center justify-center rounded-full bg-[linear-gradient(145deg,#0b1120,#111f3a)] text-lime-300">
         <Sparkles size={14} />
       </div>
       <span>{text}</span>

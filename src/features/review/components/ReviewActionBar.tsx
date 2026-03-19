@@ -53,7 +53,7 @@ export default function ReviewActionBar({
       )}
       {canCancel && (
         <Button variant="secondary" icon={<RotateCcw size={16} />} onClick={onCancel}>
-          취소
+          상신 취소
         </Button>
       )}
       {canResubmit && status !== 'SUBMITTED' && (

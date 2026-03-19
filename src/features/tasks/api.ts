@@ -17,6 +17,7 @@ import {
 } from '../review/mock';
 import { getMockProjectIdForTask } from './mock-project';
 import type {
+  TaskAssignee,
   TaskAssignInput,
   TaskCreateInput,
   TaskDetail,
@@ -37,6 +38,7 @@ type BackendTaskSummary = {
   startDate: string | null;
   dueDate: string | null;
   authorId: number;
+  assignees: TaskAssignee[];
   createdAt: string;
   updatedAt: string;
 };
@@ -55,6 +57,7 @@ function mapTaskSummary(task: BackendTaskSummary): TaskSummary {
     startDate: task.startDate,
     dueDate: task.dueDate,
     authorId: task.authorId,
+    assignees: task.assignees ?? [],
     createdAt: task.createdAt,
     updatedAt: task.updatedAt,
   };
@@ -85,6 +88,7 @@ function mapMockTaskDetail(projectId: number, taskId: number) {
     startDate: task.startDate,
     dueDate: task.dueDate,
     authorId: task.authorId,
+    assignees: [],
     createdAt: task.createdAt,
     updatedAt: task.updatedAt,
     description: task.summary,
@@ -108,6 +112,7 @@ export async function fetchProjectTasks(
           startDate: task.startDate,
           dueDate: task.dueDate,
           authorId: task.authorId,
+          assignees: [],
           createdAt: task.createdAt,
           updatedAt: task.updatedAt,
         }))
@@ -170,6 +175,7 @@ export async function createTask(projectId: number, input: TaskCreateInput) {
         startDate: task.startDate,
         dueDate: task.dueDate,
         authorId: task.authorId,
+        assignees: [],
         createdAt: task.createdAt,
         updatedAt: task.updatedAt,
         description: task.summary,
@@ -206,6 +212,7 @@ export async function assignTask(projectId: number, taskId: number, input: TaskA
         startDate: task.startDate,
         dueDate: task.dueDate,
         authorId: task.authorId,
+        assignees: [{ userId: input.userId, name: `담당자 #${input.userId}` }],
         createdAt: task.createdAt,
         updatedAt: task.updatedAt,
         description: task.summary,
@@ -237,6 +244,7 @@ export async function assignTaskToMe(projectId: number, taskId: number) {
         startDate: task.startDate,
         dueDate: task.dueDate,
         authorId: task.authorId,
+        assignees: [{ userId: actor.actorId, name: `담당자 #${actor.actorId}` }],
         createdAt: task.createdAt,
         updatedAt: task.updatedAt,
         description: task.summary,

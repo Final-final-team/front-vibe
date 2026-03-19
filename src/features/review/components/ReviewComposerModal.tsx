@@ -1,17 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FileText, LoaderCircle, SendHorizontal, Users } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
-import { Input } from '../../../components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
 import { useSubmitReview } from '../hooks';
 import { ApiError } from '../api';
 import AppModal from '../../../shared/ui/AppModal';
-import { parseIdList } from '../../../shared/lib/format';
+import type { ProjectMember } from '../../workspace/types';
+import StatusPill from '../../../shared/ui/StatusPill';
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   taskId: number | null;
   taskTitle?: string | null;
+  memberOptions: ProjectMember[];
   onSubmitted?: (reviewId: number) => void;
 };
 
@@ -20,18 +22,32 @@ export default function ReviewComposerModal({
   onOpenChange,
   taskId,
   taskTitle,
+  memberOptions,
   onSubmitted,
 }: Props) {
   const submitMutation = useSubmitReview();
   const [content, setContent] = useState('');
-  const [references, setReferences] = useState('');
+  const [selectedReferenceId, setSelectedReferenceId] = useState('');
+  const [selectedReviewerId, setSelectedReviewerId] = useState('');
+  const [referenceIds, setReferenceIds] = useState<number[]>([]);
+  const [additionalReviewerIds, setAdditionalReviewerIds] = useState<number[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const parsedReferences = useMemo(() => parseIdList(references), [references]);
+  const referenceOptions = useMemo(
+    () => memberOptions.filter((member) => !referenceIds.includes(member.userId) && !additionalReviewerIds.includes(member.userId)),
+    [additionalReviewerIds, memberOptions, referenceIds],
+  );
+  const reviewerOptions = useMemo(
+    () => memberOptions.filter((member) => !additionalReviewerIds.includes(member.userId) && !referenceIds.includes(member.userId)),
+    [additionalReviewerIds, memberOptions, referenceIds],
+  );
 
   useEffect(() => {
     if (!open) {
       setContent('');
-      setReferences('');
+      setSelectedReferenceId('');
+      setSelectedReviewerId('');
+      setReferenceIds([]);
+      setAdditionalReviewerIds([]);
       setErrorMessage(null);
     }
   }, [open]);
@@ -48,7 +64,8 @@ export default function ReviewComposerModal({
         taskId,
         input: {
           content: content.trim(),
-          referenceUserIds: parsedReferences,
+          referenceUserIds: referenceIds,
+          additionalReviewerUserIds: additionalReviewerIds,
           attachments: [],
         },
       });
@@ -124,27 +141,123 @@ export default function ReviewComposerModal({
           />
         </label>
 
-        <label className="block space-y-2">
-          <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
-            <Users size={15} />
-            참조자 ID
-          </span>
-          <Input
-            value={references}
-            onChange={(event) => setReferences(event.target.value)}
-            placeholder="예: 201, 202"
-          />
-          <p className="text-xs leading-5 text-muted-foreground">
-            현재는 사용자 검색 API가 없어 숫자 ID 입력 방식으로 연결합니다. 비워도 상신은 가능합니다.
-          </p>
-        </label>
+        <ParticipantPicker
+          title="참조자"
+          description="진행 상황을 공유할 멤버를 이름으로 고릅니다."
+          members={memberOptions}
+          options={referenceOptions}
+          selectedValue={selectedReferenceId}
+          onSelectedValueChange={setSelectedReferenceId}
+          selectedIds={referenceIds}
+          onAdd={(userId) => setReferenceIds((current) => (current.includes(userId) ? current : [...current, userId]))}
+          onRemove={(userId) => setReferenceIds((current) => current.filter((id) => id !== userId))}
+        />
+
+        <ParticipantPicker
+          title="추가 검토자"
+          description="상신과 동시에 추가 검토자를 같이 지정할 수 있습니다."
+          members={memberOptions}
+          options={reviewerOptions}
+          selectedValue={selectedReviewerId}
+          onSelectedValueChange={setSelectedReviewerId}
+          selectedIds={additionalReviewerIds}
+          onAdd={(userId) =>
+            setAdditionalReviewerIds((current) => (current.includes(userId) ? current : [...current, userId]))
+          }
+          onRemove={(userId) => setAdditionalReviewerIds((current) => current.filter((id) => id !== userId))}
+        />
 
         <div className="rounded-[20px] border border-border/70 bg-muted/20 px-4 py-4 text-sm leading-6 text-muted-foreground">
-          참조자 수 <span className="font-semibold text-foreground">{parsedReferences.length}</span>
+          참조자 수 <span className="font-semibold text-foreground">{referenceIds.length}</span>
+          <span className="mx-2 text-border">|</span>
+          추가 검토자 수 <span className="font-semibold text-foreground">{additionalReviewerIds.length}</span>
           <span className="mx-2 text-border">|</span>
           첨부 presign API는 아직 연결되지 않아 상신 후 상세에서 첨부를 추가하는 흐름을 유지합니다.
         </div>
       </div>
     </AppModal>
+  );
+}
+
+function ParticipantPicker({
+  title,
+  description,
+  members,
+  options,
+  selectedValue,
+  onSelectedValueChange,
+  selectedIds,
+  onAdd,
+  onRemove,
+}: {
+  title: string;
+  description: string;
+  members: ProjectMember[];
+  options: ProjectMember[];
+  selectedValue: string;
+  onSelectedValueChange: (value: string) => void;
+  selectedIds: number[];
+  onAdd: (userId: number) => void;
+  onRemove: (userId: number) => void;
+}) {
+  return (
+    <div className="space-y-3 rounded-[22px] border border-border/70 bg-background px-4 py-4">
+      <div>
+        <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          <Users size={15} />
+          {title}
+        </div>
+        <p className="mt-1 text-xs leading-5 text-muted-foreground">{description}</p>
+      </div>
+      <div className="flex gap-2">
+        <Select value={selectedValue} onValueChange={onSelectedValueChange} disabled={options.length === 0}>
+          <SelectTrigger className="h-11 flex-1 rounded-xl bg-background shadow-none">
+            <SelectValue placeholder={options.length === 0 ? '선택 가능한 멤버 없음' : '이름으로 멤버 선택'} />
+          </SelectTrigger>
+          <SelectContent className="rounded-2xl">
+            {options.map((member) => (
+              <SelectItem key={member.id} value={String(member.userId)}>
+                {member.name} · {member.team}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button
+          type="button"
+          variant="outline"
+          className="rounded-xl"
+          disabled={!selectedValue}
+          onClick={() => {
+            const userId = Number(selectedValue);
+            if (!Number.isInteger(userId) || userId <= 0) return;
+            onAdd(userId);
+            onSelectedValueChange('');
+          }}
+        >
+          추가
+        </Button>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {selectedIds.length === 0 ? (
+          <span className="text-xs text-muted-foreground">아직 선택된 멤버가 없습니다.</span>
+        ) : (
+          selectedIds.map((userId) => {
+            const member = members.find((item) => item.userId === userId);
+            const label = member ? `${member.name} · ${member.team}` : `멤버 #${userId}`;
+            return (
+              <button
+                key={userId}
+                type="button"
+                onClick={() => onRemove(userId)}
+                className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/30 px-3 py-1.5 text-xs font-medium text-foreground transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700"
+              >
+                <StatusPill tone="slate">{title}</StatusPill>
+                {label}
+              </button>
+            );
+          })
+        )}
+      </div>
+    </div>
   );
 }

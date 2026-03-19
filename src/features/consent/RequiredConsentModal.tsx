@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, LoaderCircle } from 'lucide-react';
 import { Button } from '../../components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import AppModal from '../../shared/ui/AppModal';
 import { fetchConsentStatuses, fetchRequiredConsentCheck, submitConsents } from './api';
 import { consentKeys } from './ConsentGate';
@@ -186,33 +185,25 @@ export default function RequiredConsentModal({ open }: Props) {
                     </div>
 
                     <div className="rounded-[20px] bg-slate-100 px-8 py-6">
-                      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                        <p className="text-[16px] leading-7 text-slate-800">{term.title} 안내 사항을 읽고 동의 여부를 선택해 주세요.</p>
-                        <div className="w-full lg:w-[260px]">
-                          <div className="mb-2 text-[13px] font-medium tracking-[0.04em] text-slate-500">동의 상태</div>
-                          <Select
-                            value={agreed ? 'agree' : 'disagree'}
-                            onValueChange={(value) =>
-                              setAgreements((prev) => ({
-                                ...prev,
-                                [term.code]: value === 'agree',
-                              }))
-                            }
-                          >
-                            <SelectTrigger className="h-12 w-full rounded-2xl border-slate-300 bg-white px-4 text-[16px] font-medium text-slate-900 shadow-none">
-                              <SelectValue placeholder="동의 여부를 선택하세요" />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-2xl">
-                              <SelectItem value="disagree" className="py-2 text-[15px]">
-                                동의안함
-                              </SelectItem>
-                              <SelectItem value="agree" className="py-2 text-[15px]">
-                                동의함
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
+                      <label className="flex cursor-pointer items-start gap-4">
+                        <input
+                          type="checkbox"
+                          className="mt-1 h-6 w-6 rounded-md border-slate-300 accent-blue-600"
+                          checked={agreed}
+                          onChange={(event) =>
+                            setAgreements((prev) => ({
+                              ...prev,
+                              [term.code]: event.target.checked,
+                            }))
+                          }
+                        />
+                        <div className="min-w-0">
+                          <div className="text-[16px] font-semibold text-slate-900">{term.title} 안내 사항을 읽고 동의합니다.</div>
+                          <p className="mt-2 text-[15px] leading-7 text-slate-700">
+                            필수 항목은 모두 체크해야 서비스 사용을 계속할 수 있습니다.
+                          </p>
                         </div>
-                      </div>
+                      </label>
                     </div>
                   </section>
                 );

@@ -40,3 +40,9 @@ export async function verifySession() {
     throw apiError;
   }
 }
+
+export async function logoutSession() {
+  await backendRequest<void>('/api/auth/logout', {
+    method: 'POST',
+  });
+}

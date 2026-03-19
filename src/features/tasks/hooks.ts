@@ -20,11 +20,15 @@ import {
 import type {
   TaskAssignInput,
   TaskCreateInput,
+  TaskDetail,
+  TaskPageResult,
   TaskStatus,
+  TaskSummary,
   TaskUpdateDateInput,
   TaskUpdatePriorityInput,
   TaskUpdateTextInput,
 } from './types';
+import type { ProjectMember, ProjectTaskMeta } from '../workspace/types';
 
 export const taskKeys = {
   lists: (projectId: number, statuses?: TaskStatus[]) =>
@@ -58,13 +62,74 @@ export function useCreateTask(projectId = appConfig.defaultProjectId) {
   });
 }
 
+function syncTaskCaches(
+  queryClient: ReturnType<typeof useQueryClient>,
+  projectId: number,
+  task: TaskDetail,
+) {
+  queryClient.setQueryData<TaskDetail>(taskKeys.detail(projectId, task.id), task);
+
+  const targetPrefix = ['projects', projectId, 'tasks'] as const;
+  const matchingQueries = queryClient.getQueriesData<TaskPageResult<TaskSummary>>({ queryKey: targetPrefix });
+
+  matchingQueries.forEach(([queryKey, page]) => {
+    if (!page) {
+      return;
+    }
+
+    queryClient.setQueryData<TaskPageResult<TaskSummary>>(queryKey, {
+      ...page,
+      items: page.items.map((item) =>
+        item.id === task.id
+          ? {
+              ...item,
+              title: task.title,
+              status: task.status,
+              priority: task.priority,
+              startDate: task.startDate,
+              dueDate: task.dueDate,
+              authorId: task.authorId,
+              assignees: task.assignees,
+              updatedAt: task.updatedAt,
+            }
+          : item,
+      ),
+    });
+  });
+
+  const projectIdKey = String(projectId);
+  const memberOptions = queryClient.getQueryData<ProjectMember[]>(['workspace', projectIdKey, 'members']) ?? [];
+
+  queryClient.setQueryData<ProjectTaskMeta[] | undefined>(['workspace', projectIdKey, 'taskMeta'], (current) =>
+    current?.map((meta) =>
+      meta.taskId === task.id
+        ? {
+            ...meta,
+            assigneeId: task.assignees[0]?.userId ?? 0,
+            assigneeName:
+              task.assignees.length === 0
+                ? '담당 없음'
+                : task.assignees
+                    .map((assignee) =>
+                      memberOptions.find((member) => member.userId === assignee.userId)?.name ?? assignee.name,
+                    )
+                    .join(', '),
+            priority: task.priority ?? meta.priority,
+            dueDate: task.dueDate ?? meta.dueDate,
+          }
+        : meta,
+    ),
+  );
+}
+
 export function useAssignTask(projectId = appConfig.defaultProjectId) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ taskId, input }: { taskId: number; input: TaskAssignInput }) =>
       assignTask(projectId, taskId, input),
-    onSuccess: (_, variables) => {
+    onSuccess: (task, variables) => {
+      syncTaskCaches(queryClient, projectId, task);
       void queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'tasks'] });
       void queryClient.invalidateQueries({ queryKey: taskKeys.detail(projectId, variables.taskId) });
     },
@@ -76,7 +141,8 @@ export function useAssignTaskToMe(projectId = appConfig.defaultProjectId) {
 
   return useMutation({
     mutationFn: ({ taskId }: { taskId: number }) => assignTaskToMe(projectId, taskId),
-    onSuccess: (_, variables) => {
+    onSuccess: (task, variables) => {
+      syncTaskCaches(queryClient, projectId, task);
       void queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'tasks'] });
       void queryClient.invalidateQueries({ queryKey: taskKeys.detail(projectId, variables.taskId) });
     },
@@ -137,7 +203,10 @@ export function useUnassignTask(projectId = appConfig.defaultProjectId) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ taskId }: { taskId: number }) => unassignTask(projectId, taskId),
-    onSuccess: (_, variables) => invalidateTask(queryClient, projectId, variables.taskId),
+    onSuccess: (task, variables) => {
+      syncTaskCaches(queryClient, projectId, task);
+      invalidateTask(queryClient, projectId, variables.taskId);
+    },
   });
 }
 
@@ -145,7 +214,10 @@ export function useUnassignTaskFromMe(projectId = appConfig.defaultProjectId) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ taskId }: { taskId: number }) => unassignTaskFromMe(projectId, taskId),
-    onSuccess: (_, variables) => invalidateTask(queryClient, projectId, variables.taskId),
+    onSuccess: (task, variables) => {
+      syncTaskCaches(queryClient, projectId, task);
+      invalidateTask(queryClient, projectId, variables.taskId);
+    },
   });
 }
 

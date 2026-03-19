@@ -1,4 +1,5 @@
 import type {
+  AdditionalReviewerInfo,
   ApiErrorShape,
   AttachmentInfo,
   CommentInfo,
@@ -21,6 +22,7 @@ const tasksCatalog: ReviewTask[] = [
     title: '승인 큐 응답 시간 줄이기',
     summary: '검토 대기 업무가 오래 머물지 않도록 상신, 처리, 후속 확인 흐름을 정리합니다.',
     authorId: 101,
+    assignees: [],
     priority: 'HIGHEST',
     startDate: '2026-03-10T09:00:00Z',
     dueDate: '2026-03-14T09:00:00Z',
@@ -33,6 +35,7 @@ const tasksCatalog: ReviewTask[] = [
     title: '역할 변경 승인 정책 정리',
     summary: '역할 변경 요청 시 승인 기준과 예외 규칙을 운영 정책 문서에 반영합니다.',
     authorId: 101,
+    assignees: [],
     priority: 'HIGH',
     startDate: '2026-03-12T09:00:00Z',
     dueDate: '2026-03-18T09:00:00Z',
@@ -45,6 +48,7 @@ const tasksCatalog: ReviewTask[] = [
     title: '첨부 버전 관리 UX 개선',
     summary: '업로드 파일 교체 이력과 검토 첨부 확인 흐름을 사용자 기준으로 정리합니다.',
     authorId: 102,
+    assignees: [],
     priority: 'MEDIUM',
     startDate: '2026-03-05T09:00:00Z',
     dueDate: '2026-03-12T09:00:00Z',
@@ -57,6 +61,7 @@ const tasksCatalog: ReviewTask[] = [
     title: '초대 기반 프로젝트 참여 흐름 정리',
     summary: '초대 발송부터 수락, 만료, 재초대까지 멤버 참여 흐름을 한 화면에서 관리합니다.',
     authorId: 202,
+    assignees: [],
     priority: 'HIGH',
     startDate: '2026-03-14T09:00:00Z',
     dueDate: '2026-03-19T09:00:00Z',
@@ -69,6 +74,7 @@ const tasksCatalog: ReviewTask[] = [
     title: '프로젝트 역할 정책 템플릿 정리',
     summary: '운영자, 검토 리드, 옵저버 역할별 권한 묶음과 적용 범위를 표준화합니다.',
     authorId: 101,
+    assignees: [],
     priority: 'LOWEST',
     startDate: '2026-03-16T09:00:00Z',
     dueDate: '2026-03-22T09:00:00Z',
@@ -81,6 +87,7 @@ const tasksCatalog: ReviewTask[] = [
     title: '주간 운영 점검 템플릿 정비',
     summary: '운영 프로젝트에서 공통으로 쓰는 점검 항목과 상태 표현을 정리합니다.',
     authorId: 501,
+    assignees: [],
     priority: 'HIGH',
     startDate: '2026-03-15T09:00:00Z',
     dueDate: '2026-03-21T09:00:00Z',
@@ -93,6 +100,7 @@ const tasksCatalog: ReviewTask[] = [
     title: '온콜 대응 큐 화면 정리',
     summary: '긴급도 분류와 담당자 라우팅이 한눈에 보이는 운영 큐 화면으로 정리합니다.',
     authorId: 502,
+    assignees: [],
     priority: 'MEDIUM',
     startDate: '2026-03-17T09:00:00Z',
     dueDate: '2026-03-23T09:00:00Z',
@@ -105,6 +113,7 @@ const tasksCatalog: ReviewTask[] = [
     title: '변경 이력 탐색 패턴 정리',
     summary: '운영 로그와 작업 이력을 탐색하는 필터와 상세 패턴을 정리합니다.',
     authorId: 501,
+    assignees: [],
     priority: 'HIGH',
     startDate: '2026-03-18T09:00:00Z',
     dueDate: '2026-03-29T09:00:00Z',
@@ -408,6 +417,7 @@ export async function createMockTask(input: {
     title: input.title,
     summary: input.description,
     authorId: input.authorId,
+    assignees: [],
     priority: input.priority,
     startDate: input.startDate ?? timestamp,
     dueDate: input.dueDate ?? timestamp,
@@ -427,7 +437,7 @@ export async function assignMockTask(taskId: number, userId: number) {
     throw createMockError('TASK_NOT_FOUND', 'Task was not found.', 404);
   }
 
-  task.authorId = userId;
+  task.assignees = [{ userId, name: `담당자 #${userId}` }];
   task.updatedAt = now();
 
   return deepCopy(task);
@@ -500,7 +510,7 @@ export async function unassignMockTask(taskId: number) {
     throw createMockError('TASK_NOT_FOUND', 'Task was not found.', 404);
   }
 
-  task.authorId = 0;
+  task.assignees = [];
   task.updatedAt = now();
   return deepCopy(task);
 }
@@ -607,7 +617,11 @@ export async function submitReview(taskId: number, input: ReviewCreateInput, act
       addedBy: actorId,
       createdAt,
     })),
-    additionalReviewers: [],
+    additionalReviewers: input.additionalReviewerUserIds.map<AdditionalReviewerInfo>((userId) => ({
+      userId,
+      assignedBy: actorId,
+      createdAt,
+    })),
     attachments: input.attachments.map<AttachmentInfo>((attachment) => ({
       attachmentId: attachmentIdCounter++,
       objectKey: attachment.objectKey,

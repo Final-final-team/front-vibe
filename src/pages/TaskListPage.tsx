@@ -85,7 +85,7 @@ export default function TaskListPage() {
   const { data: projectMembers = [] } = useProjectMembers(projectIdParam ?? currentProject?.id ?? null);
   const { data: projectRoles = [] } = useProjectRoles(projectIdParam ?? currentProject?.id ?? null);
   const { data: tasks = [] } = useTasks(projectId);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const currentView = getCurrentView(searchParams.get('view'));
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [selectedReviewId, setSelectedReviewId] = useState<number | null>(null);
@@ -178,12 +178,19 @@ export default function TaskListPage() {
         taskId: task.id,
         projectId: String(projectId),
         milestoneId: 'milestone-unplanned',
-        assigneeId: task.authorId,
+        assigneeId: task.assignees[0]?.userId ?? 0,
         assigneeName:
-          activeMembers.find((member) => member.userId === task.authorId)?.name ?? `작성자 #${task.authorId}`,
+          task.assignees.length === 0
+            ? '담당 없음'
+            : task.assignees
+                .map(
+                  (assignee) =>
+                    activeMembers.find((member) => member.userId === assignee.userId)?.name ?? assignee.name,
+                )
+                .join(', '),
         domain: '일반 업무',
         priority: task.priority,
-        dueDate: task.dueDate,
+        dueDate: task.dueDate ?? new Date().toISOString(),
       }));
   }, [activeMembers, projectId, taskMeta, tasks]);
 
@@ -216,10 +223,10 @@ export default function TaskListPage() {
     if (taskScope === 'mine') {
       return taskItems
         .filter((task) => currentUserId != null && task.assigneeId === currentUserId)
-        .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+        .sort((a, b) => getTaskTime(a.dueDate) - getTaskTime(b.dueDate));
     }
 
-    return [...taskItems].sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+    return [...taskItems].sort((a, b) => getTaskTime(a.dueDate) - getTaskTime(b.dueDate));
   }, [currentUserId, taskItems, taskScope]);
 
   const sourceOrderByMilestone = useMemo(
@@ -246,6 +253,15 @@ export default function TaskListPage() {
       }, {}),
     [reviewQueries, taskItems],
   );
+  const latestReviewSummaryByTaskId = useMemo(
+    () =>
+      taskItems.reduce<Record<number, { reviewId: number; status: string } | null>>((acc, task, index) => {
+        const latest = reviewQueries[index]?.data?.items?.[0];
+        acc[task.id] = latest ? { reviewId: latest.reviewId, status: latest.status } : null;
+        return acc;
+      }, {}),
+    [reviewQueries, taskItems],
+  );
 
   const selectedTask = taskItems.find((task) => task.id === selectedTaskId) ?? null;
   const selectedTaskDetailQuery = useTaskDetail(projectId, selectedTaskId ?? 0, Boolean(selectedTaskId));
@@ -258,10 +274,17 @@ export default function TaskListPage() {
   const reviewCount = groupedByStatus.IN_REVIEW.length;
   const completedCount = groupedByStatus.COMPLETED.length;
   const activeAssignees = new Set(scopedTaskItems.map((task) => task.assigneeName)).size;
-  const currentAssignee = useMemo(() => {
-    if (!selectedTaskDetail) return selectedTask ? activeMembers.find((member) => member.userId === selectedTask.assigneeId) ?? null : null;
-    return activeMembers.find((member) => member.userId === selectedTaskDetail.authorId) ?? null;
-  }, [activeMembers, selectedTask, selectedTaskDetail]);
+  const selectedAssignees = selectedTaskDetail?.assignees ?? selectedTask?.assignees ?? [];
+  const selectedAssigneeId = selectedAssignees[0]?.userId ?? null;
+  const selectedAssigneeName = selectedAssignees.length
+    ? selectedAssignees
+        .map((assignee) => activeMembers.find((member) => member.userId === assignee.userId)?.name ?? assignee.name)
+        .join(', ')
+    : selectedTask?.assigneeName ?? '담당 없음';
+  const selectedCreatorName =
+    selectedTaskDetail != null
+      ? activeMembers.find((member) => member.userId === selectedTaskDetail.authorId)?.name ?? `작성자 #${selectedTaskDetail.authorId}`
+      : selectedTask?.creatorName ?? null;
   const detailBusy =
     updateTaskTitleMutation.isPending ||
     updateTaskDescriptionMutation.isPending ||
@@ -275,6 +298,18 @@ export default function TaskListPage() {
     startTaskMutation.isPending ||
     cancelTaskStartMutation.isPending ||
     forceCompleteTaskMutation.isPending;
+
+  useEffect(() => {
+    const taskIdParam = searchParams.get('taskId');
+    if (!taskIdParam) {
+      return;
+    }
+
+    const parsedTaskId = Number(taskIdParam);
+    if (Number.isInteger(parsedTaskId) && parsedTaskId > 0 && selectedTaskId !== parsedTaskId) {
+      setSelectedTaskId(parsedTaskId);
+    }
+  }, [searchParams, selectedTaskId]);
 
   function openReviewComposer(task: { id: number; title: string }) {
     setReviewComposerTask(task);
@@ -294,7 +329,7 @@ export default function TaskListPage() {
       startDate: selectedTask.startDate,
       dueDate: selectedTask.dueDate,
       priority: selectedTask.priority,
-      authorId: selectedTask.assigneeId,
+      assignees: selectedTask.assignees,
     };
 
     const nextDraft = {
@@ -303,7 +338,7 @@ export default function TaskListPage() {
       startDate: source.startDate ? toDateInputValue(source.startDate) : '',
       dueDate: source.dueDate ? toDateInputValue(source.dueDate) : '',
       priority: source.priority,
-      assigneeUserId: source.authorId || null,
+      assigneeUserId: selectedTask.assignees[0]?.userId ?? source.assignees?.[0]?.userId ?? null,
     };
 
     setTaskDraft((current) => {
@@ -437,24 +472,60 @@ export default function TaskListPage() {
 
   async function handleAssignToMe() {
     if (!selectedTaskId) return;
-    await runTaskMutation(() => assignTaskToMeMutation.mutateAsync({ taskId: selectedTaskId }));
+    await runAssignmentMutation(() => assignTaskToMeMutation.mutateAsync({ taskId: selectedTaskId }), currentUserId ?? null);
   }
 
   async function handleAssignSelectedMember() {
     if (!selectedTaskId || taskDraft.assigneeUserId == null) return;
     const userId = taskDraft.assigneeUserId;
-    await runTaskMutation(() =>
-      assignTaskMutation.mutateAsync({ taskId: selectedTaskId, input: { userId } }),
+    await runAssignmentMutation(
+      () => assignTaskMutation.mutateAsync({ taskId: selectedTaskId, input: { userId } }),
+      userId,
     );
   }
 
   async function handleUnassign() {
     if (!selectedTaskId) return;
     const targetAction =
-      currentUserId != null && selectedTaskDetail?.authorId === currentUserId
+      currentUserId != null && selectedAssigneeId === currentUserId
         ? () => unassignTaskFromMeMutation.mutateAsync({ taskId: selectedTaskId })
         : () => unassignTaskMutation.mutateAsync({ taskId: selectedTaskId });
-    await runTaskMutation(targetAction);
+    await runAssignmentMutation(targetAction, 0);
+  }
+
+  async function runAssignmentMutation(action: () => Promise<unknown>, expectedAssigneeId: number | null) {
+    setDetailErrorMessage(null);
+
+    try {
+      await action();
+      setEditingField(null);
+      return;
+    } catch (error) {
+      const refreshed = await selectedTaskDetailQuery.refetch();
+      const currentAssignedUserIds = refreshed.data?.assignees.map((assignee) => assignee.userId) ?? selectedTask?.assignees.map((assignee) => assignee.userId) ?? [];
+
+      if (
+        expectedAssigneeId != null &&
+        ((expectedAssigneeId === 0 && currentAssignedUserIds.length === 0) ||
+          currentAssignedUserIds.includes(expectedAssigneeId))
+      ) {
+        setEditingField(null);
+        setDetailErrorMessage(null);
+        return;
+      }
+
+      const apiError = error instanceof BackendApiError ? error : toBackendApiError(error);
+      setDetailErrorMessage(apiError.message);
+    }
+  }
+
+  function closeTaskDetail() {
+    setSelectedTaskId(null);
+    setForceCompleteConfirmOpen(false);
+    setReviewComposerOpen(false);
+    const next = new URLSearchParams(searchParams);
+    next.delete('taskId');
+    setSearchParams(next, { replace: true });
   }
 
   async function handleStateAction(action: 'start' | 'cancel-start' | 'force-complete') {
@@ -531,7 +602,7 @@ export default function TaskListPage() {
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           <Badge variant="outline" className="rounded-md">{currentProject?.code ?? '업무'}</Badge>
           <Badge variant="outline" className="rounded-md">{getViewLabel(currentView)}</Badge>
-          <span>드래그로 순서를 바꾸고 상세 모달로 바로 진입합니다.</span>
+          <span>지금 처리할 업무를 바로 골라 진행하세요.</span>
         </div>
       </section>
 
@@ -597,10 +668,11 @@ export default function TaskListPage() {
                                   }
                                   setSelectedTaskId(task.id);
                                 }}
-                                onSubmitReview={() => {
-                                  openReviewComposer({ id: task.id, title: task.title });
-                                }}
-                              />
+                            onSubmitReview={() => {
+                              openReviewComposer({ id: task.id, title: task.title });
+                            }}
+                            canSubmitReview={canSubmitReview(task, latestReviewSummaryByTaskId[task.id]?.status)}
+                          />
                             ))}
                           </div>
                         </section>
@@ -671,6 +743,7 @@ export default function TaskListPage() {
                                     onSubmitReview={() => {
                                       openReviewComposer({ id: task.id, title: task.title });
                                     }}
+                                    canSubmitReview={canSubmitReview(task, latestReviewSummaryByTaskId[task.id]?.status)}
                                   />
                                 ))}
                               </SortableContext>
@@ -706,6 +779,7 @@ export default function TaskListPage() {
                         onSubmitReview={() => {
                           openReviewComposer({ id: task.id, title: task.title });
                         }}
+                        canSubmitReview={canSubmitReview(task, latestReviewSummaryByTaskId[task.id]?.status)}
                         showMilestone
                       />
                     ))}
@@ -744,6 +818,7 @@ export default function TaskListPage() {
                             onSubmitReview={() => {
                               openReviewComposer({ id: task.id, title: task.title });
                             }}
+                            canSubmitReview={canSubmitReview(task, latestReviewSummaryByTaskId[task.id]?.status)}
                             showMilestone
                           />
                         ))}
@@ -806,24 +881,34 @@ export default function TaskListPage() {
         open={Boolean(selectedTask)}
         onOpenChange={(open) => {
           if (!open) {
-            setSelectedTaskId(null);
-            setForceCompleteConfirmOpen(false);
-            setReviewComposerOpen(false);
+            closeTaskDetail();
           }
         }}
         title={taskDraft.title || selectedTask?.title || ''}
+        titleActions={
+          selectedTask ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-xl"
+              onClick={() => setEditingField('title')}
+              disabled={detailBusy}
+            >
+              <Pencil size={15} />
+              수정
+            </Button>
+          ) : null
+        }
         description={
           selectedTask
-            ? `${selectedTask.milestoneName} · ${currentAssignee?.name ?? (selectedTaskDetail?.authorId === 0 ? '담당 없음' : selectedTask.assigneeName)}`
+            ? `${selectedTask.milestoneName} · ${selectedAssigneeName}`
             : undefined
         }
         badges={
           selectedTask ? (
             <>
               <StatusPill tone="teal">{selectedTask.domain}</StatusPill>
-              <StatusPill tone="purple">
-                {currentAssignee?.name ?? (selectedTaskDetail?.authorId === 0 ? '담당 없음' : selectedTask.assigneeName)}
-              </StatusPill>
+              <StatusPill tone="purple">{selectedAssigneeName}</StatusPill>
               <StatusPill tone="slate">{selectedTask.milestoneName}</StatusPill>
             </>
           ) : null
@@ -833,7 +918,7 @@ export default function TaskListPage() {
             <div className="text-sm text-muted-foreground">
               {detailBusy ? '변경 내용을 저장하는 중입니다.' : '필드별로 바로 저장되고 목록과 상세가 함께 갱신됩니다.'}
             </div>
-            <Button type="button" variant="outline" size="lg" className="min-w-24 rounded-xl px-4" onClick={() => setSelectedTaskId(null)}>
+            <Button type="button" variant="outline" size="lg" className="min-w-24 rounded-xl px-4" onClick={closeTaskDetail}>
               닫기
             </Button>
           </div>
@@ -844,7 +929,8 @@ export default function TaskListPage() {
           <div className="space-y-6">
             <section className="grid gap-3 border-b border-border/70 pb-5 md:grid-cols-4">
               <SummaryBlock label="현재 상태" value={getStatusLabel(selectedTaskDetail?.status ?? selectedTask.status)} tone={getStatusTone(selectedTaskDetail?.status ?? selectedTask.status)} />
-              <SummaryBlock label="담당자" value={currentAssignee?.name ?? (selectedTaskDetail?.authorId === 0 ? '담당 없음' : selectedTask.assigneeName)} />
+              <SummaryBlock label="담당자" value={selectedAssigneeName} />
+              <SummaryBlock label="작성자" value={selectedCreatorName ?? '작성자 정보 없음'} />
               <SummaryBlock label="마일스톤" value={selectedTask.milestoneName} />
               <SummaryBlock
                 label="다음 행동"
@@ -861,21 +947,23 @@ export default function TaskListPage() {
 
             <section className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
               <div className="space-y-6">
-                <TaskEditableField
-                  label="업무 제목"
-                  editing={editingField === 'title'}
-                  onEdit={() => setEditingField('title')}
-                  onCancel={() => setEditingField(null)}
-                  onSave={() => void handleSaveField('title')}
-                  disabled={detailBusy}
-                  view={<span className="text-base font-semibold text-foreground">{taskDraft.title || selectedTask.title}</span>}
-                >
-                  <Input
-                    value={taskDraft.title}
-                    onChange={(event) => setTaskDraft((current) => ({ ...current, title: event.target.value }))}
-                    placeholder="업무 제목을 입력하세요"
-                  />
-                </TaskEditableField>
+                {editingField === 'title' ? (
+                  <TaskEditableField
+                    label="업무 제목"
+                    editing
+                    onEdit={() => setEditingField('title')}
+                    onCancel={() => setEditingField(null)}
+                    onSave={() => void handleSaveField('title')}
+                    disabled={detailBusy}
+                    view={<span className="text-base font-semibold text-foreground">{taskDraft.title || selectedTask.title}</span>}
+                  >
+                    <Input
+                      value={taskDraft.title}
+                      onChange={(event) => setTaskDraft((current) => ({ ...current, title: event.target.value }))}
+                      placeholder="업무 제목을 입력하세요"
+                    />
+                  </TaskEditableField>
+                ) : null}
 
                 <TaskEditableField
                   label="업무 설명"
@@ -902,7 +990,7 @@ export default function TaskListPage() {
                     onCancel={() => setEditingField(null)}
                     onSave={() => void handleSaveField('startDate')}
                     disabled={detailBusy}
-                    view={<span className="text-sm font-medium text-foreground">{formatDueDateShort(selectedTaskDetail?.startDate ?? selectedTask.startDate)}</span>}
+                    view={<span className="text-sm font-medium text-foreground">{formatDueDateShort(selectedTaskDetail?.startDate ?? null)}</span>}
                   >
                     <Input
                       type="date"
@@ -918,7 +1006,7 @@ export default function TaskListPage() {
                     onCancel={() => setEditingField(null)}
                     onSave={() => void handleSaveField('dueDate')}
                     disabled={detailBusy}
-                    view={<span className="text-sm font-medium text-foreground">{formatDueDateShort(selectedTaskDetail?.dueDate ?? selectedTask.dueDate)}</span>}
+                    view={<span className="text-sm font-medium text-foreground">{formatDueDateShort(selectedTaskDetail?.dueDate ?? null)}</span>}
                   >
                     <Input
                       type="date"
@@ -932,11 +1020,11 @@ export default function TaskListPage() {
                   label="우선순위"
                   editing={editingField === 'priority'}
                   onEdit={() => setEditingField('priority')}
-                  onCancel={() => setEditingField(null)}
-                  onSave={() => void handleSaveField('priority')}
-                  disabled={detailBusy}
-                  view={<StatusPill tone={getPriorityTone(taskDraft.priority)}>{getPriorityLabel(taskDraft.priority)}</StatusPill>}
-                >
+                    onCancel={() => setEditingField(null)}
+                    onSave={() => void handleSaveField('priority')}
+                    disabled={detailBusy}
+                    view={<StatusPill tone={getPriorityTone(taskDraft.priority)}>{getPriorityLabel(taskDraft.priority)}</StatusPill>}
+                  >
                   <select
                     value={taskDraft.priority}
                     onChange={(event) =>
@@ -957,9 +1045,7 @@ export default function TaskListPage() {
                 <section className="rounded-2xl border border-border/70 bg-muted/[0.04] px-4 py-4">
                   <div className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground">담당자 제어</div>
                   <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <StatusPill tone="purple">
-                      {currentAssignee?.name ?? (selectedTaskDetail?.authorId === 0 ? '담당 없음' : selectedTask.assigneeName)}
-                    </StatusPill>
+                    <StatusPill tone="purple">{selectedAssigneeName}</StatusPill>
                     <StatusPill tone="slate">{selectedTask.domain}</StatusPill>
                   </div>
                   <div className="mt-4 space-y-3">
@@ -967,7 +1053,7 @@ export default function TaskListPage() {
                       <Button type="button" variant="outline" className="rounded-md" onClick={() => void handleAssignToMe()} disabled={detailBusy}>
                         나에게 할당
                       </Button>
-                      <Button type="button" variant="outline" className="rounded-md" onClick={() => void handleUnassign()} disabled={detailBusy || selectedTaskDetail?.authorId === 0}>
+                      <Button type="button" variant="outline" className="rounded-md" onClick={() => void handleUnassign()} disabled={detailBusy || selectedAssignees.length === 0}>
                         담당 해제
                       </Button>
                     </div>
@@ -1025,14 +1111,16 @@ export default function TaskListPage() {
                         강제 완료
                       </Button>
                     ) : null}
-                    <Button
-                      type="button"
-                      className="rounded-md"
-                      onClick={() => openReviewComposer({ id: selectedTask.id, title: selectedTask.title })}
-                    >
-                      <SendHorizontal size={15} />
-                      검토 상신하기
-                    </Button>
+                    {canSubmitReview(selectedTask, latestSelectedReview?.status) ? (
+                      <Button
+                        type="button"
+                        className="rounded-md"
+                        onClick={() => openReviewComposer({ id: selectedTask.id, title: selectedTask.title })}
+                      >
+                        <SendHorizontal size={15} />
+                        검토 상신하기
+                      </Button>
+                    ) : null}
                   </div>
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <MetaRow label="현재 상태" value={getStatusLabel(selectedTaskDetail?.status ?? selectedTask.status)} />
@@ -1145,6 +1233,7 @@ export default function TaskListPage() {
         }}
         taskId={reviewComposerTask?.id ?? null}
         taskTitle={reviewComposerTask?.title ?? null}
+        memberOptions={activeMembers}
         onSubmitted={(reviewId) => {
           setReviewComposerTask(null);
           setSelectedReviewId(reviewId);
@@ -1364,6 +1453,7 @@ function KanbanView({
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <StatusPill tone="purple">{task.assigneeName}</StatusPill>
+                  <StatusPill tone="slate">작성 {task.creatorName}</StatusPill>
                   <StatusPill tone="teal">{task.domain}</StatusPill>
                   <span className="text-xs text-muted-foreground">{formatDueDateShort(task.dueDate)}</span>
                 </div>
@@ -1397,8 +1487,28 @@ function CalendarView({
   const cells = Array.from({ length: 42 }, (_, index) => index - startDay + 1);
 
   const tasksByDay = items.reduce<Record<number, TaskViewItem[]>>((acc, item) => {
-    const date = new Date(item.dueDate).getDate();
-    acc[date] = [...(acc[date] ?? []), item];
+    const startDate = item.startDate ? new Date(item.startDate) : item.dueDate ? new Date(item.dueDate) : null;
+    const endDate = item.dueDate ? new Date(item.dueDate) : startDate;
+
+    if (!startDate || !endDate || Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+      return acc;
+    }
+
+    const rangeStart = new Date(Math.min(startDate.getTime(), endDate.getTime()));
+    const rangeEnd = new Date(Math.max(startDate.getTime(), endDate.getTime()));
+
+    for (let date = new Date(rangeStart); date <= rangeEnd; date.setDate(date.getDate() + 1)) {
+      if (
+        date.getFullYear() !== targetMonth.getFullYear()
+        || date.getMonth() !== targetMonth.getMonth()
+      ) {
+        continue;
+      }
+
+      const day = date.getDate();
+      acc[day] = [...(acc[day] ?? []), item];
+    }
+
     return acc;
   }, {});
 
@@ -1462,7 +1572,7 @@ function CalendarView({
                         className="block w-full border-l-2 border-primary px-1.5 py-1 text-left text-[11px] transition hover:bg-muted/30"
                       >
                         <div className="font-semibold text-foreground">{task.title}</div>
-                        <div className="mt-1 text-muted-foreground">{task.assigneeName}</div>
+                        <div className="mt-1 text-muted-foreground">{task.startDate && task.dueDate ? `${formatListDueDate(task.startDate)} ~ ${formatListDueDate(task.dueDate)}` : task.assigneeName}</div>
                       </button>
                     ))}
                   </div>
@@ -1579,7 +1689,16 @@ function GanttView({
     date.setDate(index + 1);
     return date;
   });
-  const visibleItems = items.filter((item) => new Date(item.dueDate) >= start && new Date(item.startDate) <= end);
+  const visibleItems = items.filter((item) => {
+    const rangeStart = item.startDate ? new Date(item.startDate) : item.dueDate ? new Date(item.dueDate) : null;
+    const rangeEnd = item.dueDate ? new Date(item.dueDate) : rangeStart;
+
+    if (!rangeStart || !rangeEnd || Number.isNaN(rangeStart.getTime()) || Number.isNaN(rangeEnd.getTime())) {
+      return false;
+    }
+
+    return rangeEnd >= start && rangeStart <= end;
+  });
 
   return (
     <div className="border-t border-border/70 pt-6">
@@ -1627,8 +1746,10 @@ function GanttView({
 
       <div className="space-y-2 pt-4">
         {visibleItems.map((task) => {
-          const clippedStart = new Date(Math.max(new Date(task.startDate).getTime(), start.getTime()));
-          const clippedEnd = new Date(Math.min(new Date(task.dueDate).getTime(), end.getTime()));
+          const taskStart = task.startDate ? new Date(task.startDate) : task.dueDate ? new Date(task.dueDate) : start;
+          const taskEnd = task.dueDate ? new Date(task.dueDate) : taskStart;
+          const clippedStart = new Date(Math.max(taskStart.getTime(), start.getTime()));
+          const clippedEnd = new Date(Math.min(taskEnd.getTime(), end.getTime()));
           const offset = Math.max(0, Math.round((clippedStart.getTime() - start.getTime()) / 86_400_000));
           const span = Math.max(1, Math.round((clippedEnd.getTime() - clippedStart.getTime()) / 86_400_000) + 1);
 
@@ -1645,7 +1766,7 @@ function GanttView({
             >
               <div className="min-w-0 pr-2">
                 <div className="truncate font-semibold text-foreground">{task.title}</div>
-                <div className="mt-1 truncate text-[11px] text-muted-foreground">{task.assigneeName}</div>
+                <div className="mt-1 truncate text-[11px] text-muted-foreground">{task.assigneeName} · 작성 {task.creatorName}</div>
               </div>
               {days.map((_, index) => {
                 const active = index >= offset && index < offset + span;
@@ -1669,6 +1790,7 @@ function SortableTaskRow({
   onSelect,
   onOpenReview,
   onSubmitReview,
+  canSubmitReview = true,
   showMilestone = false,
 }: {
   task: TaskViewItem;
@@ -1676,6 +1798,7 @@ function SortableTaskRow({
   onSelect: () => void;
   onOpenReview: () => void;
   onSubmitReview: () => void;
+  canSubmitReview?: boolean;
   showMilestone?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -1732,18 +1855,22 @@ function SortableTaskRow({
           >
             검토 보기
           </Link>
-          <button
-            type="button"
-            className="text-sm font-semibold text-foreground/70 hover:text-foreground"
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              onSubmitReview();
-            }}
-          >
-            상신
-          </button>
+          {canSubmitReview ? (
+            <button
+              type="button"
+              className="text-sm font-semibold text-foreground/70 hover:text-foreground"
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onSubmitReview();
+              }}
+            >
+              상신
+            </button>
+          ) : (
+            <StatusPill tone="amber">검토중</StatusPill>
+          )}
         </div>
       </TableCell>
     </tr>
@@ -1755,12 +1882,14 @@ function TaskMobileCard({
   onSelect,
   onOpenReview,
   onSubmitReview,
+  canSubmitReview = true,
   showMilestone = false,
 }: {
   task: TaskViewItem;
   onSelect: () => void;
   onOpenReview: () => void;
   onSubmitReview: () => void;
+  canSubmitReview?: boolean;
   showMilestone?: boolean;
 }) {
   return (
@@ -1783,6 +1912,10 @@ function TaskMobileCard({
           <span className="font-medium text-foreground">{task.assigneeName}</span>
         </div>
         <div className="flex items-center justify-between gap-3">
+          <span>작성자</span>
+          <span className="font-medium text-foreground">{task.creatorName}</span>
+        </div>
+        <div className="flex items-center justify-between gap-3">
           <span>우선순위</span>
           <span className="font-medium text-foreground">{getPriorityLabel(task.priority)}</span>
         </div>
@@ -1803,17 +1936,21 @@ function TaskMobileCard({
         >
           검토 보기
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="h-8 rounded-lg px-3 text-xs"
-          onClick={(event) => {
-            event.stopPropagation();
-            onSubmitReview();
-          }}
-        >
-          상신
-        </Button>
+        {canSubmitReview ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="h-8 rounded-lg px-3 text-xs"
+            onClick={(event) => {
+              event.stopPropagation();
+              onSubmitReview();
+            }}
+          >
+            상신
+          </Button>
+        ) : (
+          <StatusPill tone="amber">검토중</StatusPill>
+        )}
       </div>
     </button>
   );
@@ -1992,6 +2129,20 @@ function formatListDueDate(value: string | null) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '-';
   return `${date.getMonth() + 1}/${date.getDate()}`;
+}
+
+function getTaskTime(value: string | null) {
+  if (!value) return Number.MAX_SAFE_INTEGER;
+  const timestamp = new Date(value).getTime();
+  return Number.isNaN(timestamp) ? Number.MAX_SAFE_INTEGER : timestamp;
+}
+
+function canSubmitReview(task: TaskViewItem, latestStatus?: string) {
+  if (task.status === 'IN_REVIEW') {
+    return false;
+  }
+
+  return latestStatus !== 'SUBMITTED' && latestStatus !== 'APPROVED';
 }
 
 function getCurrentView(value: string | null): TaskView {

@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import ReviewForm from '../features/review/components/ReviewForm';
 import { useReviewDetail, useSubmitReview, useUpdateReview } from '../features/review/hooks';
 import { ApiError } from '../features/review/api';
+import { useProjectMembers } from '../features/workspace/hooks';
 
 type Props = {
   mode: 'create' | 'edit';
@@ -18,11 +19,13 @@ export default function ReviewEditorPage({ mode }: Props) {
   const updateMutation = useUpdateReview(reviewId);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const detailQuery = useReviewDetail(reviewId);
+  const { data: projectMembers = [] } = useProjectMembers(projectIdParam ?? null);
   const initialReview = mode === 'edit' ? detailQuery.data : undefined;
 
   async function handleSubmit(payload: {
     content: string;
     referenceUserIds: number[];
+    additionalReviewerUserIds: number[];
     files: File[];
   }) {
     setErrorMessage(null);
@@ -34,6 +37,7 @@ export default function ReviewEditorPage({ mode }: Props) {
           input: {
             content: payload.content,
             referenceUserIds: payload.referenceUserIds,
+            additionalReviewerUserIds: payload.additionalReviewerUserIds,
             attachments: [],
           },
         });
@@ -73,6 +77,7 @@ export default function ReviewEditorPage({ mode }: Props) {
       <ReviewForm
         mode={mode}
         initialReview={initialReview}
+        memberOptions={projectMembers.filter((member) => member.inviteStatus === 'ACTIVE')}
         onSubmit={handleSubmit}
         submitting={submitMutation.isPending || updateMutation.isPending}
       />

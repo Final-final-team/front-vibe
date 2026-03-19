@@ -5,6 +5,7 @@ import { Button } from '../components/ui/button';
 import ReviewComposerModal from '../features/review/components/ReviewComposerModal';
 import ReviewSummaryTable from '../features/review/components/ReviewSummaryTable';
 import { useTaskReviews, useTasks } from '../features/review/hooks';
+import { useProjectMembers } from '../features/workspace/hooks';
 import PageHero from '../shared/ui/PageHero';
 import StatusPill from '../shared/ui/StatusPill';
 
@@ -15,6 +16,7 @@ export default function TaskReviewsPage() {
   const hasValidTaskId = Number.isFinite(taskId) && taskId > 0;
   const [reviewComposerOpen, setReviewComposerOpen] = useState(false);
   const { data: tasks = [] } = useTasks();
+  const { data: projectMembers = [] } = useProjectMembers(projectIdParam ?? null);
   const task = tasks.find((item) => item.id === taskId);
   const { data: reviewPage, isLoading, error } = useTaskReviews(hasValidTaskId ? taskId : -1);
   const reviews = reviewPage?.items ?? [];
@@ -89,6 +91,7 @@ export default function TaskReviewsPage() {
         onOpenChange={setReviewComposerOpen}
         taskId={hasValidTaskId ? taskId : null}
         taskTitle={task?.title ?? null}
+        memberOptions={projectMembers.filter((member) => member.inviteStatus === 'ACTIVE')}
       />
     </div>
   );

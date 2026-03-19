@@ -27,6 +27,7 @@ import {
   useUploadAttachment,
 } from '../features/review/hooks';
 import { useProjectMembers } from '../features/workspace/hooks';
+import { useWorkspace } from '../features/workspace/use-workspace';
 import { appConfig } from '../shared/config/app-config';
 import { getCurrentActor } from '../shared/lib/session';
 import { formatDate } from '../shared/lib/format';
@@ -40,7 +41,8 @@ export default function ReviewDetailPage() {
   const navigate = useNavigate();
   const { reviewId: reviewIdParam } = useParams();
   const reviewId = Number(reviewIdParam);
-  const actorId = appConfig.useMock ? getCurrentActor().actorId : null;
+  const { currentUserId } = useWorkspace();
+  const actorId = appConfig.useMock ? getCurrentActor().actorId : currentUserId;
   const detailQuery = useReviewDetail(reviewId);
   const historiesQuery = useReviewHistories(reviewId);
   const { data: tasks = [] } = useTasks();
@@ -142,6 +144,12 @@ export default function ReviewDetailPage() {
               className="rounded-2xl border border-border/70 bg-background px-4 py-2.5 text-sm font-semibold text-foreground transition hover:border-primary/20 hover:text-primary"
             >
               라운드 목록
+            </Link>
+            <Link
+              to={`/projects/${task?.projectId ?? appConfig.defaultProjectId}/tasks?taskId=${review.taskId}`}
+              className="rounded-2xl border border-border/70 bg-background px-4 py-2.5 text-sm font-semibold text-foreground transition hover:border-primary/20 hover:text-primary"
+            >
+              연결된 업무
             </Link>
             <Button variant="secondary" onClick={() => navigate(`/projects/${task?.projectId ?? appConfig.defaultProjectId}/tasks/${review.taskId}/reviews/new`)}>
               새 검토

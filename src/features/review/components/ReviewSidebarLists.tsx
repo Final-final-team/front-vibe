@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Users2 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
-import { Input } from '../../../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
 import type { ProjectMember } from '../../workspace/types';
 import type { AdditionalReviewerInfo, ReferenceInfo } from '../types';
@@ -46,7 +45,7 @@ export default function ReviewSidebarLists({
           <div>
             <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Reference</div>
             <h3 className="mt-2 text-lg font-semibold tracking-tight text-slate-950">참조자</h3>
-            <p className="mt-1 text-sm leading-6 text-slate-600">SUBMITTED 상태에서만 관리 가능합니다.</p>
+            <p className="mt-1 text-sm leading-6 text-slate-600">현재 검토를 공유할 멤버를 프로젝트 멤버에서 바로 선택합니다.</p>
           </div>
           <StatusPill tone="blue">{references.length}명</StatusPill>
         </div>
@@ -67,7 +66,6 @@ export default function ReviewSidebarLists({
             options={availableReferenceOptions}
             buttonLabel="참조자 추가"
             selectLabel="참조자 지정"
-            inputLabel="참조자 사용자 ID"
             disabled={!canManage}
             onSubmit={async () => {
               const userId = Number(referenceInput);
@@ -88,7 +86,7 @@ export default function ReviewSidebarLists({
           <div>
             <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Additional Reviewer</div>
             <h3 className="mt-2 text-lg font-semibold tracking-tight text-slate-950">추가 검토자</h3>
-            <p className="mt-1 text-sm leading-6 text-slate-600">권한이 없는 승인자에게 review별 권한을 부여합니다.</p>
+            <p className="mt-1 text-sm leading-6 text-slate-600">필요한 승인자를 프로젝트 멤버에서 바로 추가합니다.</p>
           </div>
           <StatusPill tone="purple">{additionalReviewers.length}명</StatusPill>
         </div>
@@ -111,7 +109,6 @@ export default function ReviewSidebarLists({
             options={availableReviewerOptions}
             buttonLabel="추가 검토자 할당"
             selectLabel="추가 검토자 지정"
-            inputLabel="추가 검토자 사용자 ID"
             disabled={!canManage}
             onSubmit={async () => {
               const userId = Number(reviewerInput);
@@ -138,7 +135,6 @@ type ManageInputProps = {
   disabled: boolean;
   options: ProjectMember[];
   selectLabel: string;
-  inputLabel: string;
 };
 
 function ManageInput({
@@ -149,41 +145,27 @@ function ManageInput({
   disabled,
   options,
   selectLabel,
-  inputLabel,
 }: ManageInputProps) {
   return (
     <div className="space-y-3 pt-2">
       <div className="flex items-center gap-2 rounded-2xl border border-border/70 bg-white/80 px-3 py-3 text-xs text-slate-500">
         <Users2 size={14} />
-        프로젝트 멤버 기준으로 선택하거나, 사용자 ID를 직접 입력할 수 있습니다.
+        프로젝트 멤버 기준으로 바로 지정됩니다.
       </div>
-      <div className="grid gap-3">
-        <div className="space-y-2">
-          <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{selectLabel}</div>
-          <Select value={value} onValueChange={onChange} disabled={disabled || options.length === 0}>
-            <SelectTrigger aria-label={selectLabel} className="h-11 w-full rounded-xl bg-white/90 shadow-none">
-              <SelectValue placeholder={options.length === 0 ? '선택 가능한 멤버 없음' : '프로젝트 멤버 선택'} />
-            </SelectTrigger>
-            <SelectContent className="rounded-2xl">
-              {options.map((member) => (
-                <SelectItem key={member.id} value={String(member.userId)}>
-                  {member.name} · {member.team}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{inputLabel}</div>
-          <Input
-            aria-label={inputLabel}
-            value={value}
-            onChange={(event) => onChange(event.target.value)}
-            disabled={disabled}
-            placeholder="또는 사용자 ID 직접 입력"
-            className="h-11 rounded-xl bg-white/90"
-          />
-        </div>
+      <div className="space-y-2">
+        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{selectLabel}</div>
+        <Select value={value} onValueChange={onChange} disabled={disabled || options.length === 0}>
+          <SelectTrigger aria-label={selectLabel} className="h-11 w-full rounded-xl bg-white/90 shadow-none">
+            <SelectValue placeholder={options.length === 0 ? '선택 가능한 멤버 없음' : '프로젝트 멤버 선택'} />
+          </SelectTrigger>
+          <SelectContent className="rounded-2xl">
+            {options.map((member) => (
+              <SelectItem key={member.id} value={String(member.userId)}>
+                {member.name} · {member.team}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <Button aria-label={buttonLabel} variant="outline" className="w-full rounded-xl" onClick={() => void onSubmit()} disabled={disabled}>
         {buttonLabel}

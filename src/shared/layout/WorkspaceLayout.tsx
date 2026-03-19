@@ -7,15 +7,21 @@ import {
   KanbanSquare,
   LayoutTemplate,
   Layers3,
+  LogOut,
   Search,
   ShieldCheck,
   Users,
+  UserRound,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { NavLink, useLocation, useSearchParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
+import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import Header from '../../components/Header';
 import { useWorkspace } from '../../features/workspace/use-workspace';
+import { useProjectMembers } from '../../features/workspace/hooks';
+import { logoutSession } from '../../features/auth/api';
 import { formatDate } from '../lib/format';
+import BrandLockup from '../ui/BrandLockup';
 import {
   Sidebar,
   SidebarContent,
@@ -43,36 +49,80 @@ import {
 } from '../../components/ui/dropdown-menu';
 import { Button } from '../../components/ui/button';
 import { appConfig } from '../config/app-config';
+import { getCurrentActor } from '../lib/session';
 
 type Props = {
   children: ReactNode;
 };
 
 export default function WorkspaceLayout({ children }: Props) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const shell = getShellConfig(location.pathname);
   const { projects, currentProject, currentProjectDetail, selectedProjectId, setSelectedProjectId } = useWorkspace();
+  const { data: currentProjectMembers = [] } = useProjectMembers(currentProject?.id ?? null);
   const taskView = searchParams.get('view') ?? 'table';
   const isProjectHub = shell.domainPath === 'projects';
   const showTaskViewExpansion = shell.domainPath === 'tasks';
   const projectBasePath = `/projects/${currentProject?.id ?? appConfig.defaultProjectId}`;
+  const actorMember = currentProjectMembers.find((member) => member.userId === currentProjectDetail?.myUserId) ?? null;
+  const actor = appConfig.useMock ? getCurrentActor() : null;
+  const currentUserName = actorMember?.name ?? actor?.name ?? '내 계정';
+  const currentUserEmail = actorMember?.email ?? (actor ? `actor-${actor.actorId}@local.mock` : null);
+  const currentUserRoles = actorMember?.roleIds ?? [];
+
+  async function handleLogout() {
+    try {
+      if (!appConfig.useMock) {
+        await logoutSession();
+      }
+    } finally {
+      const authStorageKeys = [
+        'wm_access_token',
+        'wm_actor_id',
+        'wm_actor_name',
+        'wm_actor_roles',
+        'wm_actor_permissions',
+      ];
+
+      queryClient.setQueryData(['auth', 'session'], { authenticated: false });
+      queryClient.clear();
+
+      if (typeof window !== 'undefined') {
+        authStorageKeys.forEach((key) => {
+          window.localStorage.removeItem(key);
+          window.sessionStorage.removeItem(key);
+        });
+      }
+
+      if (typeof window !== 'undefined') {
+        window.location.assign(`/login?loggedOut=1&t=${Date.now()}`);
+        return;
+      }
+      navigate(`/login?loggedOut=1&t=${Date.now()}`, { replace: true });
+    }
+  }
 
   return (
     <SidebarProvider defaultOpen>
       <Sidebar variant="inset" collapsible="icon" className="border-r border-border/60">
         <SidebarHeader className="px-2.5 py-3">
-          <div className="flex items-center justify-between gap-2 px-1 group-data-[collapsible=icon]:justify-center">
+          <div className="flex items-center justify-between gap-2 px-1 group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-start group-data-[collapsible=icon]:gap-2">
             <NavLink to="/projects" className="flex min-w-0 items-center gap-2 group-data-[collapsible=icon]:hidden">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-sidebar-border bg-background text-primary shadow-sm">
-                <Home size={16} />
-              </div>
-              <div className="min-w-0">
-                <div className="truncate text-sm font-semibold text-sidebar-foreground">front-vibe</div>
-                <div className="text-xs text-sidebar-foreground/70">협업 워크스페이스</div>
-              </div>
+              <BrandLockup compact caption="Project" />
             </NavLink>
-            <SidebarTrigger className="h-7 w-7 rounded-md border border-sidebar-border/80 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:w-9" />
+            <div className="hidden group-data-[collapsible=icon]:block">
+              <div className="flex h-10 w-10 items-center justify-center rounded-[14px] border border-sidebar-border bg-[linear-gradient(145deg,#0b1120,#111f3a)] text-lime-300 shadow-sm">
+                <div className="relative flex items-center gap-1">
+                  <span className="block h-5 w-1.5 rounded-full bg-lime-300" />
+                  <span className="block h-5 w-1.5 rounded-full bg-white" />
+                  <span className="absolute left-[5px] top-[8px] block h-1.5 w-4.5 rounded-full bg-lime-300" />
+                </div>
+              </div>
+            </div>
+            <SidebarTrigger className="h-7 w-7 rounded-md border border-sidebar-border/80 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:rounded-xl" />
           </div>
           <div className="relative mt-3 group-data-[collapsible=icon]:hidden">
             <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sidebar-foreground/55" />
@@ -137,8 +187,11 @@ export default function WorkspaceLayout({ children }: Props) {
             <SidebarGroup>
               <SidebarGroupLabel>허브</SidebarGroupLabel>
               <SidebarGroupContent className="px-2">
-                <div className="rounded-2xl border border-sidebar-border bg-sidebar px-3 py-3 text-sm leading-6 text-sidebar-foreground/80 group-data-[collapsible=icon]:hidden">
-                  프로젝트 카드를 고른 뒤에만 업무와 검토 메뉴가 열립니다.
+                <div className="rounded-2xl border border-sidebar-border bg-[linear-gradient(145deg,#f8fbff,#eef4ff)] px-3 py-3 group-data-[collapsible=icon]:hidden">
+                  <div className="text-sm font-semibold text-sidebar-foreground">오늘 시작할 프로젝트를 고르세요</div>
+                  <div className="mt-1 text-sm leading-6 text-sidebar-foreground/70">
+                    가장 급한 프로젝트부터 들어가면 업무와 검토가 바로 이어집니다.
+                  </div>
                 </div>
               </SidebarGroupContent>
             </SidebarGroup>
@@ -189,9 +242,33 @@ export default function WorkspaceLayout({ children }: Props) {
         <SidebarFooter className="px-2.5 pb-3 group-data-[collapsible=icon]:hidden">
           {!isProjectHub && currentProject && (
             <div className="border-t border-sidebar-border px-1 pt-3 text-xs text-sidebar-foreground/80">
-              <div className="font-semibold text-sidebar-foreground">{currentProject.ownerName}</div>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/55">
+                    <UserRound size={12} />
+                    내 정보
+                  </div>
+                  <div className="mt-2 truncate text-sm font-semibold text-sidebar-foreground">{currentUserName}</div>
+                  {currentUserEmail ? <div className="mt-1 truncate text-[11px] text-sidebar-foreground/65">{currentUserEmail}</div> : null}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 rounded-lg border-sidebar-border bg-sidebar px-2.5 text-[11px] text-sidebar-foreground/75 shadow-none hover:text-sidebar-foreground"
+                  onClick={() => void handleLogout()}
+                >
+                  <LogOut size={13} />
+                  로그아웃
+                </Button>
+              </div>
               {currentProjectDetail ? (
                 <div className="mt-2 flex flex-wrap gap-1.5">
+                  {currentUserRoles.length > 0 ? (
+                    <span className="rounded-full border border-sidebar-border bg-sidebar px-2 py-1 text-[10px] font-semibold text-sidebar-foreground/75">
+                      역할 {currentUserRoles.length}개
+                    </span>
+                  ) : null}
                   <span className="rounded-full border border-sidebar-border bg-sidebar px-2 py-1 text-[10px] font-semibold text-sidebar-foreground/75">
                     {getMembershipLabel(currentProjectDetail.membershipStatus)}
                   </span>
@@ -383,7 +460,7 @@ function getShellConfig(pathname: string) {
       domain: 'projects',
       domainPath: 'projects',
       title: '프로젝트 허브',
-      subtitle: '집 아이콘에서 진입하는 메인 프로젝트 카드 화면입니다.',
+      subtitle: '오늘 들어갈 프로젝트를 고르고 바로 작업을 시작합니다.',
       primaryLabel: '프로젝트 허브',
       primaryTo: '/projects',
       contextLabel: 'projects',
@@ -396,7 +473,7 @@ function getShellConfig(pathname: string) {
       domain: 'members',
       domainPath: 'members',
       title: '멤버',
-      subtitle: '프로젝트 구성원 현황, 초대 준비, 역할 할당 상태를 한 화면에서 확인합니다.',
+      subtitle: '프로젝트에 함께하는 사람과 역할 배치를 한 번에 정리합니다.',
       primaryLabel: '업무로 이동',
       primaryTo: `/projects/${appConfig.defaultProjectId}/tasks`,
       contextLabel: 'members',
@@ -409,7 +486,7 @@ function getShellConfig(pathname: string) {
       domain: 'roles',
       domainPath: 'roles',
       title: '역할 / 권한',
-      subtitle: '역할 카탈로그와 권한 정책을 관리자 시점에서 검토합니다.',
+      subtitle: '역할별 권한 기준을 정리하고 멤버 운영 기준을 맞춥니다.',
       primaryLabel: '업무로 이동',
       primaryTo: `/projects/${appConfig.defaultProjectId}/tasks`,
       contextLabel: 'rbac',
@@ -422,7 +499,7 @@ function getShellConfig(pathname: string) {
       domain: 'milestones',
       domainPath: 'milestones',
       title: '마일스톤',
-      subtitle: '마일스톤 단위로 진행률, 위험, 연결 업무를 확인합니다.',
+      subtitle: '중요 일정의 진척과 위험 신호를 빠르게 확인합니다.',
       primaryLabel: '업무로 이동',
       primaryTo: `/projects/${appConfig.defaultProjectId}/tasks`,
       contextLabel: 'milestones',
@@ -435,7 +512,7 @@ function getShellConfig(pathname: string) {
       domain: 'audit-logs',
       domainPath: 'audit-logs',
       title: '감사 로그',
-      subtitle: '역할 변경과 검토 이력을 프로젝트 단위로 묶어서 확인합니다.',
+      subtitle: '누가 어떤 변경을 했는지 프로젝트 흐름 기준으로 추적합니다.',
       primaryLabel: '업무로 이동',
       primaryTo: `/projects/${appConfig.defaultProjectId}/tasks`,
       contextLabel: 'audit',
@@ -461,7 +538,7 @@ function getShellConfig(pathname: string) {
       domain: 'reviews',
       domainPath: 'reviews',
       title: '검토 상세',
-      subtitle: '본문, 첨부, 코멘트, 이력을 하나의 화면에서 확인합니다.',
+      subtitle: '검토 내용과 결정 이력을 한 화면에서 확인합니다.',
       primaryLabel: '검토 inbox로 이동',
       primaryTo: `/projects/${appConfig.defaultProjectId}/reviews`,
       contextLabel: 'reviews',
@@ -487,7 +564,7 @@ function getShellConfig(pathname: string) {
       domain: 'reviews',
       domainPath: 'reviews',
       title: '검토 보관함',
-      subtitle: '프로젝트 전체 검토 큐와 최근 라운드를 모아서 봅니다.',
+      subtitle: '내가 처리할 검토와 최근 라운드를 빠르게 모아봅니다.',
       primaryLabel: '검토 큐 보기',
       primaryTo: pathname,
       contextLabel: 'reviews',
@@ -512,7 +589,7 @@ function getShellConfig(pathname: string) {
     domain: 'tasks',
     domainPath: 'tasks',
     title: '업무 보드',
-    subtitle: '백엔드 프로젝트 업무와 검토 진입 흐름을 기준으로 보여줍니다.',
+    subtitle: '오늘 처리할 업무를 고르고 바로 담당과 검토를 이어갑니다.',
     primaryLabel: '업무 보드 보기',
     primaryTo: `/projects/${appConfig.defaultProjectId}/tasks`,
     contextLabel: 'tasks',

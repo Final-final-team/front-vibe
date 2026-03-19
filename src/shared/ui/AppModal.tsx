@@ -17,6 +17,7 @@ type Props = {
   title: string;
   description?: string;
   badges?: ReactNode;
+  titleActions?: ReactNode;
   side?: ReactNode;
   footer?: ReactNode;
   children: ReactNode;
@@ -33,6 +34,7 @@ export default function AppModal({
   title,
   description,
   badges,
+  titleActions,
   side,
   footer,
   children,
@@ -65,7 +67,12 @@ export default function AppModal({
           <div className="flex items-start justify-between gap-4 border-b border-border/70 px-5 py-4 sm:px-6 sm:py-5">
             <DialogHeader className="min-w-0">
               {badges ? <div className="mb-3 flex flex-wrap items-center gap-2">{badges}</div> : null}
-              <DialogTitle className="break-keep text-[24px] font-semibold tracking-tight leading-tight">{title}</DialogTitle>
+              <div className="flex flex-wrap items-start gap-3">
+                <DialogTitle className="min-w-0 flex-1 break-keep text-[24px] font-semibold tracking-tight leading-tight">
+                  {title}
+                </DialogTitle>
+                {titleActions ? <div className="shrink-0">{titleActions}</div> : null}
+              </div>
               {description ? <DialogDescription className="mt-2 text-sm leading-6">{description}</DialogDescription> : null}
             </DialogHeader>
             <DialogClose asChild>

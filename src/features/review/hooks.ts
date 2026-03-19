@@ -66,6 +66,7 @@ export function useTasks(projectId = appConfig.defaultProjectId) {
         .filter((task) => getMockProjectIdForTask(task.id) === projectId)
         .map<ReviewTaskListItem>((task) => ({
           ...task,
+          assignees: [],
           projectId,
           status: task.latestReviewStatus,
         }));
@@ -77,6 +78,7 @@ export function useTasks(projectId = appConfig.defaultProjectId) {
       title: task.title,
       summary: `${task.title} 업무 상세는 task detail API 연결 전까지 목록 데이터로 대체합니다.`,
       authorId: task.authorId,
+      assignees: task.assignees,
       priority: task.priority,
       startDate: task.startDate ?? task.createdAt,
       dueDate: task.dueDate ?? task.updatedAt,

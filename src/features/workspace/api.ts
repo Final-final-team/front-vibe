@@ -221,6 +221,18 @@ export async function revokeProjectMemberRole(projectId: string, projectMemberId
   });
 }
 
+export async function inviteProjectMember(projectId: string, targetEmail: string) {
+  return backendRequest<{
+    projectMemberId: number;
+    projectId: number;
+    userId: number;
+    status: string;
+  }>(`/api/projects/${projectId}/members`, {
+    method: 'POST',
+    body: JSON.stringify({ targetEmail }),
+  });
+}
+
 export async function createProjectRole(
   projectId: string,
   input: {
