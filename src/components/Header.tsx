@@ -1,14 +1,7 @@
 import { Bell, ChevronDown, Sparkles } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { Button } from './ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from './ui/dialog';
+import AppModal from '../shared/ui/AppModal';
 
 type Props = {
   title?: string;
@@ -95,19 +88,22 @@ export default function Header({
         </div>
       </div>
     </header>
-      <Dialog open={noticeOpen} onOpenChange={setNoticeOpen}>
-        <DialogContent className="max-w-sm rounded-lg">
-          <DialogHeader>
-            <DialogTitle>알림 기능 준비 중</DialogTitle>
-            <DialogDescription>
-              알림 센터와 실시간 알림 설정은 추후 구현 예정입니다. 현재는 업무와 검토 흐름 정리에 우선 집중하고 있습니다.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button type="button" onClick={() => setNoticeOpen(false)}>확인</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AppModal
+        open={noticeOpen}
+        onOpenChange={setNoticeOpen}
+        title="알림 기능 준비 중"
+        description="알림 센터와 실시간 알림 설정은 추후 구현 예정입니다. 현재는 업무와 검토 흐름 정리에 우선 집중하고 있습니다."
+        size="sm"
+        bodyClassName="hidden"
+        footerClassName="px-5 py-3"
+        footer={
+          <Button type="button" className="rounded-xl px-4" onClick={() => setNoticeOpen(false)}>
+            확인
+          </Button>
+        }
+      >
+        <div />
+      </AppModal>
     </>
   );
 }

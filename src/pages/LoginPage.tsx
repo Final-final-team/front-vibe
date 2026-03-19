@@ -38,13 +38,7 @@ export default function LoginPage() {
             <BrandLockup className="justify-center" />
           </div>
 
-          <div className="mt-10 text-center">
-            <h1 className="text-3xl font-bold tracking-tight text-slate-950">
-              {shouldPromptAccount ? '다른 계정으로 다시 로그인' : '로그인'}
-            </h1>
-          </div>
-
-          <Button asChild size="lg" className="mt-8 h-14 w-full rounded-2xl bg-slate-950 text-white hover:bg-slate-800">
+          <Button asChild size="lg" className="mt-10 h-14 w-full rounded-2xl bg-slate-950 text-white hover:bg-slate-800">
             <a href={oauthTarget}>
               <LogIn size={16} />
               로그인하기

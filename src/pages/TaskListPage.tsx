@@ -606,8 +606,8 @@ export default function TaskListPage() {
         </div>
       </section>
 
-      <section className="min-w-0 bg-background pt-4">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-4">
+      <section className="min-w-0 rounded-[24px] border border-border/70 bg-background px-5 py-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)] sm:px-6">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-5">
           <div className="inline-flex flex-wrap items-center gap-2 rounded-[22px] border border-border/70 bg-muted/20 p-2">
             <ScopeButton active={taskScope === 'milestone'} onClick={() => setTaskScope('milestone')}>
               마일스톤별 보기
@@ -646,7 +646,7 @@ export default function TaskListPage() {
                       const progress = Math.round((done / total) * 100);
 
                       return (
-                        <section key={milestone.id} className="border-b border-border/70 pb-5">
+                        <section key={milestone.id} className="border-b border-border/70 pb-5 last:border-b-0">
                           <div className="mb-3 flex items-center justify-between gap-3">
                             <div>
                               <div className="font-semibold text-foreground">{milestone.name}</div>
@@ -688,7 +688,7 @@ export default function TaskListPage() {
                       const progress = Math.round((done / total) * 100);
 
                       return (
-                        <section key={milestone.id} className="py-4 first:pt-0">
+                        <section key={milestone.id} className="py-4 first:pt-0 last:pb-0">
                           <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
                             <div>
                               <div className="flex items-center gap-2">
@@ -1598,12 +1598,12 @@ function ChartView({
 
   return (
     <div className="grid gap-6 xl:grid-cols-2">
-      <section className="border-t border-border/70 pt-3">
-        <div className="pb-3">
+      <section className="rounded-[24px] border border-border/70 bg-background px-5 py-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)] sm:px-6">
+        <div className="pb-4">
           <h2 className="text-base font-semibold text-foreground">상태 분포</h2>
           <p className="mt-1 text-xs text-muted-foreground">현재 업무 분포를 상태별로 확인합니다.</p>
         </div>
-        <div className="space-y-4">
+        <div className="space-y-5">
           {[
             { label: '대기', value: groups.PENDING.length, tone: 'blue' as const },
             { label: '진행중', value: groups.IN_PROGRESS.length, tone: 'slate' as const },
@@ -1611,11 +1611,11 @@ function ChartView({
             { label: '완료', value: groups.COMPLETED.length, tone: 'green' as const },
           ].map((row) => (
             <div key={row.label}>
-              <div className="mb-2 flex items-center justify-between text-sm">
+              <div className="mb-2.5 flex items-center justify-between text-sm">
                 <span className="font-medium text-foreground">{row.label}</span>
                 <span className="text-muted-foreground">{row.value}건</span>
               </div>
-              <div className="h-3 overflow-hidden bg-muted">
+              <div className="h-3 overflow-hidden rounded-full bg-muted">
                 <div
                   className={[
                     'h-full rounded-full',
@@ -1635,12 +1635,12 @@ function ChartView({
         </div>
       </section>
 
-      <section className="border-t border-border/70 pt-3">
-        <div className="pb-3">
+      <section className="rounded-[24px] border border-border/70 bg-background px-5 py-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)] sm:px-6">
+        <div className="pb-4">
           <h2 className="text-base font-semibold text-foreground">마일스톤 부담</h2>
           <p className="mt-1 text-xs text-muted-foreground">마일스톤별 연결 업무와 완료 비율</p>
         </div>
-        <div className="space-y-4">
+        <div className="space-y-5">
           {milestones.map((milestone) => {
             const milestoneTasks = items.filter((item) => item.milestoneId === milestone.id);
             const done = milestoneTasks.filter((item) => item.status === 'COMPLETED').length;
@@ -1648,12 +1648,12 @@ function ChartView({
 
             return (
               <div key={milestone.id}>
-                <div className="mb-2 flex items-center justify-between text-sm">
+                <div className="mb-2.5 flex items-center justify-between text-sm">
                   <span className="font-medium text-foreground">{milestone.name}</span>
                   <span className="text-muted-foreground">{progress}%</span>
                 </div>
-                <div className="h-3 overflow-hidden bg-muted">
-                  <div className="h-full bg-primary" style={{ width: `${progress}%` }} />
+                <div className="h-3 overflow-hidden rounded-full bg-muted">
+                  <div className="h-full rounded-full bg-primary" style={{ width: `${progress}%` }} />
                 </div>
                 <div className="mt-2 text-xs text-muted-foreground">{milestoneTasks.length}건</div>
               </div>
